@@ -1,0 +1,30 @@
+# .NET build output
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Tt]est[Rr]esults/
+coverage/
+coverage.*
+
+# IDEs and user settings
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# Frontend dependencies and output
+node_modules/
+.tailwindcss/
+
+# Operating system files
+.DS_Store
+Thumbs.db

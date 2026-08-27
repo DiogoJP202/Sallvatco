@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O projeto está na **Fase 0 — Descoberta e documentação**. Ainda não existem solution, projetos .NET, banco, migrations, containers ou páginas. A documentação em [`docs/`](docs/README.md) é a fonte de verdade para o desenvolvimento futuro.
+O planejamento da Fase 0 está concluído e a **Fase 1 — Fundação técnica** foi iniciada com a solution e os projetos-base. Ainda não existem banco, migrations, containers ou páginas. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Stack definida
 
@@ -22,7 +22,7 @@ O projeto está na **Fase 0 — Descoberta e documentação**. Ainda não existe
 
 ## Arquitetura
 
-O sistema começará como um **monólito modular**, sem microserviços, SPA separada, CQRS framework ou event sourcing. A divisão futura da solution será:
+O sistema começa como um **monólito modular**, sem microserviços, SPA separada, CQRS framework ou event sourcing. A estrutura inicial da solution é:
 
 ```text
 Sallvat.sln
@@ -42,6 +42,14 @@ As responsabilidades, limites de módulos e dependências permitidas estão em [
 
 Comece pelo [índice da documentação](docs/README.md). Os documentos cobrem produto, requisitos, banco de dados, autenticação, pedidos, pagamentos, frete, segurança, LGPD, infraestrutura, deploy, testes, SEO, roadmap, backlog e decisões arquiteturais.
 
-## Início futuro do desenvolvimento
+## Desenvolvimento local
 
-O desenvolvimento só deve começar depois da aprovação desta documentação e da resolução das decisões comerciais que bloquearem cada fase. A primeira tarefa técnica prevista é criar `Sallvat.sln` e os projetos-base, respeitando as dependências registradas, sem antecipar funcionalidades.
+Pré-requisito atual: .NET SDK 10.
+
+```powershell
+dotnet restore Sallvat.sln
+dotnet build Sallvat.sln --no-restore
+dotnet test Sallvat.sln --no-build
+```
+
+Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Banco, migrations, containers, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).

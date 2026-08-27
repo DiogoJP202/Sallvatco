@@ -50,6 +50,6 @@ Esta pasta é a fonte de verdade do projeto. Código, migrations, infraestrutura
 | Área | Estado |
 |---|---|
 | Descoberta e documentação | Documentação concluída; aguardando aprovação da Sallvat |
-| Desenvolvimento | Não iniciado |
+| Desenvolvimento | Fase 1 iniciada: solution e projetos-base criados |
 | Homologação | Não iniciado |
 | Produção | Não iniciado |
