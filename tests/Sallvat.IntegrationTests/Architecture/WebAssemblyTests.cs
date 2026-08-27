@@ -3,7 +3,7 @@ namespace Sallvat.IntegrationTests.Architecture;
 public sealed class WebAssemblyTests
 {
     [Fact]
-    public void Web_application_assembly_is_available()
+    public void WebApplicationAssemblyIsAvailable()
     {
         var assemblyName = typeof(global::Program).Assembly.GetName().Name;
 

@@ -5,7 +5,7 @@ namespace Sallvat.UnitTests.Architecture;
 public sealed class ProjectDependencyTests
 {
     [Fact]
-    public void Projects_follow_the_approved_dependency_graph()
+    public void ProjectsFollowTheApprovedDependencyGraph()
     {
         var repositoryRoot = FindRepositoryRoot();
         var expectedReferences = new Dictionary<string, string[]>

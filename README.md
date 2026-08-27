@@ -44,12 +44,14 @@ Comece pelo [índice da documentação](docs/README.md). Os documentos cobrem pr
 
 ## Desenvolvimento local
 
-Pré-requisito atual: .NET SDK 10.
+Pré-requisito atual: .NET SDK 10.0.400 ou patch posterior da mesma feature band, conforme [`global.json`](global.json).
 
 ```powershell
-dotnet restore Sallvat.sln
+dotnet restore Sallvat.sln --locked-mode
 dotnet build Sallvat.sln --no-restore
 dotnet test Sallvat.sln --no-build
 ```
+
+Warnings e analyzers são tratados como erros pelo build. Formatação e estilos básicos são definidos no `.editorconfig`, versões NuGet são centralizadas e cada projeto possui lock file reproduzível.
 
 Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Banco, migrations, containers, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).

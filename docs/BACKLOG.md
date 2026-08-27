@@ -33,8 +33,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Criar `Sallvat.sln` e projetos `Web`, `Application`, `Domain`, `Infrastructure`.
 - [x] Criar projetos `UnitTests` e `IntegrationTests`.
 - [x] Configurar referências permitidas e teste de arquitetura.
-- [ ] Habilitar nullable, warnings relevantes, analyzers e formatação.
-- [ ] Criar `global.json`, lock files e documentação de pré-requisitos.
+- [x] Habilitar nullable, warnings relevantes, analyzers e formatação.
+- [x] Criar `global.json`, lock files e documentação de pré-requisitos.
 - [ ] Configurar PostgreSQL Development via Compose sem exposição externa produtiva.
 - [ ] Criar `SallvatDbContext` e primeira migration vazia/Identity somente quando necessário.
 - [ ] Documentar comandos de build, test e migration.
