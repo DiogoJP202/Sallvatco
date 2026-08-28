@@ -60,9 +60,18 @@ docker compose ps
 
 O PostgreSQL fica acessível somente em `127.0.0.1:5432` por padrão. `docker compose down` preserva o volume. `docker compose down --volumes` apaga permanentemente o banco local.
 
+Configure a mesma credencial para a aplicação, sem gravá-la no Git:
+
+```powershell
+dotnet user-secrets --project src/Sallvat.Web set `
+  "ConnectionStrings:SallvatDatabase" `
+  "Host=127.0.0.1;Port=5432;Database=sallvat;Username=sallvat;Password=replace-with-the-same-local-password"
+```
+
 Restaure, compile e teste:
 
 ```powershell
+dotnet tool restore
 dotnet restore Sallvat.sln --locked-mode
 dotnet build Sallvat.sln --no-restore
 dotnet test Sallvat.sln --no-build
@@ -70,4 +79,19 @@ dotnet test Sallvat.sln --no-build
 
 Warnings e analyzers são tratados como erros pelo build. Formatação e estilos básicos são definidos no `.editorconfig`, versões NuGet são centralizadas e cada projeto possui lock file reproduzível.
 
-Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. `DbContext`, migrations, container Web, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
+## Migrations
+
+Ainda não existe migration: um schema vazio não justifica histórico. Quando a primeira entidade persistida for aprovada, use a ferramenta local fixada no repositório:
+
+```powershell
+dotnet ef migrations add InitialSchema `
+  --project src/Sallvat.Infrastructure `
+  --startup-project src/Sallvat.Web `
+  --output-dir Persistence/Migrations
+
+dotnet ef database update `
+  --project src/Sallvat.Infrastructure `
+  --startup-project src/Sallvat.Web
+```
+
+Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Migrations, container Web, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).

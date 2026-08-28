@@ -36,8 +36,9 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Habilitar nullable, warnings relevantes, analyzers e formatação.
 - [x] Criar `global.json`, lock files e documentação de pré-requisitos.
 - [x] Configurar PostgreSQL Development via Compose sem exposição externa produtiva.
-- [ ] Criar `SallvatDbContext` e primeira migration vazia/Identity somente quando necessário.
-- [ ] Documentar comandos de build, test e migration.
+- [x] Criar `SallvatDbContext` vazio e registrá-lo no composition root.
+- [ ] Criar a primeira migration somente quando existir o primeiro schema real.
+- [x] Documentar comandos de build, test e migration.
 
 ### STORY F1-S2 — Aplicação possui base operacional segura
 
