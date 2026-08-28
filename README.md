@@ -44,7 +44,23 @@ Comece pelo [índice da documentação](docs/README.md). Os documentos cobrem pr
 
 ## Desenvolvimento local
 
-Pré-requisito atual: .NET SDK 10.0.400 ou patch posterior da mesma feature band, conforme [`global.json`](global.json).
+Pré-requisitos atuais:
+
+- .NET SDK 10.0.400 ou patch posterior da mesma feature band, conforme [`global.json`](global.json);
+- Docker com Compose v2 para executar o PostgreSQL de Development.
+
+Crie o arquivo local de ambiente e inicie o banco:
+
+```powershell
+Copy-Item .env.example .env
+# Edite SALLVAT_POSTGRES_PASSWORD no arquivo .env.
+docker compose up -d postgres
+docker compose ps
+```
+
+O PostgreSQL fica acessível somente em `127.0.0.1:5432` por padrão. `docker compose down` preserva o volume. `docker compose down --volumes` apaga permanentemente o banco local.
+
+Restaure, compile e teste:
 
 ```powershell
 dotnet restore Sallvat.sln --locked-mode
@@ -54,4 +70,4 @@ dotnet test Sallvat.sln --no-build
 
 Warnings e analyzers são tratados como erros pelo build. Formatação e estilos básicos são definidos no `.editorconfig`, versões NuGet são centralizadas e cada projeto possui lock file reproduzível.
 
-Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Banco, migrations, containers, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
+Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. `DbContext`, migrations, container Web, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).

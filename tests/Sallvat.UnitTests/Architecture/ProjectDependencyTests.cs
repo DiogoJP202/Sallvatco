@@ -7,7 +7,7 @@ public sealed class ProjectDependencyTests
     [Fact]
     public void ProjectsFollowTheApprovedDependencyGraph()
     {
-        var repositoryRoot = FindRepositoryRoot();
+        var repositoryRoot = RepositoryRoot.Find();
         var expectedReferences = new Dictionary<string, string[]>
         {
             ["src/Sallvat.Domain/Sallvat.Domain.csproj"] = [],
@@ -29,24 +29,6 @@ public sealed class ProjectDependencyTests
 
             Assert.Equal(expected, actual);
         }
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "Sallvat.sln")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException(
-            "Could not find the repository root containing Sallvat.sln.");
     }
 
     private static string[] ReadProjectReferences(

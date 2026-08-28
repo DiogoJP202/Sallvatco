@@ -45,6 +45,8 @@ O backup pode começar como job controlado no host, desde que use credenciais m�
 ### Development
 
 - Windows/local com .NET 10 e Docker para PostgreSQL;
+- imagem `postgres:18.6-alpine3.24`, com volume montado em `/var/lib/postgresql` conforme a convenção da imagem 18+;
+- porta 5432 publicada apenas em `127.0.0.1` e senha fornecida por `.env` não versionado;
 - user-secrets/variáveis locais;
 - Mercado Pago e Melhor Envio em sandbox;
 - dados descartáveis e e-mail capturado por ferramenta local;
