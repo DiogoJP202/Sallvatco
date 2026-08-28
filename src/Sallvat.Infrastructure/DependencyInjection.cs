@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Sallvat.Infrastructure.Persistence;
 
 namespace Sallvat.Infrastructure;
@@ -14,20 +15,29 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var connectionString = configuration.GetConnectionString(
-            "SallvatDatabase");
+        services
+            .AddOptions<DatabaseOptions>()
+            .Configure(options =>
+                options.ConnectionString =
+                    configuration.GetConnectionString("SallvatDatabase")
+                    ?? string.Empty)
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(
+                    options.ConnectionString),
+                "Connection string 'SallvatDatabase' is required.")
+            .ValidateOnStart();
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        services.AddDbContext<SallvatDbContext>((serviceProvider, options) =>
         {
-            throw new InvalidOperationException(
-                "Connection string 'SallvatDatabase' is required.");
-        }
+            var databaseOptions = serviceProvider
+                .GetRequiredService<IOptions<DatabaseOptions>>()
+                .Value;
 
-        services.AddDbContext<SallvatDbContext>(options =>
             options.UseNpgsql(
-                connectionString,
+                databaseOptions.ConnectionString,
                 npgsql => npgsql.MigrationsAssembly(
-                    typeof(SallvatDbContext).Assembly.GetName().Name)));
+                    typeof(SallvatDbContext).Assembly.GetName().Name));
+        });
 
         return services;
     }

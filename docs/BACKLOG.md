@@ -46,11 +46,11 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Configurar options tipadas e validação no startup.
-- [ ] Configurar Serilog JSON e filtros de dados sensíveis.
-- [ ] Implementar/generar correlation ID e propagação HTTP.
-- [ ] Implementar tratamento global de exceções e páginas seguras.
-- [ ] Criar `/health/live` e `/health/ready`.
+- [x] Configurar options tipadas e validação no startup.
+- [x] Configurar Serilog JSON e filtros de dados sensíveis.
+- [x] Implementar/generar correlation ID e propagação HTTP.
+- [x] Implementar tratamento global de exceções e páginas seguras.
+- [x] Criar `/health/live` e `/health/ready`.
 - [ ] Persistir Data Protection keys fora do container efêmero.
 - [ ] Configurar Tailwind, purge/content paths e build de assets.
 - [ ] Criar layout Razor mínimo acessível e sem design final.

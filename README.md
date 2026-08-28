@@ -95,3 +95,7 @@ dotnet ef database update `
 ```
 
 Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Migrations, container Web, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
+
+## Diagnóstico local
+
+Com a aplicação em execução, `GET /health/live` confirma que o processo responde e `GET /health/ready` também verifica a conexão com o PostgreSQL. As respostas contêm apenas o estado agregado e o header `X-Correlation-ID`, sem detalhes internos. Logs estruturados são escritos como JSON em stdout.
