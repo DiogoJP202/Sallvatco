@@ -112,14 +112,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar entidades `Product` e `ProductVariant` e invariantes.
-- [ ] Configurar mappings, precisão, índices únicos, checks e concorrência.
-- [ ] Criar migration e dados de teste não produtivos.
-- [ ] Implementar casos de uso de criar, editar, publicar, inativar e destacar.
-- [ ] Criar controllers/views Admin com validação e antiforgery.
-- [ ] Impedir publicação sem preço, SKU, peso, dimensões e imagem necessários.
-- [ ] Auditar preço, status e alteração comercial.
-- [ ] Testar slug/SKU duplicado, overposting e conflito de edição.
+- [x] Criar entidades `Product` e `ProductVariant` e invariantes.
+- [x] Configurar mappings, precisão, índices únicos, checks e concorrência.
+- [x] Criar migration e dados de teste não produtivos.
+- [x] Implementar casos de uso de criar, editar, publicar, inativar e destacar.
+- [x] Criar controllers/views Admin com validação e antiforgery.
+- [x] Impedir publicação sem preço, SKU, peso, dimensões e imagem necessários.
+- [x] Auditar preço, status e alteração comercial.
+- [x] Testar slug/SKU duplicado, overposting e conflito de edição.
 
 ### STORY F3-S2 — Administrador gerencia imagens seguras e otimizadas
 
@@ -127,7 +127,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `ProductImage` e configuração.
+- [x] Criar `ProductImage` e configuração.
 - [ ] Definir e implementar `IImageStorage` local.
 - [ ] Selecionar biblioteca de imagem após revisão de licença e segurança.
 - [ ] Validar tamanho, extensão, magic bytes, dimensões e decodificação.
@@ -142,12 +142,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `InventoryMovement` e campos `OnHand`, `Reserved`, versão.
-- [ ] Implementar ajuste condicional de estoque.
-- [ ] Criar tela Admin de saldo e movimentos.
-- [ ] Exigir justificativa em ajuste manual.
-- [ ] Auditar antes/depois e movimento resultante.
-- [ ] Testar conflito, quantidade inválida e redução abaixo do reservado.
+- [x] Criar `InventoryMovement` e campos `OnHand`, `Reserved`, versão.
+- [x] Implementar ajuste condicional de estoque.
+- [x] Criar tela Admin de saldo e movimentos.
+- [x] Exigir justificativa em ajuste manual.
+- [x] Auditar antes/depois e movimento resultante.
+- [x] Testar conflito, quantidade inválida e redução abaixo do reservado.
 
 ### STORY F3-S4 — Visitante descobre produtos indexáveis
 
@@ -155,11 +155,11 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Implementar query paginada de catálogo e filtros essenciais.
+- [x] Implementar query paginada de catálogo e filtros essenciais.
 - [ ] Implementar página `/perfumes/{slug}` com seleção de variante.
 - [ ] Implementar home e destaques conforme conteúdo aprovado.
 - [ ] Gerar title, description, canonical, Open Graph e JSON-LD.
-- [ ] Implementar 404 e histórico/redirect 301 de slug.
+- [x] Implementar 404 e histórico/redirect 301 de slug.
 - [ ] Aplicar imagens responsivas e acessibilidade básica.
 - [ ] Testar produto inativo, sem estoque, slug antigo e metadados.
 

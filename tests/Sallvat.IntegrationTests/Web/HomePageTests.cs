@@ -18,7 +18,8 @@ public sealed class HomePageTests
         Assert.Contains("href=\"#conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("<main id=\"conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("/css/app.css?v=", content, StringComparison.Ordinal);
-        Assert.Contains("catálogo e compras ainda não estão disponíveis", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Conheça o catálogo", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("href=\"/perfumes\"", content, StringComparison.Ordinal);
         Assert.Contains("href=\"/conta/criar\"", content, StringComparison.Ordinal);
     }
 }

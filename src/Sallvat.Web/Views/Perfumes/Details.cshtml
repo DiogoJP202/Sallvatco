@@ -1,0 +1,51 @@
+@model CatalogProductDetails
+@{
+    ViewData["Title"] = Model.Name;
+    ViewData["Description"] = Model.ShortDescription;
+}
+
+<section class="mx-auto grid max-w-7xl gap-12 px-5 py-12 sm:px-8 lg:grid-cols-2 lg:px-10 lg:py-20">
+    <div class="flex min-h-[32rem] items-center justify-center rounded-[2rem] bg-sand/60" aria-label="Imagem de @Model.Name">
+        <div class="h-56 w-40 rounded-t-2xl rounded-b-[3rem] border border-copper/40 bg-white/60 shadow-2xl"></div>
+    </div>
+    <div class="self-center">
+        <a class="text-sm font-semibold text-copper" asp-action="Index">← Voltar aos perfumes</a>
+        <p class="eyebrow mt-9">@Model.OlfactoryFamily · @Model.Concentration</p>
+        <h1 class="mt-4 font-serif text-5xl tracking-tight sm:text-6xl">@Model.Name</h1>
+        <p class="mt-6 text-lg leading-8 text-stone-600">@Model.ShortDescription</p>
+
+        <div class="mt-8 space-y-3" aria-label="Volumes disponíveis">
+            @foreach (var variant in Model.Variants)
+            {
+                <div class="flex items-center justify-between rounded-2xl border border-stone-300 bg-white px-5 py-4">
+                    <span class="font-semibold">@variant.VolumeMl ml</span>
+                    <span class="text-right">@variant.Price.ToString("C")<small class="block text-xs text-stone-500">@(variant.Available > 0 ? $"{variant.Available} disponível(is)" : "Esgotado")</small></span>
+                </div>
+            }
+        </div>
+        <p class="mt-4 text-xs leading-5 text-stone-500">A compra será habilitada na etapa de carrinho e checkout.</p>
+    </div>
+</section>
+
+<section class="border-y border-stone-300/70 bg-white">
+    <div class="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1fr_1.2fr] lg:px-10">
+        <div>
+            <p class="eyebrow">Pirâmide olfativa</p>
+            <dl class="mt-6 space-y-5 text-sm">
+                <div><dt class="font-semibold">Saída</dt><dd class="mt-1 text-stone-600">@Model.TopNotes</dd></div>
+                <div><dt class="font-semibold">Coração</dt><dd class="mt-1 text-stone-600">@Model.HeartNotes</dd></div>
+                <div><dt class="font-semibold">Fundo</dt><dd class="mt-1 text-stone-600">@Model.BaseNotes</dd></div>
+            </dl>
+        </div>
+        <div>
+            <p class="eyebrow">A fragrância</p>
+            <p class="mt-6 whitespace-pre-line text-base leading-8 text-stone-700">@Model.Description</p>
+            <dl class="mt-8 grid gap-5 sm:grid-cols-2">
+                <div><dt class="text-xs font-semibold tracking-wide text-stone-500 uppercase">Projeção</dt><dd class="mt-1">@Model.Projection</dd></div>
+                <div><dt class="text-xs font-semibold tracking-wide text-stone-500 uppercase">Fixação</dt><dd class="mt-1">@Model.Longevity</dd></div>
+                <div><dt class="text-xs font-semibold tracking-wide text-stone-500 uppercase">Ocasiões</dt><dd class="mt-1">@Model.Occasions</dd></div>
+                <div><dt class="text-xs font-semibold tracking-wide text-stone-500 uppercase">Momento</dt><dd class="mt-1">@Model.Season · @Model.Period</dd></div>
+            </dl>
+        </div>
+    </div>
+</section>

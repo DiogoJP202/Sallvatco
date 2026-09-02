@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Sallvat.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Sallvat.Infrastructure.Persistence;
 namespace Sallvat.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SallvatDbContext))]
-    partial class SallvatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260902192057_AddCatalogAndInventory")]
+    partial class AddCatalogAndInventory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

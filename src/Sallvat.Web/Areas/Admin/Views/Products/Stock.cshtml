@@ -1,0 +1,23 @@
+@model StockAdjustmentViewModel
+@{ ViewData["Title"] = "Ajustar estoque"; }
+<section class="mx-auto max-w-5xl px-5 py-12 sm:px-8 lg:px-10">
+    <a class="text-sm font-semibold text-copper" asp-action="Edit" asp-route-id="@Model.ProductId">← Voltar ao produto</a>
+    <p class="eyebrow mt-8">@Model.Sku</p><h1 class="mt-4 font-serif text-4xl">Estoque</h1>
+    @if (TempData["StatusMessage"] is string statusMessage)
+    {
+        <div class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800" role="status">@statusMessage</div>
+    }
+    <div class="mt-10 grid gap-8 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <form class="space-y-5 rounded-3xl border border-stone-300 bg-white p-6" method="post">
+            <div asp-validation-summary="ModelOnly"></div><input asp-for="ProductId" type="hidden" /><input asp-for="VariantId" type="hidden" /><input asp-for="Sku" type="hidden" /><input asp-for="CurrentOnHand" type="hidden" /><input asp-for="Reserved" type="hidden" /><input asp-for="ConcurrencyVersion" type="hidden" />
+            <dl class="grid grid-cols-2 gap-3 text-sm"><div><dt class="text-stone-500">Físico atual</dt><dd class="mt-1 text-xl font-semibold">@Model.CurrentOnHand</dd></div><div><dt class="text-stone-500">Reservado</dt><dd class="mt-1 text-xl font-semibold">@Model.Reserved</dd></div></dl>
+            <div><label class="form-label" asp-for="NewOnHand"></label><input class="form-control" asp-for="NewOnHand" inputmode="numeric" /><span asp-validation-for="NewOnHand"></span></div>
+            <div><label class="form-label" asp-for="Reason"></label><textarea class="form-control" asp-for="Reason" rows="4"></textarea><span asp-validation-for="Reason"></span></div>
+            <button class="btn-primary w-full" type="submit">Registrar ajuste</button>
+        </form>
+        <div class="rounded-3xl border border-stone-300 bg-white p-6"><h2 class="font-serif text-2xl">Últimos movimentos</h2>
+            @if (Model.Movements.Count == 0) { <p class="mt-5 text-sm text-stone-600">Nenhum ajuste manual registrado.</p> }
+            else { <ol class="mt-5 divide-y divide-stone-200">@foreach (var movement in Model.Movements) { <li class="py-4"><div class="flex justify-between gap-4"><strong>@(movement.Quantity > 0 ? $"+{movement.Quantity}" : movement.Quantity)</strong><time class="text-xs text-stone-500">@movement.CreatedAtUtc.ToLocalTime().ToString("g")</time></div><p class="mt-2 text-sm text-stone-600">@movement.Reason</p><p class="mt-1 text-xs text-stone-500">Saldo: @movement.ResultingOnHand físico, @movement.ResultingReserved reservado</p></li> }</ol> }
+        </div>
+    </div>
+</section>

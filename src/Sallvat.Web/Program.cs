@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
@@ -25,6 +26,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var culture = CultureInfo.GetCultureInfo("pt-BR");
+    options.DefaultRequestCulture = new(culture);
+    options.SupportedCultures = [culture];
+    options.SupportedUICultures = [culture];
+});
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -255,6 +263,7 @@ else
 }
 
 app.UseStaticFiles();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseStatusCodePages();

@@ -1,0 +1,25 @@
+@model ProductFormViewModel
+
+<div asp-validation-summary="ModelOnly"></div>
+<input asp-for="Id" type="hidden" />
+<input asp-for="ConcurrencyVersion" type="hidden" />
+<div class="grid gap-5 sm:grid-cols-2">
+    <div><label class="form-label" asp-for="Name"></label><input class="form-control" asp-for="Name" /><span asp-validation-for="Name"></span></div>
+    <div><label class="form-label" asp-for="Slug"></label><input class="form-control" asp-for="Slug" placeholder="nome-do-perfume" /><span asp-validation-for="Slug"></span></div>
+</div>
+<div><label class="form-label" asp-for="ShortDescription"></label><textarea class="form-control" asp-for="ShortDescription" rows="3"></textarea><span asp-validation-for="ShortDescription"></span></div>
+<div><label class="form-label" asp-for="Description"></label><textarea class="form-control" asp-for="Description" rows="7"></textarea><span asp-validation-for="Description"></span></div>
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div><label class="form-label" asp-for="OlfactoryFamily"></label><input class="form-control" asp-for="OlfactoryFamily" /></div>
+    <div><label class="form-label" asp-for="Concentration"></label><input class="form-control" asp-for="Concentration" /></div>
+    <div><label class="form-label" asp-for="Projection"></label><input class="form-control" asp-for="Projection" /></div>
+    <div><label class="form-label" asp-for="Longevity"></label><input class="form-control" asp-for="Longevity" /></div>
+    <div><label class="form-label" asp-for="Season"></label><input class="form-control" asp-for="Season" /></div>
+    <div><label class="form-label" asp-for="Period"></label><input class="form-control" asp-for="Period" /></div>
+</div>
+<div class="grid gap-5 lg:grid-cols-3">
+    <div><label class="form-label" asp-for="TopNotes"></label><textarea class="form-control" asp-for="TopNotes" rows="3"></textarea></div>
+    <div><label class="form-label" asp-for="HeartNotes"></label><textarea class="form-control" asp-for="HeartNotes" rows="3"></textarea></div>
+    <div><label class="form-label" asp-for="BaseNotes"></label><textarea class="form-control" asp-for="BaseNotes" rows="3"></textarea></div>
+</div>
+<div><label class="form-label" asp-for="Occasions"></label><input class="form-control" asp-for="Occasions" /></div>

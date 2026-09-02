@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 e a **Fase 1 — Fundação técnica** estão concluídos. A **Fase 2 — Identidade e clientes** possui cadastro, confirmação de e-mail, login/logout, recuperação e alteração de senha, perfil, endereços privados, roles `Customer`/`Admin` e `/Admin` protegido. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0, a **Fase 1 — Fundação técnica** e a **Fase 2 — Identidade e clientes** estão concluídos. A **Fase 3 — Catálogo, imagens e estoque** está em andamento: já existem produtos, variantes, histórico de slug, estoque auditável, migration, catálogo público em `/perfumes` e CRUD protegido em `/Admin/Produtos`. A publicação exige conteúdo editorial, variante comercializável e imagem; por isso permanece bloqueada até o próximo incremento implementar upload e processamento seguro. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Stack definida
 
@@ -111,7 +111,7 @@ dotnet run --project src/Sallvat.Web
 
 ## Migrations
 
-A migration inicial `InitialIdentityAndCustomers` cria Identity, `Customer`, `Address` e as roles fixas. Ela não é executada automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
+As migrations `InitialIdentityAndCustomers` e `AddCatalogAndInventory` criam a base de identidade/clientes e a primeira fatia de catálogo, imagens, estoque e auditoria. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
 
 ```powershell
 dotnet ef migrations add NomeDaMudanca `

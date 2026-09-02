@@ -72,7 +72,7 @@ erDiagram
 - `VolumeMl` inteiro positivo;
 - `Price >= 0`, `OnHand >= 0`, `Reserved >= 0` e `Reserved <= OnHand`;
 - peso e dimensões estritamente positivos antes de permitir publicação;
-- `ConcurrencyVersion` atualizado a cada alteração comercial ou de estoque.
+- `ConcurrencyVersion` é um `Guid` gerenciado pela aplicação, atualizado a cada alteração comercial ou de estoque e configurado como token de concorrência otimista.
 
 ### Order
 
@@ -90,7 +90,7 @@ Guarda `ProductName`, `VariantName`, `Sku`, `Quantity`, `UnitPrice`, `DiscountAm
 
 ## Índices e constraints
 
-- `product.slug` unique quando publicado, com comparação normalizada;
+- `product.slug` unique em todos os estados, com comparação normalizada;
 - `product_slug_history.slug` unique e diferente do slug atual do mesmo produto;
 - `product_variant.sku` unique;
 - `application_user.normalized_email` e `customer.application_user_id` unique conforme regras do Identity;

@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Sallvat.Application.Accounts;
+using Sallvat.Application.Catalog;
 using Sallvat.Application.Time;
+using Sallvat.Infrastructure.Catalog;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Infrastructure.Time;
@@ -47,6 +49,7 @@ public static class DependencyInjection
                 });
         });
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<ICatalogService, CatalogService>();
         services.AddSingleton<IClock, SystemClock>();
 
         return services;

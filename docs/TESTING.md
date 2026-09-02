@@ -48,6 +48,16 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - cliente não lê nem altera endereço pertencente a outro usuário;
 - sender fake captura links em memória sem expô-los em log.
 
+### Cobertura implementada do catálogo
+
+- normalização de slug, invariantes editoriais e rejeição de chaves de imagem com traversal;
+- rascunho não aparece no catálogo público e slug/SKU duplicado é rejeitado;
+- publicação exige imagem e variante comercializável;
+- atualização com versão obsoleta é rejeitada por concorrência otimista;
+- ajuste de estoque gera movimento e auditoria e não aceita saldo inválido;
+- mudança de slug preserva redirect permanente para a URL canônica;
+- catálogo vazio responde com estado editorial seguro e o Admin exige autorização.
+
 ### Testes manuais e homologação
 
 - responsividade, acessibilidade, conteúdo e experiência de marca;

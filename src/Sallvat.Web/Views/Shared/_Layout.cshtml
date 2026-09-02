@@ -4,7 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] | Sallvat &amp; Co.</title>
-    <meta name="description" content="Perfumaria Sallvat &amp; Co. — uma experiência sensorial construída com cuidado." />
+    <meta name="description" content="@(ViewData["Description"] ?? "Perfumaria Sallvat & Co. — uma experiência sensorial construída com cuidado.")" />
+    @if (ViewData["CanonicalUrl"] is string canonicalUrl)
+    {
+        <link rel="canonical" href="@canonicalUrl" />
+    }
     <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
 </head>
@@ -25,6 +29,10 @@
                 <a class="hidden text-sm font-medium text-stone-700 transition hover:text-copper sm:inline"
                    asp-controller="Home"
                    asp-action="Index">Início</a>
+                <a class="hidden text-sm font-medium text-stone-700 transition hover:text-copper sm:inline"
+                   asp-area=""
+                   asp-controller="Perfumes"
+                   asp-action="Index">Perfumes</a>
                 @if (User.Identity?.IsAuthenticated is true)
                 {
                     @if (User.IsInRole("Admin"))

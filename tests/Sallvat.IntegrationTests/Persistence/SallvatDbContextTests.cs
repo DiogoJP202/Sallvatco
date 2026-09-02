@@ -13,7 +13,7 @@ namespace Sallvat.IntegrationTests.Persistence;
 public sealed class SallvatDbContextTests
 {
     [Fact]
-    public async Task IdentityAndCustomerModelMatchesTheInitialMigration()
+    public async Task ModelMatchesTheLatestMigration()
     {
         await using var application = new SallvatWebApplicationFactory();
         using var scope = application.Services.CreateScope();
@@ -37,7 +37,13 @@ public sealed class SallvatDbContextTests
                 "application_user_login",
                 "application_user_role",
                 "application_user_token",
+                "audit_log",
                 "customer",
+                "inventory_movement",
+                "product",
+                "product_image",
+                "product_slug_history",
+                "product_variant",
             ],
             tableNames);
 

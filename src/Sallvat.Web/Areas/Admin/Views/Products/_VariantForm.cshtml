@@ -1,0 +1,16 @@
+@model VariantFormViewModel
+
+<div asp-validation-summary="ModelOnly"></div>
+<input asp-for="ProductId" type="hidden" />
+<input asp-for="Id" type="hidden" />
+<input asp-for="ConcurrencyVersion" type="hidden" />
+<div class="grid gap-5 sm:grid-cols-2">
+    <div><label class="form-label" asp-for="Sku"></label><input class="form-control" asp-for="Sku" /><span asp-validation-for="Sku"></span></div>
+    <div><label class="form-label" asp-for="VolumeMl"></label><input class="form-control" asp-for="VolumeMl" inputmode="numeric" /><span asp-validation-for="VolumeMl"></span></div>
+    <div><label class="form-label" asp-for="Price"></label><input class="form-control" asp-for="Price" inputmode="decimal" /><span asp-validation-for="Price"></span></div>
+    <div><label class="form-label" asp-for="WeightKg"></label><input class="form-control" asp-for="WeightKg" inputmode="decimal" /><span asp-validation-for="WeightKg"></span></div>
+    <div><label class="form-label" asp-for="HeightCm"></label><input class="form-control" asp-for="HeightCm" inputmode="decimal" /><span asp-validation-for="HeightCm"></span></div>
+    <div><label class="form-label" asp-for="WidthCm"></label><input class="form-control" asp-for="WidthCm" inputmode="decimal" /><span asp-validation-for="WidthCm"></span></div>
+    <div><label class="form-label" asp-for="LengthCm"></label><input class="form-control" asp-for="LengthCm" inputmode="decimal" /><span asp-validation-for="LengthCm"></span></div>
+</div>
+<label class="flex items-center gap-3 text-sm font-semibold"><input class="h-5 w-5" asp-for="IsActive" /> @Html.DisplayNameFor(model => model.IsActive)</label>

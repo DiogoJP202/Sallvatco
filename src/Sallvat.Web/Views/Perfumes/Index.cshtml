@@ -1,0 +1,79 @@
+@model CatalogPage
+@{
+    ViewData["Title"] = "Perfumes";
+    ViewData["Description"] = "Conheça os perfumes publicados pela curadoria Sallvat & Co.";
+}
+
+<section class="border-b border-stone-300/70 bg-sand/40">
+    <div class="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
+        <p class="eyebrow">Catálogo</p>
+        <h1 class="mt-4 font-serif text-5xl tracking-tight sm:text-6xl">Perfumes</h1>
+        <p class="mt-5 max-w-2xl text-base leading-7 text-stone-600">
+            Fragrâncias apresentadas com notas, concentração e opções de volume para uma escolha cuidadosa.
+        </p>
+    </div>
+</section>
+
+<section class="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
+    @if (Model.Families.Count > 0)
+    {
+        <nav class="mb-10 flex flex-wrap gap-2" aria-label="Filtrar por família olfativa">
+            <a class="rounded-full border px-4 py-2 text-sm font-semibold @(Model.SelectedFamily is null ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
+               asp-action="Index">Todas</a>
+            @foreach (var family in Model.Families)
+            {
+                <a class="rounded-full border px-4 py-2 text-sm font-semibold @(family == Model.SelectedFamily ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
+                   asp-action="Index"
+                   asp-route-familia="@family">@family</a>
+            }
+        </nav>
+    }
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="rounded-3xl border border-stone-300 bg-white px-6 py-16 text-center">
+            <p class="eyebrow">Em curadoria</p>
+            <h2 class="mt-4 font-serif text-3xl">Novas fragrâncias chegarão em breve.</h2>
+            <p class="mx-auto mt-4 max-w-xl text-sm leading-6 text-stone-600">
+                Nenhum perfume publicado corresponde a esta seleção. O catálogo só exibe itens revisados e prontos para venda.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach (var product in Model.Items)
+            {
+                <article class="group overflow-hidden rounded-3xl border border-stone-300 bg-white">
+                    <div class="flex aspect-[4/5] items-center justify-center bg-sand/60" aria-hidden="true">
+                        <div class="h-32 w-24 rounded-t-xl rounded-b-[2rem] border border-copper/40 bg-white/50 shadow-lg"></div>
+                    </div>
+                    <div class="p-6">
+                        <p class="eyebrow">@product.OlfactoryFamily</p>
+                        <h2 class="mt-3 font-serif text-3xl">@product.Name</h2>
+                        <p class="mt-3 line-clamp-3 text-sm leading-6 text-stone-600">@product.ShortDescription</p>
+                        <div class="mt-6 flex items-center justify-between gap-4">
+                            <p class="text-sm font-semibold">A partir de @product.StartingPrice.ToString("C")</p>
+                            <a class="text-sm font-semibold text-copper underline-offset-4 group-hover:underline"
+                               asp-action="Details"
+                               asp-route-slug="@product.Slug">Conhecer</a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-12 flex justify-center gap-3" aria-label="Paginação">
+                @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                {
+                    <a class="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold @(pageNumber == Model.Page ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
+                       asp-action="Index"
+                       asp-route-familia="@Model.SelectedFamily"
+                       asp-route-pagina="@pageNumber">@pageNumber</a>
+                }
+            </nav>
+        }
+    }
+</section>
