@@ -8,6 +8,20 @@ namespace Sallvat.IntegrationTests.Web;
 public sealed class SallvatWebApplicationFactory :
     WebApplicationFactory<Program>
 {
+    private readonly bool ownsDataProtectionKeysPath;
+
+    public SallvatWebApplicationFactory(string? dataProtectionKeysPath = null)
+    {
+        ownsDataProtectionKeysPath = dataProtectionKeysPath is null;
+        DataProtectionKeysPath = dataProtectionKeysPath
+            ?? Path.Combine(
+                Path.GetTempPath(),
+                "Sallvat.Tests",
+                Guid.NewGuid().ToString("N"));
+    }
+
+    public string DataProtectionKeysPath { get; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -25,7 +39,21 @@ public sealed class SallvatWebApplicationFactory :
                         "Username=sallvat;Password=test;Timeout=1",
                     ["Operational:ServiceName"] = "Sallvat.Tests",
                     ["Operational:CorrelationIdMaxLength"] = "64",
+                    ["DataProtection:KeysPath"] = DataProtectionKeysPath,
                 });
         });
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+
+        if (ownsDataProtectionKeysPath
+            && Directory.Exists(DataProtectionKeysPath))
+        {
+            Directory.Delete(DataProtectionKeysPath, recursive: true);
+        }
+
+        GC.SuppressFinalize(this);
     }
 }

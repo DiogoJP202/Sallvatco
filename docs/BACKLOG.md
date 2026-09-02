@@ -51,10 +51,10 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar/generar correlation ID e propagação HTTP.
 - [x] Implementar tratamento global de exceções e páginas seguras.
 - [x] Criar `/health/live` e `/health/ready`.
-- [ ] Persistir Data Protection keys fora do container efêmero.
-- [ ] Configurar Tailwind, purge/content paths e build de assets.
-- [ ] Criar layout Razor mínimo acessível e sem design final.
-- [ ] Criar pipeline CI de restore, build e testes.
+- [x] Persistir Data Protection keys fora do container efêmero.
+- [x] Configurar Tailwind, purge/content paths e build de assets.
+- [x] Criar layout Razor mínimo acessível e sem design final.
+- [x] Criar pipeline CI de restore, build e testes.
 
 ## EPIC F2 — Identidade e clientes
 

@@ -20,10 +20,12 @@ coverage.*
 .env.*
 !.env.example
 appsettings.*.local.json
+.local/
 
 # Frontend dependencies and output
 node_modules/
 .tailwindcss/
+.nuget/
 
 # Operating system files
 .DS_Store

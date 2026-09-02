@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 está concluído e a **Fase 1 — Fundação técnica** foi iniciada com a solution e os projetos-base. Ainda não existem banco, migrations, containers ou páginas. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 está concluído e a **Fase 1 — Fundação técnica** possui solution, projetos-base, PostgreSQL de Development, persistência inicial, observabilidade, CI e layout Razor mínimo. Ainda não existem schema de negócio, migrations ou funcionalidades de e-commerce. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Stack definida
 
@@ -47,6 +47,7 @@ Comece pelo [índice da documentação](docs/README.md). Os documentos cobrem pr
 Pré-requisitos atuais:
 
 - .NET SDK 10.0.400 ou patch posterior da mesma feature band, conforme [`global.json`](global.json);
+- Node.js 24.19 e npm 11.17, conforme [`.nvmrc`](.nvmrc) e [`package.json`](package.json);
 - Docker com Compose v2 para executar o PostgreSQL de Development.
 
 Crie o arquivo local de ambiente e inicie o banco:
@@ -68,7 +69,16 @@ dotnet user-secrets --project src/Sallvat.Web set `
   "Host=127.0.0.1;Port=5432;Database=sallvat;Username=sallvat;Password=replace-with-the-same-local-password"
 ```
 
-Restaure, compile e teste:
+Restaure o frontend e compile o CSS:
+
+```powershell
+npm ci
+npm run css:build
+```
+
+Durante ajustes nas views, `npm run css:watch` recompila o asset automaticamente. O build .NET detecta alterações nas fontes Razor e exige que as dependências npm estejam restauradas antes de recompilar o CSS.
+
+Restaure, compile e teste a solution:
 
 ```powershell
 dotnet tool restore
@@ -78,6 +88,18 @@ dotnet test Sallvat.sln --no-build
 ```
 
 Warnings e analyzers são tratados como erros pelo build. Formatação e estilos básicos são definidos no `.editorconfig`, versões NuGet são centralizadas e cada projeto possui lock file reproduzível.
+
+Em Development, as chaves de Data Protection são persistidas em `.local/data-protection-keys/development`, fora do web root e do Git. Staging e Production devem fornecer um caminho absoluto montado em volume próprio:
+
+```text
+DataProtection__KeysPath=/var/lib/sallvat/data-protection-keys
+```
+
+Inicie a aplicação:
+
+```powershell
+dotnet run --project src/Sallvat.Web
+```
 
 ## Migrations
 
@@ -94,8 +116,12 @@ dotnet ef database update `
   --startup-project src/Sallvat.Web
 ```
 
-Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Migrations, container Web, Tailwind e páginas serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
+Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Identity, entidades, migrations e container Web serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
 
 ## Diagnóstico local
 
 Com a aplicação em execução, `GET /health/live` confirma que o processo responde e `GET /health/ready` também verifica a conexão com o PostgreSQL. As respostas contêm apenas o estado agregado e o header `X-Correlation-ID`, sem detalhes internos. Logs estruturados são escritos como JSON em stdout.
+
+## Integração contínua
+
+O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) restaura dependências bloqueadas, audita npm/NuGet, recompila e confere o CSS, valida Markdown e formatação, compila em Release e executa todos os testes. As actions externas estão fixadas por commit SHA.

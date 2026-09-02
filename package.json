@@ -1,0 +1,20 @@
+{
+  "name": "sallvatco",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "scripts": {
+    "css:build": "tailwindcss -i ./src/Sallvat.Web/Styles/app.css -o ./src/Sallvat.Web/wwwroot/css/app.css --minify",
+    "css:watch": "tailwindcss -i ./src/Sallvat.Web/Styles/app.css -o ./src/Sallvat.Web/wwwroot/css/app.css --watch",
+    "lint:markdown": "markdownlint-cli2 \"README.md\" \"docs/*.md\""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "markdownlint-cli2": "0.23.2",
+    "tailwindcss": "4.3.3"
+  }
+}

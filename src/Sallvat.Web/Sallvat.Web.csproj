@@ -20,6 +20,23 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>0b962ad5-fb2d-4c42-af82-f2cf18da2698</UserSecretsId>
+    <FrontendRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../..'))</FrontendRoot>
   </PropertyGroup>
+
+  <ItemGroup>
+    <TailwindSource Include="Styles/app.css;Views/**/*.cshtml;Controllers/**/*.cs;Models/**/*.cs;../../package-lock.json" />
+  </ItemGroup>
+
+  <Target
+    Name="BuildTailwindCss"
+    BeforeTargets="PrepareForBuild"
+    Inputs="@(TailwindSource)"
+    Outputs="$(MSBuildProjectDirectory)/wwwroot/css/app.css"
+    Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error
+      Condition="!Exists('$(FrontendRoot)/node_modules/@tailwindcss/cli/package.json')"
+      Text="Dependências frontend ausentes. Execute 'npm ci' na raiz do repositório." />
+    <Exec Command="npm run css:build" WorkingDirectory="$(FrontendRoot)" />
+  </Target>
 
 </Project>

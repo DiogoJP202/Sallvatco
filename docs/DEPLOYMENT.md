@@ -11,26 +11,32 @@
 - deploy só termina após health check e smoke test;
 - rollback de imagem só é permitido se o schema continuar compatível.
 
-## Artefatos futuros
+## Artefatos
+
+Já estão versionados o Compose de Development, o pipeline de validação e os assets Tailwind compilados em build reprodutível.
+
+Ainda serão adicionados:
 
 - imagem OCI de `sallvat-web` identificada por commit SHA e digest;
-- assets Tailwind compilados em build reprodutível;
-- arquivos Compose e configuração Nginx versionados quando a Fase 1 começar;
-- migrations dentro do assembly de `Infrastructure`;
+- stacks Compose de Staging/Production e configuração Nginx;
+- migrations dentro do assembly de `Infrastructure` quando houver schema real;
 - checklist/release notes com mudanças e decisões operacionais.
 
-## Pipeline futuro
+## Pipeline de validação
 
-GitHub Actions deverá:
+O workflow versionado do GitHub Actions já:
 
 1. restaurar dependências com lock files;
 2. compilar em Release;
 3. executar testes unitários e de integração;
 4. verificar assets e documentação;
-5. gerar imagem sem secrets;
-6. analisar vulnerabilidades conforme ferramenta adotada;
-7. publicar em registry privado/GHCR com SHA;
-8. promover somente artefato aprovado.
+5. analisar vulnerabilidades de dependências.
+
+A etapa futura de entrega deverá:
+
+1. gerar imagem sem secrets;
+2. publicar em registry privado/GHCR com SHA e digest;
+3. promover somente o artefato aprovado.
 
 Credenciais de deploy têm escopo mínimo e não são expostas a pull requests não confiáveis.
 

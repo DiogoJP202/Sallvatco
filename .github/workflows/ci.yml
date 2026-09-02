@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Build, test and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore frontend dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build Tailwind asset
+        run: npm run css:build
+
+      - name: Verify generated Tailwind asset
+        run: git diff --exit-code -- src/Sallvat.Web/wwwroot/css/app.css
+
+      - name: Lint Markdown
+        run: npm run lint:markdown
+
+      - name: Restore .NET tools and packages
+        run: |
+          dotnet tool restore
+          dotnet restore Sallvat.sln --locked-mode
+
+      - name: Build
+        run: dotnet build Sallvat.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Sallvat.sln --configuration Release --no-build --logger "console;verbosity=normal"
+
+      - name: Verify formatting
+        run: dotnet format Sallvat.sln --verify-no-changes --no-restore
+
+      - name: Audit NuGet dependencies
+        run: dotnet list Sallvat.sln package --vulnerable --include-transitive

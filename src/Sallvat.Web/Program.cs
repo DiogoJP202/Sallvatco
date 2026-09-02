@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
@@ -7,6 +9,7 @@ using Sallvat.Infrastructure;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Web.Configuration;
 using Sallvat.Web.Observability;
+using Sallvat.Web.Security;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -30,6 +33,45 @@ builder.Services
         options => options.CorrelationIdMaxLength is >= 16 and <= 128,
         $"{OperationalOptions.SectionName}:CorrelationIdMaxLength must be between 16 and 128.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<DataProtectionStorageOptions>()
+    .Bind(builder.Configuration.GetSection(
+        DataProtectionStorageOptions.SectionName))
+    .PostConfigure(options =>
+    {
+        if (!string.IsNullOrWhiteSpace(options.KeysPath)
+            && !Path.IsPathFullyQualified(options.KeysPath))
+        {
+            options.KeysPath = Path.GetFullPath(
+                options.KeysPath,
+                builder.Environment.ContentRootPath);
+        }
+    })
+    .Validate(
+        options => !string.IsNullOrWhiteSpace(options.KeysPath),
+        $"{DataProtectionStorageOptions.SectionName}:KeysPath is required.")
+    .Validate(
+        options => string.IsNullOrWhiteSpace(options.KeysPath)
+            || Path.IsPathFullyQualified(options.KeysPath),
+        $"{DataProtectionStorageOptions.SectionName}:KeysPath must resolve to an absolute path.")
+    .Validate(
+        options => string.IsNullOrWhiteSpace(options.KeysPath)
+            || DataProtectionPath.IsOutsideDirectory(
+                options.KeysPath,
+                builder.Environment.WebRootPath
+                    ?? Path.Combine(
+                        builder.Environment.ContentRootPath,
+                        "wwwroot")),
+        $"{DataProtectionStorageOptions.SectionName}:KeysPath must be outside the web root.")
+    .ValidateOnStart();
+builder.Services
+    .AddDataProtection()
+    .SetApplicationName(
+        $"Sallvat.Web:{builder.Environment.EnvironmentName}");
+builder.Services.AddSingleton<
+    IConfigureOptions<KeyManagementOptions>,
+    DataProtectionKeyRepositoryConfigurator>();
+builder.Services.AddHostedService<DataProtectionKeyRingInitializer>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services
     .AddHealthChecks()
