@@ -1,0 +1,19 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+<nav class="rounded-2xl border border-stone-300 bg-white p-3" aria-label="Navegação da conta">
+    <a class="block rounded-xl px-4 py-3 text-sm font-semibold transition @(currentController == "Account" && currentAction is "Index" or "UpdateProfile" ? "bg-sand text-ink" : "text-stone-600 hover:bg-stone-50 hover:text-ink")"
+       asp-controller="Account"
+       asp-action="Index">Dados pessoais</a>
+    <a class="mt-1 block rounded-xl px-4 py-3 text-sm font-semibold transition @(currentController == "Address" ? "bg-sand text-ink" : "text-stone-600 hover:bg-stone-50 hover:text-ink")"
+       asp-controller="Address"
+       asp-action="Index">Endereços</a>
+    <a class="mt-1 block rounded-xl px-4 py-3 text-sm font-semibold transition @(currentAction == "Orders" ? "bg-sand text-ink" : "text-stone-600 hover:bg-stone-50 hover:text-ink")"
+       asp-controller="Account"
+       asp-action="Orders">Pedidos</a>
+    <a class="mt-1 block rounded-xl px-4 py-3 text-sm font-semibold transition @(currentAction == "ChangePassword" ? "bg-sand text-ink" : "text-stone-600 hover:bg-stone-50 hover:text-ink")"
+       asp-controller="Account"
+       asp-action="ChangePassword">Segurança</a>
+</nav>

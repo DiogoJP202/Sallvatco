@@ -62,6 +62,16 @@ public sealed class Customer
         UpdatedAtUtc = RequireUtc(updatedAtUtc, nameof(updatedAtUtc));
     }
 
+    public void UpdateProfile(
+        string name,
+        string? phone,
+        DateTimeOffset updatedAtUtc)
+    {
+        Name = Required(name, NameMaxLength, nameof(name));
+        Phone = Optional(phone, PhoneMaxLength, nameof(phone));
+        UpdatedAtUtc = RequireUtc(updatedAtUtc, nameof(updatedAtUtc));
+    }
+
     private static string Required(
         string value,
         int maxLength,

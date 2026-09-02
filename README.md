@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 e a **Fase 1 — Fundação técnica** estão concluídos. A **Fase 2 — Identidade e clientes** foi iniciada com Identity em chaves `Guid`, schema inicial de clientes e endereços, roles `Customer`/`Admin` e uma superfície `/Admin` protegida. Cadastro, confirmação, recuperação e gestão da conta aguardam os próximos incrementos e a definição do provedor de e-mail em `PBD-010`. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 e a **Fase 1 — Fundação técnica** estão concluídos. A **Fase 2 — Identidade e clientes** possui cadastro, confirmação de e-mail, login/logout, recuperação e alteração de senha, perfil, endereços privados, roles `Customer`/`Admin` e `/Admin` protegido. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Stack definida
 
@@ -94,6 +94,14 @@ Em Development, as chaves de Data Protection são persistidas em `.local/data-pr
 ```text
 DataProtection__KeysPath=/var/lib/sallvat/data-protection-keys
 ```
+
+Links de confirmação e recuperação não usam o host recebido na requisição. Cada ambiente deve definir sua origem pública canônica; Development já usa `http://localhost:5170`:
+
+```text
+AccountLinks__PublicOrigin=https://dominio-do-ambiente.example
+```
+
+Enquanto `PBD-010` não define o provedor transacional, Development grava as mensagens em `.local/emails`. Esses arquivos podem conter links temporários e nunca são versionados ou registrados nos logs. Fora de Development, o envio permanece indisponível de forma explícita.
 
 Inicie a aplicação:
 

@@ -93,6 +93,64 @@ public sealed class Address
 
     public DateTimeOffset UpdatedAtUtc { get; private set; }
 
+    public void Update(
+        string label,
+        string recipientName,
+        string postalCode,
+        string street,
+        string number,
+        string? complement,
+        string district,
+        string city,
+        string stateCode,
+        DateTimeOffset updatedAtUtc,
+        string countryCode = "BR")
+    {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException(
+                "Inactive addresses cannot be updated.");
+        }
+
+        Label = Required(label, LabelMaxLength, nameof(label));
+        RecipientName = Required(
+            recipientName,
+            RecipientNameMaxLength,
+            nameof(recipientName));
+        PostalCode = Digits(
+            postalCode,
+            PostalCodeMaxLength,
+            nameof(postalCode));
+        Street = Required(street, StreetMaxLength, nameof(street));
+        Number = Required(number, NumberMaxLength, nameof(number));
+        Complement = Optional(
+            complement,
+            ComplementMaxLength,
+            nameof(complement));
+        District = Required(district, DistrictMaxLength, nameof(district));
+        City = Required(city, CityMaxLength, nameof(city));
+        StateCode = FixedCode(
+            stateCode,
+            StateCodeMaxLength,
+            nameof(stateCode));
+        CountryCode = FixedCode(
+            countryCode,
+            CountryCodeMaxLength,
+            nameof(countryCode));
+        UpdatedAtUtc = RequireUtc(updatedAtUtc, nameof(updatedAtUtc));
+    }
+
+    public void Deactivate(DateTimeOffset updatedAtUtc)
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        IsActive = false;
+        UpdatedAtUtc = RequireUtc(updatedAtUtc, nameof(updatedAtUtc));
+    }
+
     private static string Required(
         string value,
         int maxLength,

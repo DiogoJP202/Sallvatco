@@ -24,7 +24,7 @@ Fakes pequenos são preferidos para `IClock` e fronteiras externas. Não testar 
 
 ### Integration tests
 
-Usar `WebApplicationFactory` e PostgreSQL real efêmero via Testcontainers:
+Usar `WebApplicationFactory` com banco controlado. Fluxos HTTP que não dependem de semântica específica do provedor podem usar EF Core InMemory para feedback rápido; constraints, migrations, transações e concorrência exigem PostgreSQL real efêmero via Testcontainers:
 
 - mappings, constraints, índices e migrations;
 - transações e concorrência de estoque;
@@ -36,6 +36,17 @@ Usar `WebApplicationFactory` e PostgreSQL real efêmero via Testcontainers:
 - health checks e tratamento de erro.
 
 Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos testes; sandbox é reservado para homologação, não para suíte determinística.
+
+### Cobertura implementada da conta
+
+- cadastro cria `ApplicationUser`, role e `Customer`, sem autenticar antes da confirmação;
+- confirmação por token libera login e cookie seguro;
+- recuperação responde igual para e-mail conhecido e desconhecido e permite trocar a senha;
+- POST sem antiforgery é rejeitado;
+- a sexta tentativa de cadastro na mesma janela/IP recebe `429`;
+- cinco senhas incorretas bloqueiam a conta e a senha correta não ignora o lockout;
+- cliente não lê nem altera endereço pertencente a outro usuário;
+- sender fake captura links em memória sem expô-los em log.
 
 ### Testes manuais e homologação
 

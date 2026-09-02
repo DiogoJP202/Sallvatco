@@ -2,26 +2,51 @@
     ViewData["Title"] = "Início";
 }
 
-<section class="mx-auto grid min-h-[68vh] max-w-6xl content-center gap-10 px-6 py-20 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8">
-    <div class="max-w-3xl">
-        <p class="mb-5 text-sm font-semibold tracking-[0.18em] text-stone-500 uppercase">
-            Perfumaria artesanal
-        </p>
-        <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Uma experiência de marca está sendo construída com cuidado.
-        </h1>
-        <p class="mt-7 max-w-2xl text-lg leading-8 text-stone-600">
-            Esta página valida a fundação técnica do Sallvat &amp; Co. O catálogo,
-            os textos e a identidade visual serão publicados somente após aprovação.
-        </p>
-    </div>
+<section class="relative overflow-hidden border-b border-stone-300/70">
+    <div class="absolute inset-y-0 right-0 hidden w-[42%] bg-sand/70 lg:block" aria-hidden="true"></div>
+    <div class="relative mx-auto grid min-h-[72vh] max-w-7xl items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:px-10">
+        <div class="max-w-3xl">
+            <p class="eyebrow">Perfumaria autoral</p>
+            <h1 class="mt-6 font-serif text-5xl leading-[0.98] tracking-tight text-balance sm:text-7xl">
+                Uma presença que permanece além do instante.
+            </h1>
+            <p class="mt-8 max-w-2xl text-lg leading-8 text-stone-600">
+                A experiência digital da Sallvat &amp; Co. está tomando forma. A área de clientes já pode ser homologada; catálogo e compras ainda não estão disponíveis.
+            </p>
+            <div class="mt-10 flex flex-wrap gap-3">
+                <a class="btn-primary" asp-controller="Account" asp-action="Register">Criar minha conta</a>
+                <a class="btn-secondary" asp-controller="Account" asp-action="Login">Já tenho uma conta</a>
+            </div>
+        </div>
 
-    <aside class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm" aria-labelledby="status-title">
-        <h2 id="status-title" class="text-sm font-semibold tracking-wide text-stone-900 uppercase">
-            Estado atual
-        </h2>
-        <p class="mt-3 text-sm leading-6 text-stone-600">
-            Fundação técnica em desenvolvimento. Nenhuma compra pode ser realizada neste ambiente.
-        </p>
-    </aside>
+        <aside class="relative rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-xl shadow-stone-900/5 backdrop-blur" aria-labelledby="status-title">
+            <div class="mb-8 flex h-20 items-end justify-center" aria-hidden="true">
+                <div class="h-16 w-12 rounded-t-lg rounded-b-2xl border border-copper/40 bg-copper/10"></div>
+            </div>
+            <p class="eyebrow">Acesso antecipado</p>
+            <h2 id="status-title" class="mt-3 font-serif text-3xl">Sua conta, com segurança desde o início.</h2>
+            <p class="mt-4 text-sm leading-6 text-stone-600">
+                Confirmação de e-mail, proteção contra tentativas abusivas e gerenciamento privado de endereços fazem parte desta etapa.
+            </p>
+        </aside>
+    </div>
+</section>
+
+<section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10" aria-labelledby="principios-title">
+    <p class="eyebrow">O que guia a construção</p>
+    <h2 id="principios-title" class="mt-4 max-w-2xl font-serif text-4xl sm:text-5xl">Cuidado no detalhe, clareza em cada etapa.</h2>
+    <div class="mt-10 grid gap-px overflow-hidden rounded-3xl border border-stone-300 bg-stone-300 md:grid-cols-3">
+        <article class="bg-paper p-7">
+            <p class="text-sm font-semibold">01 — Essencial</p>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Uma navegação serena, acessível e sem distrações.</p>
+        </article>
+        <article class="bg-paper p-7">
+            <p class="text-sm font-semibold">02 — Confiável</p>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Dados e identidade tratados com controles explícitos.</p>
+        </article>
+        <article class="bg-paper p-7">
+            <p class="text-sm font-semibold">03 — Duradouro</p>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Uma base preparada para catálogo, pedidos e operação.</p>
+        </article>
+    </div>
 </section>

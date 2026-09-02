@@ -66,4 +66,50 @@ public sealed class CustomerTests
         Assert.Equal("SP", address.StateCode);
         Assert.Equal("BR", address.CountryCode);
     }
+
+    [Fact]
+    public void ProfileAndAddressCanBeUpdatedWithUtcAuditTimestamp()
+    {
+        var customer = new Customer(
+            "Cliente Teste",
+            "cliente@example.com",
+            null,
+            InitialTimestamp);
+        var address = new Address(
+            42,
+            "Casa",
+            "Cliente Teste",
+            "01310-100",
+            "Avenida Paulista",
+            "1000",
+            null,
+            "Bela Vista",
+            "São Paulo",
+            "SP",
+            InitialTimestamp);
+        var updatedAt = InitialTimestamp.AddHours(1);
+
+        customer.UpdateProfile(
+            "Cliente Atualizado",
+            "+55 11 98888-0000",
+            updatedAt);
+        address.Update(
+            "Trabalho",
+            "Cliente Atualizado",
+            "04538-132",
+            "Rua Teste",
+            "200",
+            "Conjunto 1",
+            "Itaim Bibi",
+            "São Paulo",
+            "sp",
+            updatedAt);
+        address.Deactivate(updatedAt.AddMinutes(1));
+
+        Assert.Equal("Cliente Atualizado", customer.Name);
+        Assert.Equal("+55 11 98888-0000", customer.Phone);
+        Assert.Equal("Trabalho", address.Label);
+        Assert.Equal("SP", address.StateCode);
+        Assert.False(address.IsActive);
+    }
 }

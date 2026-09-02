@@ -20,9 +20,12 @@ Essa separação evita criar senha ou conta implicitamente durante o checkout.
 - o cookie é `HttpOnly`, essencial, `SameSite=Lax`, seguro fora de Development e isolado pelo nome do ambiente;
 - a migration inicial cria `Customer`, `Address` e as roles determinísticas `Customer` e `Admin`;
 - o schema Identity v2 foi escolhido para o MVP baseado em senha; passkeys não fazem parte do requisito atual e exigirão decisão e migration próprias se forem adotadas;
+- cadastro, confirmação, login/logout, recuperação e alteração de senha usam view models allowlisted, antiforgery e tokens com validade de três horas;
+- perfil e endereços possuem telas responsivas e consultas sempre delimitadas pelo `ApplicationUserId` autenticado;
+- login, cadastro e recuperação usam as políticas de rate limiting descritas em [SECURITY.md](SECURITY.md); recuperação também limita o hash do e-mail normalizado;
 - `/Admin` já exige a policy `Admin`, mas nenhuma conta administrativa é criada automaticamente.
 
-Os endpoints de cadastro, confirmação e recuperação permanecem bloqueados pela seleção do provedor em `PBD-010`; tokens ou URLs de confirmação não serão registrados em log como substituto de entrega de e-mail.
+O contrato `IAccountEmailSender` está integrado. Development grava mensagens em `.local/emails`, fora do web root e do Git, para homologação local; nenhum token ou URL é registrado em log. Staging e Production não simulam entrega: permanecem sem envio até `PBD-010` definir e configurar o provedor real.
 
 ## Fluxos de conta
 

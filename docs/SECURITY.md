@@ -56,6 +56,8 @@ Valores iniciais, ajustáveis após teste de carga:
 
 Rate limiting complementa, mas não substitui Cloudflare, lockout, autorização e idempotência. Webhooks válidos podem chegar em rajada; aplicar limite de corpo e concorrência sem bloquear retries legítimos do provedor.
 
+As três políticas de conta já são aplicadas pelo middleware nativo por IP. Recuperação e reenvio de confirmação também possuem limite em memória por hash do e-mail normalizado; essa proteção é adequada a uma única instância inicial e deverá migrar para estado compartilhado se a aplicação for escalada horizontalmente.
+
 ## Administração e autorização
 
 - `/Admin` exige role `Admin` e e-mail confirmado;

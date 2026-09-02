@@ -66,13 +66,13 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 - [x] Criar `ApplicationUser` com chave `Guid` e configurações Identity.
 - [x] Criar migration Identity e constraints de e-mail.
-- [ ] Implementar cadastro com view model allowlisted.
-- [ ] Implementar confirmação de e-mail e expiração de token.
-- [ ] Implementar login, logout POST e lockout.
-- [ ] Implementar solicitação/reset de senha sem enumeração.
-- [ ] Implementar alteração de senha e invalidação de sessão.
+- [x] Implementar cadastro com view model allowlisted.
+- [x] Implementar confirmação de e-mail e expiração de token.
+- [x] Implementar login, logout POST e lockout.
+- [x] Implementar solicitação/reset de senha sem enumeração.
+- [x] Implementar alteração de senha e invalidação de sessão.
 - [ ] Integrar `IEmailSender` ao provedor definido em `PBD-010`.
-- [ ] Testar cookies, antiforgery, rate limits e fluxos de erro.
+- [x] Testar cookies, antiforgery, rate limits e fluxos de erro.
 
 ### STORY F2-S2 — Cliente gerencia perfil, endereços e histórico vinculado
 
@@ -82,12 +82,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 - [x] Criar entidades/configurações `Customer` e `Address`.
 - [x] Criar migration, índices e constraints.
-- [ ] Implementar criação/associação de perfil durante cadastro e guest checkout.
-- [ ] Implementar CRUD de endereços com autorização por recurso.
-- [ ] Criar páginas de conta e pedidos ainda vazias/contratadas.
+- [x] Implementar criação/associação de perfil durante cadastro.
+- [ ] Implementar criação/associação de perfil durante guest checkout.
+- [x] Implementar CRUD de endereços com autorização por recurso.
+- [x] Criar páginas de conta e pedidos ainda vazias/contratadas.
 - [ ] Implementar vínculo de pedidos guest após confirmação do e-mail.
 - [ ] Tratar colisão com pedido já vinculado sem transferência automática.
-- [ ] Testar IDOR, alteração de e-mail e vínculo guest.
+- [x] Testar IDOR de endereços.
+- [ ] Testar alteração de e-mail e vínculo guest.
 
 ### STORY F2-S3 — Operação possui acesso administrativo individual
 

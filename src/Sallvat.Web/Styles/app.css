@@ -3,9 +3,70 @@
 @source "../Views/**/*.cshtml";
 @source "../Areas/**/*.cshtml";
 
+@theme {
+  --color-ink: #201d1a;
+  --color-paper: #f7f4ef;
+  --color-sand: #e8dfd3;
+  --color-copper: #9a5b3e;
+  --color-forest: #31493c;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: "Segoe UI", Arial, sans-serif;
+}
+
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
   :focus-visible {
-    outline: 2px solid currentColor;
+    outline: 3px solid var(--color-copper);
     outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.2em] text-copper uppercase;
+  }
+
+  .form-label {
+    @apply mb-2 block text-sm font-semibold text-ink;
+  }
+
+  .form-control {
+    @apply block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-ink shadow-sm transition placeholder:text-stone-400 focus:border-copper focus:ring-2 focus:ring-copper/20 focus:outline-none;
+  }
+
+  .field-validation-error {
+    @apply mt-2 block text-sm font-medium text-red-700;
+  }
+
+  .field-validation-valid,
+  .validation-summary-valid {
+    display: none;
+  }
+
+  .input-validation-error {
+    @apply border-red-500 ring-2 ring-red-100;
+  }
+
+  .validation-summary-errors {
+    @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+  }
+
+  .validation-summary-errors ul {
+    @apply list-disc pl-5;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-copper disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-copper hover:text-copper;
   }
 }

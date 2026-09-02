@@ -5,7 +5,7 @@ namespace Sallvat.IntegrationTests.Web;
 public sealed class HomePageTests
 {
     [Fact]
-    public async Task HomeRendersAccessibleTechnicalPlaceholder()
+    public async Task HomeRendersAccessibleAccountLaunchExperience()
     {
         await using var application = new SallvatWebApplicationFactory();
         using var client = application.CreateClient();
@@ -18,6 +18,7 @@ public sealed class HomePageTests
         Assert.Contains("href=\"#conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("<main id=\"conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("/css/app.css?v=", content, StringComparison.Ordinal);
-        Assert.Contains("Nenhuma compra pode ser realizada", content, StringComparison.Ordinal);
+        Assert.Contains("catálogo e compras ainda não estão disponíveis", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("href=\"/conta/criar\"", content, StringComparison.Ordinal);
     }
 }

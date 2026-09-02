@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Sallvat.IntegrationTests.Web;
 
-public sealed class SallvatWebApplicationFactory :
+public class SallvatWebApplicationFactory :
     WebApplicationFactory<Program>
 {
     private readonly bool ownsDataProtectionKeysPath;
@@ -40,6 +40,8 @@ public sealed class SallvatWebApplicationFactory :
                     ["Operational:ServiceName"] = "Sallvat.Tests",
                     ["Operational:CorrelationIdMaxLength"] = "64",
                     ["DataProtection:KeysPath"] = DataProtectionKeysPath,
+                    ["AccountLinks:PublicOrigin"] =
+                        "https://tests.sallvat.invalid",
                 });
         });
     }

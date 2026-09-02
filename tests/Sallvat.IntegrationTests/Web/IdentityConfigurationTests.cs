@@ -23,6 +23,9 @@ public sealed class IdentityConfigurationTests
         var cookie = services
             .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(IdentityConstants.ApplicationScheme);
+        var tokenProvider = services
+            .GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>()
+            .Value;
 
         Assert.True(identity.User.RequireUniqueEmail);
         Assert.True(identity.SignIn.RequireConfirmedAccount);
@@ -40,6 +43,7 @@ public sealed class IdentityConfigurationTests
         Assert.Equal(SameSiteMode.Lax, cookie.Cookie.SameSite);
         Assert.Equal(CookieSecurePolicy.Always, cookie.Cookie.SecurePolicy);
         Assert.Equal(TimeSpan.FromHours(8), cookie.ExpireTimeSpan);
+        Assert.Equal(TimeSpan.FromHours(3), tokenProvider.TokenLifespan);
     }
 
     [Fact]

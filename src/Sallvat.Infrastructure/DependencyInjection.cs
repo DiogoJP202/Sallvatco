@@ -2,7 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Sallvat.Application.Accounts;
+using Sallvat.Application.Time;
+using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Time;
 
 namespace Sallvat.Infrastructure;
 
@@ -42,6 +46,8 @@ public static class DependencyInjection
                     npgsql.MigrationsHistoryTable("__ef_migrations_history");
                 });
         });
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddSingleton<IClock, SystemClock>();
 
         return services;
     }

@@ -1,0 +1,20 @@
+@model AddressViewModel
+@{
+    ViewData["Title"] = "Editar endereço";
+}
+
+<section class="mx-auto max-w-4xl px-5 py-12 sm:px-8 lg:py-16">
+    <a class="text-sm font-semibold text-copper hover:underline" asp-action="Index">← Voltar para endereços</a>
+    <div class="mt-7 rounded-3xl border border-stone-300 bg-white p-6 sm:p-9">
+        <p class="eyebrow">Editar endereço</p>
+        <h1 class="mt-4 font-serif text-4xl">Revise os dados de entrega.</h1>
+        <form class="mt-8 space-y-7" asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            <input asp-for="Id" type="hidden" />
+            <partial name="_Form" model="Model" />
+            <div class="flex flex-wrap gap-3 border-t border-stone-200 pt-7">
+                <button class="btn-primary" type="submit">Salvar alterações</button>
+                <a class="btn-secondary" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>

@@ -1,0 +1,21 @@
+@model EmailViewModel
+@{
+    ViewData["Title"] = "Reenviar confirmação";
+}
+
+<section class="mx-auto flex min-h-[64vh] max-w-xl items-center px-5 py-16 sm:px-8">
+    <div class="w-full rounded-3xl border border-stone-300 bg-white p-7 shadow-xl shadow-stone-900/5 sm:p-10">
+        <p class="eyebrow">Confirmação</p>
+        <h1 class="mt-4 font-serif text-4xl">Solicite um novo link.</h1>
+        <p class="mt-4 leading-7 text-stone-600">Informe o e-mail usado no cadastro. A resposta não revelará se existe uma conta.</p>
+        <form class="mt-8 space-y-5" asp-action="ResendConfirmation" method="post">
+            <div asp-validation-summary="ModelOnly"></div>
+            <div>
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" autocomplete="email" inputmode="email" />
+                <span asp-validation-for="Email"></span>
+            </div>
+            <button class="btn-primary w-full" type="submit">Enviar novo link</button>
+        </form>
+    </div>
+</section>

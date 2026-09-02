@@ -1,0 +1,23 @@
+@model bool
+@{
+    ViewData["Title"] = Model ? "E-mail confirmado" : "Link inválido";
+}
+
+<section class="mx-auto flex min-h-[64vh] max-w-3xl items-center px-5 py-16 sm:px-8">
+    <div class="w-full rounded-3xl border border-stone-300 bg-white p-8 text-center shadow-xl shadow-stone-900/5 sm:p-12">
+        @if (Model)
+        {
+            <p class="eyebrow">Conta ativada</p>
+            <h1 class="mt-5 font-serif text-4xl">Seu e-mail foi confirmado.</h1>
+            <p class="mx-auto mt-5 max-w-xl leading-7 text-stone-600">Agora você já pode entrar e cuidar dos seus dados com segurança.</p>
+            <a class="btn-primary mt-8" asp-action="Login">Entrar na minha conta</a>
+        }
+        else
+        {
+            <p class="eyebrow">Não foi possível confirmar</p>
+            <h1 class="mt-5 font-serif text-4xl">Este link é inválido ou expirou.</h1>
+            <p class="mx-auto mt-5 max-w-xl leading-7 text-stone-600">Solicite uma nova mensagem para continuar.</p>
+            <a class="btn-primary mt-8" asp-action="ResendConfirmation">Reenviar confirmação</a>
+        }
+    </div>
+</section>

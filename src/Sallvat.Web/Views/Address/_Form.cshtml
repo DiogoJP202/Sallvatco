@@ -1,0 +1,50 @@
+@model AddressViewModel
+
+<div asp-validation-summary="ModelOnly"></div>
+<div class="grid gap-5 sm:grid-cols-2">
+    <div>
+        <label class="form-label" asp-for="Label"></label>
+        <input class="form-control" asp-for="Label" placeholder="Casa, trabalho…" />
+        <span asp-validation-for="Label"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="RecipientName"></label>
+        <input class="form-control" asp-for="RecipientName" autocomplete="name" />
+        <span asp-validation-for="RecipientName"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="PostalCode"></label>
+        <input class="form-control" asp-for="PostalCode" autocomplete="postal-code" inputmode="numeric" placeholder="00000-000" />
+        <span asp-validation-for="PostalCode"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Street"></label>
+        <input class="form-control" asp-for="Street" autocomplete="address-line1" />
+        <span asp-validation-for="Street"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Number"></label>
+        <input class="form-control" asp-for="Number" />
+        <span asp-validation-for="Number"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Complement"></label>
+        <input class="form-control" asp-for="Complement" autocomplete="address-line2" />
+        <span asp-validation-for="Complement"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="District"></label>
+        <input class="form-control" asp-for="District" />
+        <span asp-validation-for="District"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="City"></label>
+        <input class="form-control" asp-for="City" autocomplete="address-level2" />
+        <span asp-validation-for="City"></span>
+    </div>
+    <div class="sm:max-w-32">
+        <label class="form-label" asp-for="StateCode"></label>
+        <input class="form-control uppercase" asp-for="StateCode" autocomplete="address-level1" maxlength="2" />
+        <span asp-validation-for="StateCode"></span>
+    </div>
+</div>

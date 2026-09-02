@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Verifique seu e-mail";
+}
+
+<section class="mx-auto flex min-h-[64vh] max-w-3xl items-center px-5 py-16 sm:px-8">
+    <div class="w-full rounded-3xl border border-stone-300 bg-white p-8 text-center shadow-xl shadow-stone-900/5 sm:p-12">
+        <p class="eyebrow">Próximo passo</p>
+        <h1 class="mt-5 font-serif text-4xl">Verifique seu e-mail</h1>
+        <p class="mx-auto mt-5 max-w-xl leading-7 text-stone-600">
+            Se o endereço informado estiver apto, enviaremos uma mensagem com o link de confirmação. A resposta é sempre a mesma para proteger a existência das contas.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a class="btn-primary" asp-action="Login">Ir para o acesso</a>
+            <a class="btn-secondary" asp-action="ResendConfirmation">Reenviar confirmação</a>
+        </div>
+    </div>
+</section>

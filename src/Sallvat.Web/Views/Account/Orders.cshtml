@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Meus pedidos";
+}
+
+<section class="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+    <div class="mb-10">
+        <p class="eyebrow">Área do cliente</p>
+        <h1 class="mt-4 font-serif text-4xl sm:text-5xl">Meus pedidos</h1>
+    </div>
+    <div class="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <partial name="_AccountNavigation" />
+        <div class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center sm:p-16">
+            <p class="font-serif text-3xl">Seu histórico aparecerá aqui.</p>
+            <p class="mx-auto mt-4 max-w-xl leading-7 text-stone-600">Pedidos serão habilitados quando catálogo, carrinho e checkout estiverem homologados.</p>
+        </div>
+    </div>
+</section>

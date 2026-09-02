@@ -1,0 +1,65 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Criar conta";
+}
+
+<section class="mx-auto grid max-w-7xl gap-12 px-5 py-14 sm:px-8 lg:grid-cols-[minmax(0,1fr)_32rem] lg:px-10 lg:py-20">
+    <div class="max-w-xl lg:pt-10">
+        <p class="eyebrow">Sua conta Sallvat</p>
+        <h1 class="mt-5 font-serif text-5xl leading-tight">Um espaço reservado para sua jornada.</h1>
+        <p class="mt-6 text-lg leading-8 text-stone-600">
+            Salve seus endereços com segurança e prepare-se para acompanhar cada pedido quando o catálogo for lançado.
+        </p>
+        <ul class="mt-8 space-y-4 text-sm text-stone-700">
+            <li class="flex gap-3"><span class="text-copper" aria-hidden="true">—</span> Confirmação de e-mail antes do primeiro acesso.</li>
+            <li class="flex gap-3"><span class="text-copper" aria-hidden="true">—</span> Nenhuma compra ou conta é criada implicitamente.</li>
+            <li class="flex gap-3"><span class="text-copper" aria-hidden="true">—</span> Seus endereços ficam visíveis apenas para você.</li>
+        </ul>
+    </div>
+
+    <div class="rounded-3xl border border-stone-300 bg-white p-6 shadow-xl shadow-stone-900/5 sm:p-9">
+        <h2 class="font-serif text-3xl">Criar conta</h2>
+        <p class="mt-2 text-sm text-stone-600">Todos os campos, exceto telefone, são obrigatórios.</p>
+        <form class="mt-8 space-y-5" asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly"></div>
+            <div>
+                <label class="form-label" asp-for="Name"></label>
+                <input class="form-control" asp-for="Name" autocomplete="name" />
+                <span asp-validation-for="Name"></span>
+            </div>
+            <div>
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" autocomplete="email" inputmode="email" />
+                <span asp-validation-for="Email"></span>
+            </div>
+            <div>
+                <label class="form-label" asp-for="Phone"></label>
+                <input class="form-control" asp-for="Phone" autocomplete="tel" inputmode="tel" />
+                <span asp-validation-for="Phone"></span>
+            </div>
+            <div>
+                <label class="form-label" asp-for="Password"></label>
+                <input class="form-control" asp-for="Password" autocomplete="new-password" />
+                <p class="mt-2 text-xs leading-5 text-stone-500">Use 12 ou mais caracteres, com maiúscula, minúscula, número e símbolo.</p>
+                <span asp-validation-for="Password"></span>
+            </div>
+            <div>
+                <label class="form-label" asp-for="ConfirmPassword"></label>
+                <input class="form-control" asp-for="ConfirmPassword" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmPassword"></span>
+            </div>
+            <div>
+                <label class="flex items-start gap-3 text-sm leading-6 text-stone-600">
+                    <input class="mt-1 h-4 w-4 rounded border-stone-300 text-copper" asp-for="AcceptTerms" />
+                    <span>Li e aceito os termos de uso e a política de privacidade, que serão publicados antes da operação comercial.</span>
+                </label>
+                <span asp-validation-for="AcceptTerms"></span>
+            </div>
+            <button class="btn-primary w-full" type="submit">Criar conta</button>
+        </form>
+        <p class="mt-7 text-center text-sm text-stone-600">
+            Já possui uma conta?
+            <a class="font-semibold text-copper underline-offset-4 hover:underline" asp-action="Login">Entrar</a>
+        </p>
+    </div>
+</section>

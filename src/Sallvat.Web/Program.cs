@@ -1,16 +1,20 @@
 using System.Diagnostics;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
+using Sallvat.Application.Accounts;
 using Sallvat.Application.Authorization;
 using Sallvat.Infrastructure;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Web.Configuration;
+using Sallvat.Web.Email;
 using Sallvat.Web.Observability;
 using Sallvat.Web.Security;
 using Serilog;
@@ -19,7 +23,8 @@ using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -68,6 +73,23 @@ builder.Services
         $"{DataProtectionStorageOptions.SectionName}:KeysPath must be outside the web root.")
     .ValidateOnStart();
 builder.Services
+    .AddOptions<AccountLinkOptions>()
+    .Bind(builder.Configuration.GetSection(AccountLinkOptions.SectionName))
+    .Validate(
+        options => Uri.TryCreate(
+            options.PublicOrigin,
+            UriKind.Absolute,
+            out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps
+                || ((builder.Environment.IsDevelopment()
+                        || builder.Environment.IsEnvironment("Testing"))
+                    && uri.Scheme == Uri.UriSchemeHttp))
+            && uri.AbsolutePath == "/"
+            && string.IsNullOrEmpty(uri.Query)
+            && string.IsNullOrEmpty(uri.Fragment),
+        $"{AccountLinkOptions.SectionName}:PublicOrigin must be an absolute HTTPS URL outside Development.")
+    .ValidateOnStart();
+builder.Services
     .AddDataProtection()
     .SetApplicationName(
         $"Sallvat.Web:{builder.Environment.EnvironmentName}");
@@ -91,6 +113,8 @@ builder.Services
     })
     .AddEntityFrameworkStores<SallvatDbContext>()
     .AddDefaultTokenProviders();
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+    options.TokenLifespan = TimeSpan.FromHours(3));
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
         RoleNames.Admin,
@@ -110,6 +134,42 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/conta/entrar";
     options.AccessDeniedPath = "/conta/acesso-negado";
 });
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IRecoveryRequestLimiter, RecoveryRequestLimiter>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy<string>(
+        RateLimitPolicyNames.Login,
+        context => CreateIpFixedWindowLimiter(
+            context,
+            permitLimit: 10,
+            TimeSpan.FromMinutes(10)));
+    options.AddPolicy<string>(
+        RateLimitPolicyNames.Registration,
+        context => CreateIpFixedWindowLimiter(
+            context,
+            permitLimit: 5,
+            TimeSpan.FromHours(1)));
+    options.AddPolicy<string>(
+        RateLimitPolicyNames.Recovery,
+        context => CreateIpFixedWindowLimiter(
+            context,
+            permitLimit: 3,
+            TimeSpan.FromHours(1)));
+});
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<
+        IEmailSender,
+        DevelopmentFileAccountEmailSender>();
+}
+else
+{
+    builder.Services.AddSingleton<
+        IEmailSender,
+        UnavailableAccountEmailSender>();
+}
 builder.Services
     .AddHealthChecks()
     .AddCheck(
@@ -196,6 +256,7 @@ else
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -226,6 +287,26 @@ app.MapHealthChecks(
     .AllowAnonymous();
 
 app.Run();
+
+static RateLimitPartition<string> CreateIpFixedWindowLimiter(
+    HttpContext context,
+    int permitLimit,
+    TimeSpan window)
+{
+    var partitionKey = context.Connection.RemoteIpAddress?.ToString()
+        ?? "unknown";
+
+    return RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey,
+        _ => new FixedWindowRateLimiterOptions
+        {
+            AutoReplenishment = true,
+            PermitLimit = permitLimit,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            Window = window,
+        });
+}
 
 public partial class Program
 {
