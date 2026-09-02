@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Sallvat.Application\Sallvat.Application.csproj" />
-    <ProjectReference Include="..\Sallvat.Domain\Sallvat.Domain.csproj" />
+    <ProjectReference Include="../Sallvat.Application/Sallvat.Application.csproj" />
+    <ProjectReference Include="../Sallvat.Domain/Sallvat.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

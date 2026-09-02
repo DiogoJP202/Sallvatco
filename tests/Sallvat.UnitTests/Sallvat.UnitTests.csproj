@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Sallvat.Application\Sallvat.Application.csproj" />
-    <ProjectReference Include="..\..\src\Sallvat.Domain\Sallvat.Domain.csproj" />
+    <ProjectReference Include="../../src/Sallvat.Application/Sallvat.Application.csproj" />
+    <ProjectReference Include="../../src/Sallvat.Domain/Sallvat.Domain.csproj" />
   </ItemGroup>
 
 </Project>

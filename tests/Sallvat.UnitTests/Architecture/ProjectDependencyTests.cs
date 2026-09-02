@@ -37,12 +37,18 @@ public sealed class ProjectDependencyTests
     {
         var fullPath = Path.Combine(repositoryRoot, projectPath);
         var document = XDocument.Load(fullPath);
-
-        return document
+        var projectReferences = document
             .Descendants("ProjectReference")
             .Select(element => element.Attribute("Include")?.Value)
             .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Select(path => Path.GetFileNameWithoutExtension(path!))
+            .Select(path => path!);
+
+        Assert.All(
+            projectReferences,
+            path => Assert.DoesNotContain('\\', path));
+
+        return projectReferences
+            .Select(path => Path.GetFileNameWithoutExtension(path))
             .Order(StringComparer.Ordinal)
             .ToArray();
     }
