@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TailwindSource Include="Styles/app.css;Views/**/*.cshtml;Controllers/**/*.cs;Models/**/*.cs;../../package-lock.json" />
+    <TailwindSource Include="Styles/app.css;Views/**/*.cshtml;Areas/**/*.cshtml;Controllers/**/*.cs;Models/**/*.cs;../../package-lock.json" />
   </ItemGroup>
 
   <Target

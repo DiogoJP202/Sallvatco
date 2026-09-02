@@ -36,8 +36,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Habilitar nullable, warnings relevantes, analyzers e formatação.
 - [x] Criar `global.json`, lock files e documentação de pré-requisitos.
 - [x] Configurar PostgreSQL Development via Compose sem exposição externa produtiva.
-- [x] Criar `SallvatDbContext` vazio e registrá-lo no composition root.
-- [ ] Criar a primeira migration somente quando existir o primeiro schema real.
+- [x] Criar `SallvatDbContext` inicial e registrá-lo no composition root.
+- [x] Criar a primeira migration somente quando existir o primeiro schema real.
 - [x] Documentar comandos de build, test e migration.
 
 ### STORY F1-S2 — Aplicação possui base operacional segura
@@ -64,8 +64,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `ApplicationUser` com chave `Guid` e configurações Identity.
-- [ ] Criar migration Identity e constraints de e-mail.
+- [x] Criar `ApplicationUser` com chave `Guid` e configurações Identity.
+- [x] Criar migration Identity e constraints de e-mail.
 - [ ] Implementar cadastro com view model allowlisted.
 - [ ] Implementar confirmação de e-mail e expiração de token.
 - [ ] Implementar login, logout POST e lockout.
@@ -80,8 +80,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar entidades/configurações `Customer` e `Address`.
-- [ ] Criar migration, índices e constraints.
+- [x] Criar entidades/configurações `Customer` e `Address`.
+- [x] Criar migration, índices e constraints.
 - [ ] Implementar criação/associação de perfil durante cadastro e guest checkout.
 - [ ] Implementar CRUD de endereços com autorização por recurso.
 - [ ] Criar páginas de conta e pedidos ainda vazias/contratadas.
@@ -95,12 +95,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar roles `Customer` e `Admin` de forma idempotente.
-- [ ] Criar Area `/Admin` e policy de acesso.
+- [x] Criar roles `Customer` e `Admin` de forma idempotente.
+- [x] Criar Area `/Admin` e policy de acesso.
 - [ ] Implementar procedimento seguro para conta Admin inicial.
 - [ ] Exigir troca de segredo inicial/revisar e-mail confirmado.
 - [ ] Documentar concessão e revogação conforme `PBD-016`.
-- [ ] Testar acesso anônimo, Customer e Admin.
+- [x] Testar acesso anônimo, Customer e Admin.
 
 ## EPIC F3 — Catálogo, imagens e estoque
 

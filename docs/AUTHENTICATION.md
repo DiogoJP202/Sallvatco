@@ -13,6 +13,17 @@ ASP.NET Core Identity será usado com `ApplicationUser : IdentityUser<Guid>`. Cr
 
 Essa separação evita criar senha ou conta implicitamente durante o checkout.
 
+### Estado implementado
+
+- `ApplicationUser : IdentityUser<Guid>` usa e-mail único e confirmado;
+- lockout ocorre após 5 falhas por 15 minutos;
+- o cookie é `HttpOnly`, essencial, `SameSite=Lax`, seguro fora de Development e isolado pelo nome do ambiente;
+- a migration inicial cria `Customer`, `Address` e as roles determinísticas `Customer` e `Admin`;
+- o schema Identity v2 foi escolhido para o MVP baseado em senha; passkeys não fazem parte do requisito atual e exigirão decisão e migration próprias se forem adotadas;
+- `/Admin` já exige a policy `Admin`, mas nenhuma conta administrativa é criada automaticamente.
+
+Os endpoints de cadastro, confirmação e recuperação permanecem bloqueados pela seleção do provedor em `PBD-010`; tokens ou URLs de confirmação não serão registrados em log como substituto de entrega de e-mail.
+
 ## Fluxos de conta
 
 ### Cadastro

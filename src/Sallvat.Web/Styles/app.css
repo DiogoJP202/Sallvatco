@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 
 @source "../Views/**/*.cshtml";
+@source "../Areas/**/*.cshtml";
 
 @layer base {
   :focus-visible {

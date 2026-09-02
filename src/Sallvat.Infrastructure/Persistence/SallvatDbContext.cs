@@ -1,16 +1,26 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Sallvat.Domain.Customers;
+using Sallvat.Infrastructure.Identity;
 
 namespace Sallvat.Infrastructure.Persistence;
 
 public sealed class SallvatDbContext(
-    DbContextOptions<SallvatDbContext> options) : DbContext(options)
+    DbContextOptions<SallvatDbContext> options) :
+    IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
+    public DbSet<Customer> Customers => Set<Customer>();
 
-        base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(
+    public DbSet<Address> Addresses => Set<Address>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(
             typeof(SallvatDbContext).Assembly);
+        IdentityModelConfiguration.Configure(builder);
     }
 }

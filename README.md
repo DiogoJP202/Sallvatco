@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 está concluído e a **Fase 1 — Fundação técnica** possui solution, projetos-base, PostgreSQL de Development, persistência inicial, observabilidade, CI e layout Razor mínimo. Ainda não existem schema de negócio, migrations ou funcionalidades de e-commerce. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 e a **Fase 1 — Fundação técnica** estão concluídos. A **Fase 2 — Identidade e clientes** foi iniciada com Identity em chaves `Guid`, schema inicial de clientes e endereços, roles `Customer`/`Admin` e uma superfície `/Admin` protegida. Cadastro, confirmação, recuperação e gestão da conta aguardam os próximos incrementos e a definição do provedor de e-mail em `PBD-010`. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Stack definida
 
@@ -103,10 +103,10 @@ dotnet run --project src/Sallvat.Web
 
 ## Migrations
 
-Ainda não existe migration: um schema vazio não justifica histórico. Quando a primeira entidade persistida for aprovada, use a ferramenta local fixada no repositório:
+A migration inicial `InitialIdentityAndCustomers` cria Identity, `Customer`, `Address` e as roles fixas. Ela não é executada automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
 
 ```powershell
-dotnet ef migrations add InitialSchema `
+dotnet ef migrations add NomeDaMudanca `
   --project src/Sallvat.Infrastructure `
   --startup-project src/Sallvat.Web `
   --output-dir Persistence/Migrations
@@ -116,7 +116,7 @@ dotnet ef database update `
   --startup-project src/Sallvat.Web
 ```
 
-Os projetos-base respeitam as dependências registradas e ainda não antecipam funcionalidades. Identity, entidades, migrations e container Web serão adicionados nas tarefas correspondentes do [backlog](docs/BACKLOG.md).
+O banco local precisa estar saudável antes de `database update`. Em Staging e Production, migrations serão aplicadas por uma etapa explícita de deploy, com backup prévio, nunca pelo processo Web no startup.
 
 ## Diagnóstico local
 

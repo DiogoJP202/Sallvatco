@@ -35,8 +35,12 @@ public static class DependencyInjection
 
             options.UseNpgsql(
                 databaseOptions.ConnectionString,
-                npgsql => npgsql.MigrationsAssembly(
-                    typeof(SallvatDbContext).Assembly.GetName().Name));
+                npgsql =>
+                {
+                    npgsql.MigrationsAssembly(
+                        typeof(SallvatDbContext).Assembly.GetName().Name);
+                    npgsql.MigrationsHistoryTable("__ef_migrations_history");
+                });
         });
 
         return services;

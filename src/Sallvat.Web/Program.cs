@@ -2,10 +2,13 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
+using Sallvat.Application.Authorization;
 using Sallvat.Infrastructure;
+using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Web.Configuration;
 using Sallvat.Web.Observability;
@@ -73,6 +76,40 @@ builder.Services.AddSingleton<
     DataProtectionKeyRepositoryConfigurator>();
 builder.Services.AddHostedService<DataProtectionKeyRingInitializer>();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedAccount = true;
+        options.SignIn.RequireConfirmedEmail = true;
+        options.Stores.SchemaVersion = IdentitySchemaVersions.Version2;
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Password.RequiredLength = 12;
+        options.Password.RequiredUniqueChars = 4;
+    })
+    .AddEntityFrameworkStores<SallvatDbContext>()
+    .AddDefaultTokenProviders();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(
+        RoleNames.Admin,
+        policy => policy.RequireRole(RoleNames.Admin));
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name =
+        $"Sallvat.Auth.{builder.Environment.EnvironmentName}";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.LoginPath = "/conta/entrar";
+    options.AccessDeniedPath = "/conta/acesso-negado";
+});
 builder.Services
     .AddHealthChecks()
     .AddCheck(
@@ -160,7 +197,12 @@ else
 app.UseStaticFiles();
 app.UseRouting();
 app.UseStatusCodePages();
+app.UseAuthentication();
+app.UseAuthorization();
 
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

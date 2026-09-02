@@ -23,3 +23,8 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = true
+
+[**/Migrations/*.cs]
+# O EF Core controla e regenera a estrutura desses arquivos.
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.IDE0161.severity = none

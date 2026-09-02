@@ -34,6 +34,7 @@ public sealed class FrontendBuildTests
             developmentDependencies.GetProperty("@tailwindcss/cli").GetString());
         Assert.Contains("source(none)", inputCss, StringComparison.Ordinal);
         Assert.Contains("../Views/**/*.cshtml", inputCss, StringComparison.Ordinal);
+        Assert.Contains("../Areas/**/*.cshtml", inputCss, StringComparison.Ordinal);
         Assert.Contains("tailwindcss v4.3.3", outputCss, StringComparison.Ordinal);
         Assert.Contains(".sr-only", outputCss, StringComparison.Ordinal);
     }
