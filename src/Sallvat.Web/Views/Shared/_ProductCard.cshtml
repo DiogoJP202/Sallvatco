@@ -1,10 +1,12 @@
 @model CatalogProductSummary
 
-<article class="group flex h-full flex-col overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-stone-300/80 transition duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-900/10">
+<article class="group flex h-full flex-col overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-stone-300/80 transition duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-900/10"
+         data-product-card
+         data-family="@Model.OlfactoryFamily">
     <div class="relative overflow-hidden bg-sand">
         @if (Model.CoverImage is not null)
         {
-            <img class="aspect-[4/5] w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+            <img class="aspect-[4/5] w-full object-contain transition duration-700 group-hover:scale-[1.025]"
                  src="@Model.CoverImage.ThumbnailUrl"
                  srcset="@Model.CoverImage.ThumbnailUrl 480w, @Model.CoverImage.LargeUrl 1600w"
                  sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

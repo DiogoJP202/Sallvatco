@@ -117,6 +117,11 @@ public sealed class CatalogPageTests
             "aria-current=\"true\"",
             content,
             StringComparison.Ordinal);
+        Assert.Contains("data-gallery-main", content, StringComparison.Ordinal);
+        Assert.Contains("data-gallery-thumbnail", content, StringComparison.Ordinal);
+        Assert.Contains("data-variant-option", content, StringComparison.Ordinal);
+        Assert.Contains("data-demo-purchase", content, StringComparison.Ordinal);
+        Assert.Contains("data-purchase-dialog", content, StringComparison.Ordinal);
         Assert.Contains(
             "Esta variante está temporariamente esgotada.",
             decodedContent,

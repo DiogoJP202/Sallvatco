@@ -22,23 +22,29 @@
             </p>
             @if (Model.TotalItems > 0)
             {
-                <p class="mt-8 text-[0.68rem] font-semibold tracking-[0.2em] text-stone-600 uppercase">@Model.TotalItems @(Model.TotalItems == 1 ? "fragrância publicada" : "fragrâncias publicadas")</p>
+                <p class="mt-8 text-[0.68rem] font-semibold tracking-[0.2em] text-stone-600 uppercase" data-catalog-count>@Model.TotalItems @(Model.TotalItems == 1 ? "fragrância apresentada" : "fragrâncias apresentadas")</p>
             }
         </div>
     </div>
 </section>
 
-<section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
+<section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-20" data-catalog>
     @if (Model.Families.Count > 0)
     {
-        <nav class="mb-12 flex flex-wrap gap-2" aria-label="Filtrar por família olfativa">
-            <a class="rounded-full border px-5 py-2.5 text-sm font-semibold transition @(Model.SelectedFamily is null ? "border-ink bg-ink text-white" : "border-stone-300 bg-white hover:border-copper hover:text-copper")"
-               asp-action="Index">Todas</a>
+        <nav class="mb-12 flex flex-wrap gap-2" aria-label="Filtrar por família olfativa" data-catalog-filters>
+            <a class="catalog-filter"
+               asp-action="Index"
+               aria-current="@(Model.SelectedFamily is null ? "page" : null)"
+               data-catalog-filter
+               data-family="">Todas</a>
             @foreach (var family in Model.Families)
             {
-                <a class="rounded-full border px-5 py-2.5 text-sm font-semibold transition @(family == Model.SelectedFamily ? "border-ink bg-ink text-white" : "border-stone-300 bg-white hover:border-copper hover:text-copper")"
+                <a class="catalog-filter"
                    asp-action="Index"
-                   asp-route-familia="@family">@family</a>
+                   asp-route-familia="@family"
+                   aria-current="@(family == Model.SelectedFamily ? "page" : null)"
+                   data-catalog-filter
+                   data-family="@family">@family</a>
             }
         </nav>
     }
@@ -60,6 +66,12 @@
             {
                 <partial name="_ProductCard" model="product" />
             }
+        </div>
+
+        <div class="mt-10 hidden rounded-3xl border border-stone-300 bg-white px-6 py-16 text-center" data-catalog-empty>
+            <p class="eyebrow">Em curadoria</p>
+            <h2 class="mt-4 font-serif text-3xl">Nenhuma fragrância neste universo.</h2>
+            <p class="mx-auto mt-4 max-w-xl text-sm leading-6 text-stone-600">Escolha outra família olfativa para continuar explorando a coleção.</p>
         </div>
 
         @if (Model.TotalPages > 1)

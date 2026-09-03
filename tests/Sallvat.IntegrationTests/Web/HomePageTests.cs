@@ -31,6 +31,12 @@ public sealed class HomePageTests
         Assert.Contains("Conheça o catálogo", content, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("href=\"/perfumes\"", content, StringComparison.Ordinal);
         Assert.Contains("href=\"/conta/criar\"", content, StringComparison.Ordinal);
+        Assert.Contains("data-menu-button", content, StringComparison.Ordinal);
+        Assert.Contains("data-mobile-menu", content, StringComparison.Ordinal);
+        Assert.Contains(
+            "/js/storefront.js?v=",
+            content,
+            StringComparison.Ordinal);
         Assert.Contains(
             "<link rel=\"canonical\" href=\"https://tests.sallvat.invalid/\"",
             content,
@@ -46,6 +52,13 @@ public sealed class HomePageTests
         Assert.Equal(
             "image/webp",
             campaignImage.Content.Headers.ContentType?.MediaType);
+
+        using var storefrontScript = await client.GetAsync(
+            "/js/storefront.js");
+        Assert.Equal(HttpStatusCode.OK, storefrontScript.StatusCode);
+        Assert.Equal(
+            "text/javascript",
+            storefrontScript.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]

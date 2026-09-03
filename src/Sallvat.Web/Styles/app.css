@@ -26,6 +26,26 @@
     outline: 3px solid var(--color-copper);
     outline-offset: 3px;
   }
+
+  dialog::backdrop {
+    background: rgb(32 29 26 / 72%);
+    backdrop-filter: blur(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
 }
 
 @layer components {
@@ -68,5 +88,37 @@
 
   .btn-secondary {
     @apply inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:border-copper hover:text-copper;
+  }
+
+  .catalog-filter {
+    @apply rounded-full border border-stone-300 bg-white px-5 py-2.5 text-sm font-semibold transition hover:border-copper hover:text-copper;
+  }
+
+  .catalog-filter[aria-current="page"] {
+    @apply border-ink bg-ink text-white;
+  }
+
+  [data-gallery-thumbnail] {
+    @apply overflow-hidden rounded-2xl bg-sand ring-1 ring-stone-300 transition;
+  }
+
+  [data-gallery-thumbnail][aria-pressed="true"] {
+    @apply ring-2 ring-ink ring-offset-2 ring-offset-paper;
+  }
+
+  .variant-option {
+    @apply rounded-2xl border border-stone-300 bg-white/80 px-5 py-4 text-ink transition hover:border-copper;
+  }
+
+  .variant-option small {
+    @apply text-stone-500;
+  }
+
+  .variant-option[aria-current="true"] {
+    @apply border-ink bg-ink text-white shadow-lg shadow-stone-900/10;
+  }
+
+  .variant-option[aria-current="true"] small {
+    @apply text-stone-300;
   }
 }

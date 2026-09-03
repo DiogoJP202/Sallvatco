@@ -57,21 +57,25 @@
     </div>
 
     <header class="sticky top-0 z-40 border-b border-stone-300/70 bg-paper/90 backdrop-blur-lg">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-4 sm:px-8 lg:px-10">
+        <div class="relative mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-4 sm:px-8 lg:px-10">
             <a class="group whitespace-nowrap"
                asp-controller="Home"
                asp-action="Index">
                 <span class="block font-serif text-xl tracking-[0.12em] uppercase transition group-hover:text-copper sm:text-2xl">Sallvat &amp; Co.</span>
                 <span class="mt-0.5 hidden text-[0.52rem] font-semibold tracking-[0.25em] text-stone-500 uppercase sm:block">Perfumes artesanais</span>
             </a>
-            <nav class="flex items-center gap-2 sm:gap-6" aria-label="Navegação principal">
-                <a class="hidden text-sm font-medium text-stone-700 transition hover:text-copper sm:inline"
+            <nav class="hidden items-center gap-6 sm:flex" aria-label="Navegação principal">
+                <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
                    asp-controller="Home"
                    asp-action="Index">Início</a>
-                <a class="hidden text-sm font-medium text-stone-700 transition hover:text-copper sm:inline"
+                <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
                    asp-area=""
                    asp-controller="Perfumes"
                    asp-action="Index">Perfumes</a>
+                <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
+                   asp-controller="Home"
+                   asp-action="Index"
+                   asp-fragment="manifesto-title">Sobre</a>
                 @if (User.Identity?.IsAuthenticated is true)
                 {
                     @if (User.IsInRole("Admin"))
@@ -103,6 +107,44 @@
                        asp-action="Register">Criar conta</a>
                 }
             </nav>
+
+            <button class="flex min-h-11 items-center gap-3 rounded-full border border-stone-300 bg-white px-4 text-sm font-semibold text-ink sm:hidden"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="mobile-menu"
+                    data-menu-button>
+                <span>Menu</span>
+                <span class="grid gap-1" aria-hidden="true"><span class="block h-px w-4 bg-ink"></span><span class="block h-px w-4 bg-ink"></span></span>
+            </button>
+
+            <nav id="mobile-menu"
+                 class="absolute inset-x-4 top-[calc(100%+0.5rem)] hidden rounded-3xl border border-stone-300 bg-paper p-4 shadow-2xl shadow-stone-900/15 sm:hidden"
+                 aria-label="Navegação móvel"
+                 data-mobile-menu>
+                <div class="grid gap-1">
+                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="Index">Início</a>
+                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="" asp-controller="Perfumes" asp-action="Index">Perfumes</a>
+                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="Index" asp-fragment="manifesto-title">Sobre</a>
+                    @if (User.Identity?.IsAuthenticated is true)
+                    {
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="Admin" asp-controller="Home" asp-action="Index">Administração</a>
+                        }
+                        <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="" asp-controller="Account" asp-action="Index">Minha conta</a>
+                        <form class="mt-2 border-t border-stone-300 pt-3" asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                            <button class="w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold text-stone-600 transition hover:bg-white hover:text-copper" type="submit">Sair</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="mt-2 grid grid-cols-2 gap-2 border-t border-stone-300 pt-3">
+                            <a class="btn-secondary" asp-controller="Account" asp-action="Login">Entrar</a>
+                            <a class="btn-primary" asp-controller="Account" asp-action="Register">Criar conta</a>
+                        </div>
+                    }
+                </div>
+            </nav>
         </div>
     </header>
 
@@ -133,6 +175,7 @@
         </div>
     </footer>
 
+    <script src="~/js/storefront.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -386,6 +386,10 @@ internal static partial class Program
         ExportOptions options)
     {
         html = html.Replace(
+            "<body class=\"",
+            "<body data-showcase=\"true\" class=\"",
+            StringComparison.Ordinal);
+        html = html.Replace(
             "https://showcase.sallvat.invalid",
             options.SiteUrl,
             StringComparison.Ordinal);
