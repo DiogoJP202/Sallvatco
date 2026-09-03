@@ -17,7 +17,109 @@ namespace Sallvat.Showcase;
 
 internal static partial class Program
 {
-    private const string ProductSlug = "ambar-noturno";
+    private static readonly IReadOnlyList<ShowcaseProduct> Products =
+    [
+        new(
+            new ProductEditorInput(
+                "Sea Salt",
+                "sea-salt",
+                "Um frescor mineral inspirado pelo encontro entre sal, pele e brisa.",
+                "Bergamota luminosa e um acorde marinho abrem caminho para folhas verdes, madeiras claras e um fundo confortável de almíscar.",
+                "Fresco aquático",
+                "Bergamota e acorde marinho",
+                "Sálvia e folhas verdes",
+                "Madeiras claras e almíscar",
+                "Eau de parfum",
+                "Moderada",
+                "8 horas",
+                "Dias leves e encontros ao ar livre",
+                "Primavera e verão",
+                "Diurno"),
+            true,
+            [
+                new("SAL-SEA-050", 50, 299.90m, 12),
+                new("SAL-SEA-100", 100, 449.90m, 7),
+            ],
+            [
+                new("sea-salt.png", "Frasco Sea Salt da Sallvat & Co. em composição editorial"),
+                new("sea-salt-atmosphere.png", "Cristais de sal sobre pedra clara diante do mar"),
+            ]),
+        new(
+            new ProductEditorInput(
+                "Hibernum",
+                "hibernum",
+                "Calor envolvente, texturas gourmand e uma presença que permanece.",
+                "Especiarias luminosas encontram baunilha, caramelo e fava-tonka em uma composição âmbar de evolução macia.",
+                "Âmbar gourmand",
+                "Laranja amarga e cardamomo",
+                "Baunilha e caramelo",
+                "Fava-tonka e âmbar",
+                "Eau de parfum",
+                "Intensa",
+                "10 horas",
+                "Noites e ocasiões especiais",
+                "Outono e inverno",
+                "Noturno"),
+            true,
+            [
+                new("SAL-HIB-050", 50, 299.90m, 6),
+                new("SAL-HIB-100", 100, 449.90m, 0),
+            ],
+            [
+                new("hibernum.png", "Frasco Hibernum da Sallvat & Co. entre notas quentes"),
+                new("hibernum-atmosphere.png", "Baunilha, fava-tonka e resina âmbar sob luz quente"),
+            ]),
+        new(
+            new ProductEditorInput(
+                "Corium",
+                "corium",
+                "Madeiras, couro e luz em uma assinatura elegante e segura.",
+                "Uma abertura aromática revela couro macio, cedro e madeiras secas, equilibrados por um fundo de âmbar discreto.",
+                "Amadeirado",
+                "Bergamota e ervas aromáticas",
+                "Couro macio e cedro",
+                "Madeiras secas e âmbar",
+                "Eau de parfum",
+                "Moderada",
+                "9 horas",
+                "Encontros e momentos de presença",
+                "Todas as estações",
+                "Versátil"),
+            true,
+            [
+                new("SAL-COR-050", 50, 299.90m, 8),
+                new("SAL-COR-100", 100, 449.90m, 3),
+            ],
+            [
+                new("corium.png", "Frasco Corium da Sallvat & Co. diante de uma paisagem costeira"),
+                new("corium-atmosphere.png", "Couro, cedro e pedra em composição de luz lateral"),
+            ]),
+        new(
+            new ProductEditorInput(
+                "Cumiere",
+                "cumiere",
+                "Claridade cítrica e madeiras suaves para uma presença luminosa.",
+                "Bergamota e petitgrain conduzem a uma textura verde, apoiada por cedro claro e um acorde âmbar delicado.",
+                "Cítrico amadeirado",
+                "Bergamota e petitgrain",
+                "Folhas verdes e néroli",
+                "Cedro claro e âmbar",
+                "Eau de parfum",
+                "Moderada",
+                "8 horas",
+                "Rotina, viagens e encontros casuais",
+                "Primavera e verão",
+                "Diurno"),
+            false,
+            [
+                new("SAL-CUM-050", 50, 299.90m, 4),
+                new("SAL-CUM-100", 100, 449.90m, 2),
+            ],
+            [
+                new("cumiere.png", "Frasco Cumiere da Sallvat & Co. sob luz natural"),
+                new("cumiere-atmosphere.png", "Bergamota, folhas verdes e madeira sob luz dourada"),
+            ]),
+    ];
 
     public static async Task<int> Main(string[] args)
     {
@@ -66,11 +168,17 @@ internal static partial class Program
             "/perfumes",
             Path.Combine("perfumes", "index.html"),
             options);
-        await ExportPageAsync(
-            client,
-            $"/perfumes/{ProductSlug}",
-            Path.Combine("perfumes", ProductSlug, "index.html"),
-            options);
+        foreach (var product in Products)
+        {
+            await ExportPageAsync(
+                client,
+                $"/perfumes/{product.Product.Slug}",
+                Path.Combine(
+                    "perfumes",
+                    product.Product.Slug,
+                    "index.html"),
+                options);
+        }
 
         var notice = BuildDemonstrationNotice(options.BasePath);
         await WriteTextAsync(
@@ -120,109 +228,87 @@ internal static partial class Program
         await context.SaveChangesAsync();
 
         var operation = new AdminOperationContext(actorId, "pages-showcase");
-        var created = await service.CreateProductAsync(
-            new ProductEditorInput(
-                "Âmbar Noturno",
-                ProductSlug,
-                "Uma composição amadeirada de presença elegante.",
-                "Bergamota luminosa encontra íris, baunilha e sândalo em uma composição de evolução serena.",
-                "Amadeirado",
-                "Bergamota e especiarias",
-                "Íris e baunilha",
-                "Sândalo e fava-tonka",
-                "Eau de parfum",
-                "Moderada",
-                "8 horas",
-                "Encontros e ocasiões especiais",
-                "Outono e inverno",
-                "Noturno"),
-            operation);
-        var productId = RequireEntity(created, "criar o produto");
-
-        var firstVariant = await service.AddVariantAsync(
-            productId,
-            new VariantEditorInput(
-                "SAL-DEMO-050",
-                50,
-                299.90m,
-                0.4m,
-                12m,
-                8m,
-                8m,
-                true),
-            operation);
-        var firstVariantId = RequireEntity(
-            firstVariant,
-            "adicionar a variante de 50 ml");
-        RequireSuccess(
-            await service.AddVariantAsync(
-                productId,
-                new VariantEditorInput(
-                    "SAL-DEMO-100",
-                    100,
-                    449.90m,
-                    0.7m,
-                    15m,
-                    10m,
-                    10m,
-                    true),
-                operation),
-            "adicionar a variante de 100 ml");
-
-        var product = await RequireProductAsync(service, productId);
-        var firstAdminVariant = product.Variants.Single(
-            variant => variant.Id == firstVariantId);
-        RequireSuccess(
-            await service.AdjustStockAsync(
-                productId,
-                firstVariantId,
-                firstAdminVariant.ConcurrencyVersion,
-                6,
-                "Estoque da demonstração estática",
-                operation),
-            "registrar o estoque demonstrativo");
-
-        var imageRoot = Path.Combine(
+        var assetRoot = Path.Combine(
             repositoryRoot,
-            "src",
-            "Sallvat.Web",
-            "wwwroot",
-            "images",
-            "home");
-        await AddImageAsync(
-            service,
-            productId,
-            Path.Combine(imageRoot, "collection-amber.webp"),
-            "Frasco de Âmbar Noturno em composição de madeira e luz quente",
-            operation);
-        await AddImageAsync(
-            service,
-            productId,
-            Path.Combine(imageRoot, "hero-coastal.webp"),
-            "Frasco de Âmbar Noturno sobre pedra diante do mar",
-            operation);
-        await AddImageAsync(
-            service,
-            productId,
-            Path.Combine(imageRoot, "collection-fresh.webp"),
-            "Frasco de Âmbar Noturno em composição fresca e luminosa",
-            operation);
+            "tools",
+            "Sallvat.Showcase",
+            "Assets",
+            "products");
 
-        product = await RequireProductAsync(service, productId);
-        RequireSuccess(
-            await service.PublishAsync(
-                productId,
-                product.ConcurrencyVersion,
-                operation),
-            "publicar o produto");
-        product = await RequireProductAsync(service, productId);
-        RequireSuccess(
-            await service.SetFeaturedAsync(
-                productId,
-                product.ConcurrencyVersion,
-                true,
-                operation),
-            "destacar o produto");
+        foreach (var showcaseProduct in Products)
+        {
+            var created = await service.CreateProductAsync(
+                showcaseProduct.Product,
+                operation);
+            var productId = RequireEntity(
+                created,
+                $"criar o produto {showcaseProduct.Product.Name}");
+
+            foreach (var showcaseVariant in showcaseProduct.Variants)
+            {
+                var variant = await service.AddVariantAsync(
+                    productId,
+                    new VariantEditorInput(
+                        showcaseVariant.Sku,
+                        showcaseVariant.VolumeMl,
+                        showcaseVariant.Price,
+                        showcaseVariant.VolumeMl == 50 ? 0.4m : 0.7m,
+                        showcaseVariant.VolumeMl == 50 ? 12m : 15m,
+                        showcaseVariant.VolumeMl == 50 ? 8m : 10m,
+                        showcaseVariant.VolumeMl == 50 ? 8m : 10m,
+                        true),
+                    operation);
+                var variantId = RequireEntity(
+                    variant,
+                    $"adicionar a variante {showcaseVariant.Sku}");
+
+                if (showcaseVariant.Stock > 0)
+                {
+                    var product = await RequireProductAsync(service, productId);
+                    var adminVariant = product.Variants.Single(
+                        item => item.Id == variantId);
+                    RequireSuccess(
+                        await service.AdjustStockAsync(
+                            productId,
+                            variantId,
+                            adminVariant.ConcurrencyVersion,
+                            showcaseVariant.Stock,
+                            "Estoque da demonstração estática",
+                            operation),
+                        $"registrar o estoque de {showcaseVariant.Sku}");
+                }
+            }
+
+            foreach (var image in showcaseProduct.Images)
+            {
+                await AddImageAsync(
+                    service,
+                    productId,
+                    Path.Combine(assetRoot, image.FileName),
+                    image.AltText,
+                    operation);
+            }
+
+            var current = await RequireProductAsync(service, productId);
+            RequireSuccess(
+                await service.PublishAsync(
+                    productId,
+                    current.ConcurrencyVersion,
+                    operation),
+                $"publicar o produto {showcaseProduct.Product.Name}");
+
+            if (showcaseProduct.Featured)
+            {
+                current = await RequireProductAsync(service, productId);
+                RequireSuccess(
+                    await service.SetFeaturedAsync(
+                        productId,
+                        current.ConcurrencyVersion,
+                        true,
+                        operation),
+                    $"destacar o produto {showcaseProduct.Product.Name}");
+            }
+        }
     }
 
     private static async Task AddImageAsync(
@@ -324,7 +410,7 @@ internal static partial class Program
             StringComparison.Ordinal);
         return html.Replace(
             "A coleção Sallvat &amp; Co. está ganhando forma",
-            "Demonstração visual · compras ainda não disponíveis",
+            "Apresentação visual · produtos, preços e textos sujeitos à validação",
             StringComparison.Ordinal);
     }
 
@@ -403,6 +489,20 @@ internal static partial class Program
     [GeneratedRegex(@", /(?!/)", RegexOptions.CultureInvariant)]
     private static partial Regex SrcSetContinuationPattern();
 }
+
+internal sealed record ShowcaseProduct(
+    ProductEditorInput Product,
+    bool Featured,
+    IReadOnlyList<ShowcaseVariant> Variants,
+    IReadOnlyList<ShowcaseImage> Images);
+
+internal sealed record ShowcaseVariant(
+    string Sku,
+    int VolumeMl,
+    decimal Price,
+    int Stock);
+
+internal sealed record ShowcaseImage(string FileName, string AltText);
 
 internal sealed record ExportOptions(
     string RepositoryRoot,
