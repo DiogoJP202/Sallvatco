@@ -1,0 +1,28 @@
+@model CatalogProductSummary
+
+<article class="group overflow-hidden rounded-3xl border border-stone-300 bg-white">
+    @if (Model.CoverImage is not null)
+    {
+        <img class="aspect-[4/5] w-full bg-sand object-cover transition duration-500 group-hover:scale-[1.02]"
+             src="@Model.CoverImage.ThumbnailUrl"
+             srcset="@Model.CoverImage.ThumbnailUrl 480w, @Model.CoverImage.LargeUrl 1600w"
+             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+             width="@Model.CoverImage.Width"
+             height="@Model.CoverImage.Height"
+             alt="@Model.CoverImage.AltText"
+             loading="lazy"
+             decoding="async" />
+    }
+    <div class="p-6">
+        <p class="eyebrow">@Model.OlfactoryFamily</p>
+        <h2 class="mt-3 font-serif text-3xl">@Model.Name</h2>
+        <p class="mt-3 line-clamp-3 text-sm leading-6 text-stone-600">@Model.ShortDescription</p>
+        <div class="mt-6 flex items-center justify-between gap-4">
+            <p class="text-sm font-semibold">A partir de @Model.StartingPrice.ToString("C")</p>
+            <a class="text-sm font-semibold text-copper underline-offset-4 group-hover:underline"
+               asp-controller="Perfumes"
+               asp-action="Details"
+               asp-route-slug="@Model.Slug">Conhecer</a>
+        </div>
+    </div>
+</article>

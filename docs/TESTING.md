@@ -61,6 +61,11 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - extensão disfarçada, tamanho excessivo, dimensão excessiva e traversal são rejeitados;
 - troca de capa, reordenação e remoção mantêm a galeria consistente;
 - conflito de upload remove os arquivos órfãos gerados antes da falha no banco.
+- home exibe somente produtos publicados e explicitamente destacados;
+- variante esgotada pode ser selecionada sem JavaScript e permanece identificada como indisponível;
+- canonical ignora filtros/variante e Open Graph usa a imagem processada com dimensões coerentes;
+- JSON-LD contém `Product`, ofertas e disponibilidade derivada do estoque;
+- slug antigo responde 301 e produto arquivado responde 404.
 
 ### Testes manuais e homologação
 

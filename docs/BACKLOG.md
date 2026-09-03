@@ -156,12 +156,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [x] Implementar query paginada de catálogo e filtros essenciais.
-- [ ] Implementar página `/perfumes/{slug}` com seleção de variante.
-- [ ] Implementar home e destaques conforme conteúdo aprovado.
-- [ ] Gerar title, description, canonical, Open Graph e JSON-LD.
+- [x] Implementar página `/perfumes/{slug}` com seleção de variante.
+- [x] Implementar home e destaques conforme conteúdo aprovado.
+- [x] Gerar title, description, canonical, Open Graph e JSON-LD.
 - [x] Implementar 404 e histórico/redirect 301 de slug.
 - [x] Aplicar imagens responsivas e acessibilidade básica.
-- [ ] Testar produto inativo, sem estoque, slug antigo e metadados.
+- [x] Testar produto inativo, sem estoque, slug antigo e metadados.
 
 ## EPIC F4 — Carrinho e cupons
 

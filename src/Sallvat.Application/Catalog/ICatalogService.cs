@@ -8,6 +8,10 @@ public interface ICatalogService
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CatalogProductSummary>> ListFeaturedAsync(
+        int maximumItems,
+        CancellationToken cancellationToken = default);
+
     Task<CatalogLookupResult> FindPublishedAsync(
         string slug,
         CancellationToken cancellationToken = default);

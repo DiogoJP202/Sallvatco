@@ -1,5 +1,7 @@
+@model HomePageViewModel
 @{
     ViewData["Title"] = "Início";
+    ViewData["Description"] = "Perfumes artesanais Sallvat & Co., apresentados com clareza, cuidado e identidade autoral.";
 }
 
 <section class="relative overflow-hidden border-b border-stone-300/70">
@@ -31,6 +33,27 @@
         </aside>
     </div>
 </section>
+
+@if (Model.FeaturedProducts.Count > 0)
+{
+    <section class="border-b border-stone-300/70 bg-white" aria-labelledby="destaques-title">
+        <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
+            <div class="flex flex-wrap items-end justify-between gap-5">
+                <div>
+                    <p class="eyebrow">Seleção da curadoria</p>
+                    <h2 id="destaques-title" class="mt-4 font-serif text-4xl sm:text-5xl">Perfumes em destaque</h2>
+                </div>
+                <a class="text-sm font-semibold text-copper underline-offset-4 hover:underline" asp-controller="Perfumes" asp-action="Index">Ver catálogo completo</a>
+            </div>
+            <div class="mt-10 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach (var product in Model.FeaturedProducts)
+                {
+                    <partial name="_ProductCard" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+}
 
 <section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10" aria-labelledby="principios-title">
     <p class="eyebrow">O que guia a construção</p>

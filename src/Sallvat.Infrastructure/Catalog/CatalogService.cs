@@ -40,17 +40,7 @@ internal sealed class CatalogService(
             ? null
             : family.Trim();
 
-        var publicProducts = dbContext.Products
-            .AsNoTracking()
-            .Where(product => product.Status == ProductStatus.Published)
-            .Where(product => dbContext.ProductVariants.Any(variant =>
-                variant.ProductId == product.Id
-                && variant.IsActive
-                && variant.Price > 0
-                && variant.WeightKg > 0
-                && variant.HeightCm > 0
-                && variant.WidthCm > 0
-                && variant.LengthCm > 0));
+        var publicProducts = PublishedProducts();
 
         var families = await publicProducts
             .Where(product => product.OlfactoryFamily != string.Empty)
@@ -70,63 +60,13 @@ internal sealed class CatalogService(
             1,
             (int)Math.Ceiling((double)totalItems / pageSize));
         page = Math.Min(page, totalPages);
-        var itemRows = await publicProducts
+        var items = await LoadSummariesAsync(
+            publicProducts
             .OrderByDescending(product => product.IsFeatured)
             .ThenBy(product => product.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(product => new
-            {
-                product.Id,
-                product.Name,
-                product.Slug,
-                product.ShortDescription,
-                product.OlfactoryFamily,
-                StartingPrice = dbContext.ProductVariants
-                    .Where(variant =>
-                        variant.ProductId == product.Id
-                        && variant.IsActive
-                        && variant.Price > 0
-                        && variant.WeightKg > 0
-                        && variant.HeightCm > 0
-                        && variant.WidthCm > 0
-                        && variant.LengthCm > 0)
-                    .Min(variant => variant.Price),
-                Cover = dbContext.ProductImages
-                    .Where(image =>
-                        image.ProductId == product.Id && image.IsCover)
-                    .Select(image => new
-                    {
-                        image.Id,
-                        image.StorageKey,
-                        image.AltText,
-                        image.Width,
-                        image.Height,
-                        image.Position,
-                        image.IsCover,
-                    })
-                    .FirstOrDefault(),
-            })
-            .ToListAsync(cancellationToken);
-        var items = itemRows
-            .Select(row => new CatalogProductSummary(
-                row.Id,
-                row.Name,
-                row.Slug,
-                row.ShortDescription,
-                row.OlfactoryFamily,
-                row.StartingPrice,
-                row.Cover is null
-                    ? null
-                    : ToCatalogImage(
-                        row.Cover.Id,
-                        row.Cover.StorageKey,
-                        row.Cover.AltText,
-                        row.Cover.Width,
-                        row.Cover.Height,
-                        row.Cover.Position,
-                        row.Cover.IsCover)))
-            .ToList();
+                .Skip((page - 1) * pageSize),
+            pageSize,
+            cancellationToken);
 
         return new CatalogPage(
             items,
@@ -136,6 +76,17 @@ internal sealed class CatalogService(
             pageSize,
             totalItems);
     }
+
+    public Task<IReadOnlyList<CatalogProductSummary>> ListFeaturedAsync(
+        int maximumItems,
+        CancellationToken cancellationToken = default) =>
+        LoadSummariesAsync(
+            PublishedProducts()
+                .Where(product => product.IsFeatured)
+                .OrderByDescending(product => product.PublishedAtUtc)
+                .ThenBy(product => product.Name),
+            Math.Clamp(maximumItems, 1, 6),
+            cancellationToken);
 
     public async Task<CatalogLookupResult> FindPublishedAsync(
         string slug,
@@ -1156,6 +1107,82 @@ internal sealed class CatalogService(
             product.Occasions,
             product.Season,
             product.Period);
+
+    private IQueryable<Product> PublishedProducts() =>
+        dbContext.Products
+            .AsNoTracking()
+            .Where(product => product.Status == ProductStatus.Published)
+            .Where(product => dbContext.ProductVariants.Any(variant =>
+                variant.ProductId == product.Id
+                && variant.IsActive
+                && variant.Price > 0
+                && variant.WeightKg > 0
+                && variant.HeightCm > 0
+                && variant.WidthCm > 0
+                && variant.LengthCm > 0));
+
+    private async Task<IReadOnlyList<CatalogProductSummary>>
+        LoadSummariesAsync(
+            IQueryable<Product> products,
+            int maximumItems,
+            CancellationToken cancellationToken)
+    {
+        var rows = await products
+            .Take(maximumItems)
+            .Select(product => new
+            {
+                product.Id,
+                product.Name,
+                product.Slug,
+                product.ShortDescription,
+                product.OlfactoryFamily,
+                StartingPrice = dbContext.ProductVariants
+                    .Where(variant =>
+                        variant.ProductId == product.Id
+                        && variant.IsActive
+                        && variant.Price > 0
+                        && variant.WeightKg > 0
+                        && variant.HeightCm > 0
+                        && variant.WidthCm > 0
+                        && variant.LengthCm > 0)
+                    .Min(variant => variant.Price),
+                Cover = dbContext.ProductImages
+                    .Where(image =>
+                        image.ProductId == product.Id && image.IsCover)
+                    .Select(image => new
+                    {
+                        image.Id,
+                        image.StorageKey,
+                        image.AltText,
+                        image.Width,
+                        image.Height,
+                        image.Position,
+                        image.IsCover,
+                    })
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(row => new CatalogProductSummary(
+                row.Id,
+                row.Name,
+                row.Slug,
+                row.ShortDescription,
+                row.OlfactoryFamily,
+                row.StartingPrice,
+                row.Cover is null
+                    ? null
+                    : ToCatalogImage(
+                        row.Cover.Id,
+                        row.Cover.StorageKey,
+                        row.Cover.AltText,
+                        row.Cover.Width,
+                        row.Cover.Height,
+                        row.Cover.Position,
+                        row.Cover.IsCover)))
+            .ToList();
+    }
 
     private async Task<IReadOnlyList<CatalogImage>> LoadImagesAsync(
         long productId,

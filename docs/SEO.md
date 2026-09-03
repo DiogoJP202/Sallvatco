@@ -31,6 +31,18 @@ Slugs são minúsculos, ASCII, com hífens e únicos. Mudança de slug publicado
 
 Não gerar texto, benefícios, avaliações ou disponibilidade que não existam.
 
+### Estado implementado na Fase 3
+
+- home, catálogo e produto recebem canonical absoluto a partir da origem pública validada no startup;
+- parâmetros de família, paginação e variante não entram no canonical;
+- páginas públicas com canonical recebem Open Graph; produto inclui imagem WebP, texto alternativo e dimensões da versão grande;
+- Development, Testing e Staging emitem `noindex,nofollow`; conta, Admin, carrinho e checkout também não indexam em Production;
+- produto publicado emite JSON-LD `Product` com marca, imagens e uma `Offer` por variante;
+- preço, moeda, SKU e `InStock`/`OutOfStock` vêm da mesma projeção exibida na página;
+- seleção de variante usa links GET rastreáveis e funciona sem JavaScript.
+
+Sitemap, `robots.txt` de Production, conteúdo institucional definitivo e validação no Search Console permanecem para a etapa de entrada em produção.
+
 ## Dados estruturados
 
 Página de produto usa JSON-LD `Product` e `Offer`:

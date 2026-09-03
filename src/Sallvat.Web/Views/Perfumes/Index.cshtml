@@ -44,31 +44,7 @@
         <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             @foreach (var product in Model.Items)
             {
-                <article class="group overflow-hidden rounded-3xl border border-stone-300 bg-white">
-                    @if (product.CoverImage is not null)
-                    {
-                        <img class="aspect-[4/5] w-full bg-sand object-cover transition duration-500 group-hover:scale-[1.02]"
-                             src="@product.CoverImage.ThumbnailUrl"
-                             srcset="@product.CoverImage.ThumbnailUrl 480w, @product.CoverImage.LargeUrl 1600w"
-                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                             width="@product.CoverImage.Width"
-                             height="@product.CoverImage.Height"
-                             alt="@product.CoverImage.AltText"
-                             loading="lazy"
-                             decoding="async" />
-                    }
-                    <div class="p-6">
-                        <p class="eyebrow">@product.OlfactoryFamily</p>
-                        <h2 class="mt-3 font-serif text-3xl">@product.Name</h2>
-                        <p class="mt-3 line-clamp-3 text-sm leading-6 text-stone-600">@product.ShortDescription</p>
-                        <div class="mt-6 flex items-center justify-between gap-4">
-                            <p class="text-sm font-semibold">A partir de @product.StartingPrice.ToString("C")</p>
-                            <a class="text-sm font-semibold text-copper underline-offset-4 group-hover:underline"
-                               asp-action="Details"
-                               asp-route-slug="@product.Slug">Conhecer</a>
-                        </div>
-                    </div>
-                </article>
+                <partial name="_ProductCard" model="product" />
             }
         </div>
 
