@@ -128,13 +128,13 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [x] Criar `ProductImage` e configuração.
-- [ ] Definir e implementar `IImageStorage` local.
-- [ ] Selecionar biblioteca de imagem após revisão de licença e segurança.
-- [ ] Validar tamanho, extensão, magic bytes, dimensões e decodificação.
-- [ ] Remover metadados e gerar variantes WebP.
-- [ ] Implementar upload, ordenação, capa e remoção compensável.
-- [ ] Configurar entrega/cache/headers no ambiente local.
-- [ ] Testar arquivo disfarçado, bomba de dimensão, traversal, órfão e concorrência.
+- [x] Definir e implementar `IImageStorage` local.
+- [x] Selecionar biblioteca de imagem após revisão de licença e segurança.
+- [x] Validar tamanho, extensão, magic bytes, dimensões e decodificação.
+- [x] Remover metadados e gerar variantes WebP.
+- [x] Implementar upload, ordenação, capa e remoção compensável.
+- [x] Configurar entrega/cache/headers no ambiente local.
+- [x] Testar arquivo disfarçado, bomba de dimensão, traversal, órfão e concorrência.
 
 ### STORY F3-S3 — Estoque é ajustado com histórico e concorrência
 
@@ -160,7 +160,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Implementar home e destaques conforme conteúdo aprovado.
 - [ ] Gerar title, description, canonical, Open Graph e JSON-LD.
 - [x] Implementar 404 e histórico/redirect 301 de slug.
-- [ ] Aplicar imagens responsivas e acessibilidade básica.
+- [x] Aplicar imagens responsivas e acessibilidade básica.
 - [ ] Testar produto inativo, sem estoque, slug antigo e metadados.
 
 ## EPIC F4 — Carrinho e cupons

@@ -5,6 +5,7 @@ using Sallvat.Domain.Catalog;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.IntegrationTests.Web;
+using SkiaSharp;
 
 namespace Sallvat.IntegrationTests.Catalog;
 
@@ -69,7 +70,7 @@ public sealed class CatalogServiceTests
             VariantInput("SAL-PUBLICADO"),
             Operation(actorId));
         Assert.True(variant.Succeeded);
-        await AddImageAsync(application, productId);
+        await AddImageAsync(application, productId, actorId);
 
         product = await service.GetAdminAsync(productId);
         var published = await service.PublishAsync(
@@ -201,7 +202,7 @@ public sealed class CatalogServiceTests
             productId,
             VariantInput("SAL-SLUG"),
             Operation(actorId));
-        await AddImageAsync(application, productId);
+        await AddImageAsync(application, productId, actorId);
         var product = await service.GetAdminAsync(productId);
         await service.PublishAsync(
             productId,
@@ -218,6 +219,213 @@ public sealed class CatalogServiceTests
 
         Assert.Null(lookup.Product);
         Assert.Equal("slug-novo", lookup.RedirectSlug);
+    }
+
+    [Fact]
+    public async Task ValidImageIsConvertedStoredAndServedWithImmutableCache()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var actorId = await CreateActorAsync(application);
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var created = await service.CreateProductAsync(
+            ProductInput("imagem-valida"),
+            Operation(actorId));
+        var productId = Assert.IsType<long>(created.EntityId);
+        var product = await service.GetAdminAsync(productId);
+        var bytes = CreatePng(800, 1000);
+        using var content = new MemoryStream(bytes);
+
+        var added = await service.AddImageAsync(
+            productId,
+            product!.ConcurrencyVersion,
+            new ProductImageUpload(content, bytes.Length, "frasco.png"),
+            "Frasco âmbar sobre fundo claro",
+            Operation(actorId));
+
+        Assert.True(added.Succeeded);
+        product = await service.GetAdminAsync(productId);
+        var image = Assert.Single(product!.Images);
+        Assert.True(image.IsCover);
+        Assert.Equal(800, image.Width);
+        Assert.Equal(1000, image.Height);
+        Assert.Equal(3, StoredFileCount(application));
+
+        using var client = application.CreateClient();
+        using var response = await client.GetAsync(image.ThumbnailUrl);
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Equal("image/webp", response.Content.Headers.ContentType?.MediaType);
+        Assert.True(response.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromDays(365), response.Headers.CacheControl?.MaxAge);
+        Assert.Contains(
+            "immutable",
+            response.Headers.CacheControl?.Extensions.Select(
+                extension => extension.Name) ?? []);
+        Assert.Equal(
+            "nosniff",
+            response.Headers.GetValues("X-Content-Type-Options").Single());
+        var thumbnailBytes = await response.Content.ReadAsByteArrayAsync();
+        using var thumbnailData = SKData.CreateCopy(thumbnailBytes);
+        using var thumbnailCodec = SKCodec.Create(thumbnailData);
+        Assert.NotNull(thumbnailCodec);
+        Assert.Equal(SKEncodedImageFormat.Webp, thumbnailCodec.EncodedFormat);
+        Assert.Equal(480, thumbnailCodec.Info.Width);
+        Assert.Equal(600, thumbnailCodec.Info.Height);
+    }
+
+    [Fact]
+    public async Task DisguisedImageIsRejectedWithoutStoredFiles()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var actorId = await CreateActorAsync(application);
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var created = await service.CreateProductAsync(
+            ProductInput("imagem-disfarcada"),
+            Operation(actorId));
+        var productId = Assert.IsType<long>(created.EntityId);
+        var product = await service.GetAdminAsync(productId);
+        var bytes = CreatePng(20, 20);
+        using var content = new MemoryStream(bytes);
+
+        var result = await service.AddImageAsync(
+            productId,
+            product!.ConcurrencyVersion,
+            new ProductImageUpload(content, bytes.Length, "ataque.jpg"),
+            "Imagem inválida",
+            Operation(actorId));
+
+        Assert.Equal(CatalogMutationStatus.Invalid, result.Status);
+        Assert.Equal(0, StoredFileCount(application));
+    }
+
+    [Fact]
+    public async Task ExcessiveDimensionsLengthAndTraversalAreRejected()
+    {
+        await using var application = new AccountWebApplicationFactory(
+            maximumPixelCount: 1_000_000);
+        await application.InitializeDatabaseAsync();
+        var actorId = await CreateActorAsync(application);
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var storage = scope.ServiceProvider.GetRequiredService<IImageStorage>();
+        var created = await service.CreateProductAsync(
+            ProductInput("limites-imagem"),
+            Operation(actorId));
+        var productId = Assert.IsType<long>(created.EntityId);
+        var product = await service.GetAdminAsync(productId);
+        var bytes = CreatePng(1100, 1000);
+        using var content = new MemoryStream(bytes);
+
+        var dimensionResult = await service.AddImageAsync(
+            productId,
+            product!.ConcurrencyVersion,
+            new ProductImageUpload(content, bytes.Length, "grande.png"),
+            "Imagem grande",
+            Operation(actorId));
+        using var shortContent = new MemoryStream(CreatePng(10, 10));
+        var lengthResult = await service.AddImageAsync(
+            productId,
+            product.ConcurrencyVersion,
+            new ProductImageUpload(
+                shortContent,
+                10 * 1024 * 1024L + 1,
+                "pesada.png"),
+            "Imagem pesada",
+            Operation(actorId));
+        using var traversalContent = new MemoryStream([1, 2, 3]);
+
+        Assert.Equal(CatalogMutationStatus.Invalid, dimensionResult.Status);
+        Assert.Equal(CatalogMutationStatus.Invalid, lengthResult.Status);
+        await Assert.ThrowsAsync<ArgumentException>(() => storage.WriteAsync(
+            "../fora.webp",
+            traversalContent));
+        Assert.Equal(0, StoredFileCount(application));
+    }
+
+    [Fact]
+    public async Task ImageOrderCoverAndRemovalRemainConsistent()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var actorId = await CreateActorAsync(application);
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var created = await service.CreateProductAsync(
+            ProductInput("galeria"),
+            Operation(actorId));
+        var productId = Assert.IsType<long>(created.EntityId);
+        await AddImageAsync(application, productId, actorId, "Primeira");
+        await AddImageAsync(application, productId, actorId, "Segunda");
+        var product = await service.GetAdminAsync(productId);
+        var first = product!.Images.Single(image => image.AltText == "Primeira");
+        var second = product.Images.Single(image => image.AltText == "Segunda");
+
+        var updated = await service.UpdateImagesAsync(
+            productId,
+            product.ConcurrencyVersion,
+            [
+                new(first.Id, "Primeira revisada", 1, false),
+                new(second.Id, "Segunda revisada", 0, true),
+            ],
+            Operation(actorId));
+        Assert.True(updated.Succeeded);
+
+        product = await service.GetAdminAsync(productId);
+        Assert.Equal(second.Id, product!.Images[0].Id);
+        Assert.True(product.Images[0].IsCover);
+        var removed = await service.RemoveImageAsync(
+            productId,
+            second.Id,
+            product.ConcurrencyVersion,
+            Operation(actorId));
+
+        Assert.True(removed.Succeeded);
+        product = await service.GetAdminAsync(productId);
+        var remaining = Assert.Single(product!.Images);
+        Assert.Equal(first.Id, remaining.Id);
+        Assert.True(remaining.IsCover);
+        Assert.Equal(0, remaining.Position);
+        Assert.Equal(3, StoredFileCount(application));
+    }
+
+    [Fact]
+    public async Task StaleImageUploadRemovesItsOrphanedFiles()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var actorId = await CreateActorAsync(application);
+        long productId;
+        Guid staleVersion;
+        using (var scope = application.Services.CreateScope())
+        {
+            var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+            var created = await service.CreateProductAsync(
+                ProductInput("imagem-concorrente"),
+                Operation(actorId));
+            productId = Assert.IsType<long>(created.EntityId);
+            staleVersion = (await service.GetAdminAsync(productId))!
+                .ConcurrencyVersion;
+        }
+
+        var first = await UploadImageAsync(
+            application,
+            productId,
+            staleVersion,
+            actorId,
+            "Primeira");
+        var stale = await UploadImageAsync(
+            application,
+            productId,
+            staleVersion,
+            actorId,
+            "Obsoleta");
+
+        Assert.True(first.Succeeded);
+        Assert.Equal(CatalogMutationStatus.ConcurrencyConflict, stale.Status);
+        Assert.Equal(3, StoredFileCount(application));
     }
 
     private static ProductEditorInput ProductInput(string slug) =>
@@ -265,19 +473,57 @@ public sealed class CatalogServiceTests
 
     private static async Task AddImageAsync(
         AccountWebApplicationFactory application,
-        long productId)
+        long productId,
+        Guid actorId,
+        string altText = "Perfume Teste")
     {
         using var scope = application.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
-        context.ProductImages.Add(new ProductImage(
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var version = (await service.GetAdminAsync(productId))!
+            .ConcurrencyVersion;
+        var result = await UploadImageAsync(
+            application,
             productId,
-            $"products/{productId}/cover.webp",
-            "Perfume Teste",
-            1200,
-            1500,
-            0,
-            true,
-            DateTimeOffset.UtcNow));
-        await context.SaveChangesAsync();
+            version,
+            actorId,
+            altText);
+        Assert.True(result.Succeeded);
     }
+
+    private static async Task<CatalogMutationResult> UploadImageAsync(
+        AccountWebApplicationFactory application,
+        long productId,
+        Guid version,
+        Guid actorId,
+        string altText)
+    {
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var bytes = CreatePng(40, 50);
+        using var content = new MemoryStream(bytes);
+        return await service.AddImageAsync(
+            productId,
+            version,
+            new ProductImageUpload(content, bytes.Length, "produto.png"),
+            altText,
+            Operation(actorId));
+    }
+
+    private static byte[] CreatePng(int width, int height)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        bitmap.Erase(new SKColor(135, 78, 52));
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+        return encoded.ToArray();
+    }
+
+    private static int StoredFileCount(
+        AccountWebApplicationFactory application) =>
+        Directory.Exists(application.ImageStoragePath)
+            ? Directory.GetFiles(
+                application.ImageStoragePath,
+                "*.webp",
+                SearchOption.AllDirectories).Length
+            : 0;
 }

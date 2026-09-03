@@ -45,9 +45,18 @@
             @foreach (var product in Model.Items)
             {
                 <article class="group overflow-hidden rounded-3xl border border-stone-300 bg-white">
-                    <div class="flex aspect-[4/5] items-center justify-center bg-sand/60" aria-hidden="true">
-                        <div class="h-32 w-24 rounded-t-xl rounded-b-[2rem] border border-copper/40 bg-white/50 shadow-lg"></div>
-                    </div>
+                    @if (product.CoverImage is not null)
+                    {
+                        <img class="aspect-[4/5] w-full bg-sand object-cover transition duration-500 group-hover:scale-[1.02]"
+                             src="@product.CoverImage.ThumbnailUrl"
+                             srcset="@product.CoverImage.ThumbnailUrl 480w, @product.CoverImage.LargeUrl 1600w"
+                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                             width="@product.CoverImage.Width"
+                             height="@product.CoverImage.Height"
+                             alt="@product.CoverImage.AltText"
+                             loading="lazy"
+                             decoding="async" />
+                    }
                     <div class="p-6">
                         <p class="eyebrow">@product.OlfactoryFamily</p>
                         <h2 class="mt-3 font-serif text-3xl">@product.Name</h2>

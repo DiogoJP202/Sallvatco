@@ -308,6 +308,119 @@ public sealed class ProductsController(ICatalogService catalogService) :
                 ? "Produto destacado."
                 : "Produto removido dos destaques.");
 
+    [HttpGet("{productId:long}/imagens/nova")]
+    public async Task<IActionResult> AddImage(
+        long productId,
+        CancellationToken cancellationToken)
+    {
+        var product = await catalogService.GetAdminAsync(
+            productId,
+            cancellationToken);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        ViewData["ProductName"] = product.Product.Name;
+        return View(new ProductImageUploadViewModel
+        {
+            ProductId = productId,
+            ConcurrencyVersion = product.ConcurrencyVersion,
+        });
+    }
+
+    [HttpPost("{productId:long}/imagens/nova")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 11 * 1024 * 1024)]
+    public async Task<IActionResult> AddImage(
+        long productId,
+        ProductImageUploadViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (productId != model.ProductId)
+        {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid || model.Image is null)
+        {
+            await LoadProductNameAsync(productId, cancellationToken);
+            return View(model);
+        }
+
+        await using var content = model.Image.OpenReadStream();
+        var result = await catalogService.AddImageAsync(
+            productId,
+            model.ConcurrencyVersion,
+            new ProductImageUpload(
+                content,
+                model.Image.Length,
+                model.Image.FileName),
+            model.AltText,
+            Operation(),
+            cancellationToken);
+        if (!result.Succeeded)
+        {
+            AddErrors(result);
+            await LoadProductNameAsync(productId, cancellationToken);
+            return View(model);
+        }
+
+        TempData["StatusMessage"] = "Imagem processada e adicionada.";
+        return RedirectToAction(nameof(Edit), new { id = productId });
+    }
+
+    [HttpPost("{productId:long}/imagens/organizar")]
+    public async Task<IActionResult> UpdateImages(
+        long productId,
+        ProductImageManagementViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (productId != model.ProductId)
+        {
+            return BadRequest();
+        }
+
+        CatalogMutationResult result;
+        if (!ModelState.IsValid)
+        {
+            result = CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Revise o texto alternativo, a capa e as posições.");
+        }
+        else
+        {
+            result = await catalogService.UpdateImagesAsync(
+                productId,
+                model.ConcurrencyVersion,
+                model.ToInput(),
+                Operation(),
+                cancellationToken);
+        }
+
+        TempData[result.Succeeded ? "StatusMessage" : "ErrorMessage"] =
+            result.Succeeded
+                ? "Imagens reorganizadas."
+                : string.Join(" ", result.Errors);
+        return RedirectToAction(nameof(Edit), new { id = productId });
+    }
+
+    [HttpPost("{productId:long}/imagens/{imageId:long}/remover")]
+    public async Task<IActionResult> RemoveImage(
+        long productId,
+        long imageId,
+        Guid concurrencyVersion,
+        CancellationToken cancellationToken) =>
+        await ChangeStateAsync(
+            productId,
+            catalogService.RemoveImageAsync(
+                productId,
+                imageId,
+                concurrencyVersion,
+                Operation(),
+                cancellationToken),
+            "Imagem removida.");
+
     private AdminOperationContext Operation()
     {
         var actorValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -342,6 +455,13 @@ public sealed class ProductsController(ICatalogService catalogService) :
         ViewData["ProductDetails"] = await catalogService.GetAdminAsync(
             id,
             cancellationToken);
+
+    private async Task LoadProductNameAsync(
+        long id,
+        CancellationToken cancellationToken) =>
+        ViewData["ProductName"] = (await catalogService.GetAdminAsync(
+            id,
+            cancellationToken))?.Product.Name;
 
     private void AddErrors(CatalogMutationResult result)
     {

@@ -14,6 +14,11 @@ public sealed class AccountWebApplicationFactory :
 {
     private readonly string databaseName = $"sallvat-{Guid.NewGuid():N}";
 
+    public AccountWebApplicationFactory(long? maximumPixelCount = null)
+        : base(maximumPixelCount: maximumPixelCount)
+    {
+    }
+
     public FakeAccountEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

@@ -57,6 +57,10 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - ajuste de estoque gera movimento e auditoria e não aceita saldo inválido;
 - mudança de slug preserva redirect permanente para a URL canônica;
 - catálogo vazio responde com estado editorial seguro e o Admin exige autorização.
+- upload válido produz três WebP e mídia com `nosniff`/cache imutável;
+- extensão disfarçada, tamanho excessivo, dimensão excessiva e traversal são rejeitados;
+- troca de capa, reordenação e remoção mantêm a galeria consistente;
+- conflito de upload remove os arquivos órfãos gerados antes da falha no banco.
 
 ### Testes manuais e homologação
 

@@ -8,6 +8,7 @@ using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Catalog;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Storage;
 using Sallvat.Infrastructure.Time;
 
 namespace Sallvat.Infrastructure;
@@ -50,6 +51,8 @@ public static class DependencyInjection
         });
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICatalogService, CatalogService>();
+        services.AddSingleton<IImageStorage, LocalImageStorage>();
+        services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
         services.AddSingleton<IClock, SystemClock>();
 
         return services;

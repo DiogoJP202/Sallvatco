@@ -9,8 +9,18 @@ public sealed record CatalogProductSummary(
     string ShortDescription,
     string OlfactoryFamily,
     decimal StartingPrice,
-    string? CoverStorageKey,
-    string? CoverAltText);
+    CatalogImage? CoverImage);
+
+public sealed record CatalogImage(
+    long Id,
+    string AltText,
+    int Width,
+    int Height,
+    int Position,
+    bool IsCover,
+    string OriginalUrl,
+    string LargeUrl,
+    string ThumbnailUrl);
 
 public sealed record CatalogPage(
     IReadOnlyList<CatalogProductSummary> Items,
@@ -49,6 +59,7 @@ public sealed record CatalogProductDetails(
     string Occasions,
     string Season,
     string Period,
+    IReadOnlyList<CatalogImage> Images,
     IReadOnlyList<CatalogVariant> Variants);
 
 public sealed record CatalogLookupResult(
@@ -115,8 +126,19 @@ public sealed record AdminProductDetails(
     ProductStatus Status,
     bool IsFeatured,
     Guid ConcurrencyVersion,
-    int ImageCount,
+    IReadOnlyList<CatalogImage> Images,
     IReadOnlyList<AdminVariant> Variants);
+
+public sealed record ProductImageUpload(
+    Stream Content,
+    long Length,
+    string FileName);
+
+public sealed record ProductImagePresentationInput(
+    long ImageId,
+    string AltText,
+    int Position,
+    bool IsCover);
 
 public sealed record InventoryMovementView(
     long Id,

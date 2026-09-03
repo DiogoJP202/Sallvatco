@@ -206,6 +206,17 @@ public sealed class Product
         Touch(updatedAtUtc);
     }
 
+    public void RecordImageChange(DateTimeOffset updatedAtUtc)
+    {
+        if (Status == ProductStatus.Archived)
+        {
+            throw new InvalidOperationException(
+                "Archived products cannot have their images changed.");
+        }
+
+        Touch(updatedAtUtc);
+    }
+
     private void ApplyEditorialDetails(
         string? shortDescription,
         string? description,

@@ -1,20 +1,32 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Sallvat.Application.Catalog;
 using Sallvat.Application.Time;
 using Sallvat.Domain.Auditing;
 using Sallvat.Domain.Catalog;
 using Sallvat.Domain.Inventory;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Storage;
 
 namespace Sallvat.Infrastructure.Catalog;
 
 internal sealed class CatalogService(
     SallvatDbContext dbContext,
-    IClock clock) : ICatalogService
+    IClock clock,
+    IImageStorage imageStorage,
+    IImageProcessor imageProcessor,
+    IOptions<ImageStorageOptions> imageOptions,
+    ILogger<CatalogService> logger) : ICatalogService
 {
     private const int MaximumPageSize = 24;
+    private static readonly Action<ILogger, string, Exception?>
+        LogUnreferencedImageDeleteFailure = LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(2101, "UnreferencedImageDeleteFailure"),
+            "Could not remove unreferenced product image {StorageKey}");
 
     public async Task<CatalogPage> ListPublishedAsync(
         string? family,
@@ -58,18 +70,19 @@ internal sealed class CatalogService(
             1,
             (int)Math.Ceiling((double)totalItems / pageSize));
         page = Math.Min(page, totalPages);
-        var items = await publicProducts
+        var itemRows = await publicProducts
             .OrderByDescending(product => product.IsFeatured)
             .ThenBy(product => product.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(product => new CatalogProductSummary(
+            .Select(product => new
+            {
                 product.Id,
                 product.Name,
                 product.Slug,
                 product.ShortDescription,
                 product.OlfactoryFamily,
-                dbContext.ProductVariants
+                StartingPrice = dbContext.ProductVariants
                     .Where(variant =>
                         variant.ProductId == product.Id
                         && variant.IsActive
@@ -79,17 +92,41 @@ internal sealed class CatalogService(
                         && variant.WidthCm > 0
                         && variant.LengthCm > 0)
                     .Min(variant => variant.Price),
-                dbContext.ProductImages
+                Cover = dbContext.ProductImages
                     .Where(image =>
                         image.ProductId == product.Id && image.IsCover)
-                    .Select(image => image.StorageKey)
+                    .Select(image => new
+                    {
+                        image.Id,
+                        image.StorageKey,
+                        image.AltText,
+                        image.Width,
+                        image.Height,
+                        image.Position,
+                        image.IsCover,
+                    })
                     .FirstOrDefault(),
-                dbContext.ProductImages
-                    .Where(image =>
-                        image.ProductId == product.Id && image.IsCover)
-                    .Select(image => image.AltText)
-                    .FirstOrDefault()))
+            })
             .ToListAsync(cancellationToken);
+        var items = itemRows
+            .Select(row => new CatalogProductSummary(
+                row.Id,
+                row.Name,
+                row.Slug,
+                row.ShortDescription,
+                row.OlfactoryFamily,
+                row.StartingPrice,
+                row.Cover is null
+                    ? null
+                    : ToCatalogImage(
+                        row.Cover.Id,
+                        row.Cover.StorageKey,
+                        row.Cover.AltText,
+                        row.Cover.Width,
+                        row.Cover.Height,
+                        row.Cover.Position,
+                        row.Cover.IsCover)))
+            .ToList();
 
         return new CatalogPage(
             items,
@@ -195,9 +232,7 @@ internal sealed class CatalogService(
                 variant.IsActive,
                 variant.ConcurrencyVersion))
             .ToListAsync(cancellationToken);
-        var imageCount = await dbContext.ProductImages.CountAsync(
-            image => image.ProductId == productId,
-            cancellationToken);
+        var images = await LoadImagesAsync(productId, cancellationToken);
 
         return new AdminProductDetails(
             product.Id,
@@ -205,7 +240,7 @@ internal sealed class CatalogService(
             product.Status,
             product.IsFeatured,
             product.ConcurrencyVersion,
-            imageCount,
+            images,
             variants);
     }
 
@@ -620,6 +655,342 @@ internal sealed class CatalogService(
         }
     }
 
+    public async Task<CatalogMutationResult> AddImageAsync(
+        long productId,
+        Guid expectedVersion,
+        ProductImageUpload upload,
+        string altText,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await dbContext.Products.SingleOrDefaultAsync(
+            item => item.Id == productId,
+            cancellationToken);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(altText)
+            || altText.Trim().Length > ProductImage.AltTextMaxLength)
+        {
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Informe um texto alternativo de até 200 caracteres.");
+        }
+
+        var imageCount = await dbContext.ProductImages.CountAsync(
+            image => image.ProductId == productId,
+            cancellationToken);
+        if (imageCount >= imageOptions.Value.MaximumImagesPerProduct)
+        {
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                $"Cada produto pode ter até {imageOptions.Value.MaximumImagesPerProduct} imagens.");
+        }
+
+        ProcessedImage processed;
+        try
+        {
+            processed = await imageProcessor.ProcessAsync(
+                upload,
+                cancellationToken);
+            dbContext.Entry(product)
+                .Property(item => item.ConcurrencyVersion)
+                .OriginalValue = expectedVersion;
+            product.RecordImageChange(clock.UtcNow);
+        }
+        catch (ImageProcessingException exception)
+        {
+            return Invalid(exception);
+        }
+        catch (ArgumentException exception)
+        {
+            return Invalid(exception);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Invalid(exception);
+        }
+
+        var baseKey = $"products/{productId}/{Guid.NewGuid():N}";
+        var storedKeys = new List<string>(3);
+        try
+        {
+            await WriteImageAsync(
+                OriginalKey(baseKey),
+                processed.Original,
+                storedKeys,
+                cancellationToken);
+            await WriteImageAsync(
+                LargeKey(baseKey),
+                processed.Large,
+                storedKeys,
+                cancellationToken);
+            await WriteImageAsync(
+                ThumbnailKey(baseKey),
+                processed.Thumbnail,
+                storedKeys,
+                cancellationToken);
+
+            var lastPosition = await dbContext.ProductImages
+                .Where(image => image.ProductId == productId)
+                .Select(image => (int?)image.Position)
+                .MaxAsync(cancellationToken);
+            var image = new ProductImage(
+                productId,
+                baseKey,
+                altText,
+                processed.Width,
+                processed.Height,
+                lastPosition.GetValueOrDefault(-1) + 1,
+                imageCount == 0,
+                clock.UtcNow);
+            dbContext.ProductImages.Add(image);
+
+            await using var transaction = await BeginTransactionAsync(
+                cancellationToken);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                AddAudit(
+                    operation,
+                    "catalog.product-image.created",
+                    "ProductImage",
+                    image.Id,
+                    new { image.ProductId, image.Position, image.IsCover });
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await CommitAsync(transaction, cancellationToken);
+            }
+            catch
+            {
+                await RollbackAsync(transaction, cancellationToken);
+                throw;
+            }
+
+            return CatalogMutationResult.Success(image.Id);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await DeleteStoredKeysAsync(storedKeys, CancellationToken.None);
+            return Conflict();
+        }
+        catch (DbUpdateException)
+        {
+            await DeleteStoredKeysAsync(storedKeys, CancellationToken.None);
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Não foi possível registrar a imagem.");
+        }
+        catch
+        {
+            await DeleteStoredKeysAsync(storedKeys, CancellationToken.None);
+            throw;
+        }
+    }
+
+    public async Task<CatalogMutationResult> UpdateImagesAsync(
+        long productId,
+        Guid expectedVersion,
+        IReadOnlyList<ProductImagePresentationInput> images,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(images);
+        var product = await dbContext.Products.SingleOrDefaultAsync(
+            item => item.Id == productId,
+            cancellationToken);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var storedImages = await dbContext.ProductImages
+            .Where(image => image.ProductId == productId)
+            .OrderBy(image => image.Position)
+            .ToListAsync(cancellationToken);
+        if (storedImages.Count == 0
+            || images.Count != storedImages.Count
+            || images.Select(image => image.ImageId).Distinct().Count()
+                != storedImages.Count
+            || images.Any(input => storedImages.All(
+                image => image.Id != input.ImageId)))
+        {
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "A lista de imagens está desatualizada. Recarregue a página.");
+        }
+
+        if (images.Count(image => image.IsCover) != 1
+            || images.Select(image => image.Position).Distinct().Count()
+                != images.Count
+            || !images.Select(image => image.Position)
+                .Order()
+                .SequenceEqual(Enumerable.Range(0, images.Count)))
+        {
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Defina uma única capa e posições contínuas a partir de zero.");
+        }
+
+        await using var transaction = await BeginTransactionAsync(
+            cancellationToken);
+        try
+        {
+            dbContext.Entry(product)
+                .Property(item => item.ConcurrencyVersion)
+                .OriginalValue = expectedVersion;
+            product.RecordImageChange(clock.UtcNow);
+
+            foreach (var image in storedImages)
+            {
+                var input = images.Single(item => item.ImageId == image.Id);
+                image.UpdatePresentation(input.AltText, input.Position, false);
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            foreach (var image in storedImages)
+            {
+                var input = images.Single(item => item.ImageId == image.Id);
+                image.UpdatePresentation(
+                    input.AltText,
+                    input.Position,
+                    input.IsCover);
+            }
+
+            AddAudit(
+                operation,
+                "catalog.product-images.updated",
+                "Product",
+                productId,
+                images.Select(image => new
+                {
+                    image.ImageId,
+                    image.Position,
+                    image.IsCover,
+                }));
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await CommitAsync(transaction, cancellationToken);
+            return CatalogMutationResult.Success(productId);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return Conflict();
+        }
+        catch (ArgumentException exception)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return Invalid(exception);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return Invalid(exception);
+        }
+        catch (DbUpdateException)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Não foi possível reorganizar as imagens.");
+        }
+    }
+
+    public async Task<CatalogMutationResult> RemoveImageAsync(
+        long productId,
+        long imageId,
+        Guid expectedVersion,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await dbContext.Products.SingleOrDefaultAsync(
+            item => item.Id == productId,
+            cancellationToken);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var images = await dbContext.ProductImages
+            .Where(image => image.ProductId == productId)
+            .OrderBy(image => image.Position)
+            .ToListAsync(cancellationToken);
+        var removed = images.SingleOrDefault(image => image.Id == imageId);
+        if (removed is null)
+        {
+            return NotFound();
+        }
+
+        if (product.Status == ProductStatus.Published && images.Count == 1)
+        {
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Um produto publicado deve manter ao menos uma imagem.");
+        }
+
+        var wasCover = removed.IsCover;
+        await using var transaction = await BeginTransactionAsync(
+            cancellationToken);
+        try
+        {
+            dbContext.Entry(product)
+                .Property(item => item.ConcurrencyVersion)
+                .OriginalValue = expectedVersion;
+            product.RecordImageChange(clock.UtcNow);
+            if (wasCover)
+            {
+                removed.UpdatePresentation(
+                    removed.AltText,
+                    removed.Position,
+                    false);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            dbContext.ProductImages.Remove(removed);
+            var remaining = images.Where(image => image.Id != imageId).ToList();
+            for (var position = 0; position < remaining.Count; position++)
+            {
+                var image = remaining[position];
+                image.UpdatePresentation(
+                    image.AltText,
+                    position,
+                    wasCover && position == 0 || image.IsCover);
+            }
+
+            AddAudit(
+                operation,
+                "catalog.product-image.removed",
+                "ProductImage",
+                imageId,
+                new { ProductId = productId, WasCover = wasCover });
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await CommitAsync(transaction, cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return Conflict();
+        }
+        catch (InvalidOperationException exception)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return Invalid(exception);
+        }
+        catch (DbUpdateException)
+        {
+            await RollbackAsync(transaction, cancellationToken);
+            return CatalogMutationResult.Failure(
+                CatalogMutationStatus.Invalid,
+                "Não foi possível remover a imagem.");
+        }
+
+        await DeleteImageFilesAsync(
+            removed.StorageKey,
+            CancellationToken.None);
+        return CatalogMutationResult.Success(productId);
+    }
+
     public async Task<IReadOnlyList<InventoryMovementView>>
         ListMovementsAsync(
             long variantId,
@@ -673,6 +1044,7 @@ internal sealed class CatalogService(
                 variant.Currency,
                 variant.OnHand - variant.Reserved))
             .ToListAsync(cancellationToken);
+        var images = await LoadImagesAsync(productId, cancellationToken);
 
         return new CatalogProductDetails(
             product.Id,
@@ -690,6 +1062,7 @@ internal sealed class CatalogService(
             product.Occasions,
             product.Season,
             product.Period,
+            images,
             variants);
     }
 
@@ -783,6 +1156,97 @@ internal sealed class CatalogService(
             product.Occasions,
             product.Season,
             product.Period);
+
+    private async Task<IReadOnlyList<CatalogImage>> LoadImagesAsync(
+        long productId,
+        CancellationToken cancellationToken)
+    {
+        var images = await dbContext.ProductImages
+            .AsNoTracking()
+            .Where(image => image.ProductId == productId)
+            .OrderByDescending(image => image.IsCover)
+            .ThenBy(image => image.Position)
+            .ToListAsync(cancellationToken);
+
+        return images
+            .Select(image => ToCatalogImage(
+                image.Id,
+                image.StorageKey,
+                image.AltText,
+                image.Width,
+                image.Height,
+                image.Position,
+                image.IsCover))
+            .ToList();
+    }
+
+    private CatalogImage ToCatalogImage(
+        long id,
+        string baseKey,
+        string altText,
+        int width,
+        int height,
+        int position,
+        bool isCover) =>
+        new(
+            id,
+            altText,
+            width,
+            height,
+            position,
+            isCover,
+            imageStorage.GetPublicUrl(OriginalKey(baseKey)),
+            imageStorage.GetPublicUrl(LargeKey(baseKey)),
+            imageStorage.GetPublicUrl(ThumbnailKey(baseKey)));
+
+    private async Task WriteImageAsync(
+        string key,
+        byte[] content,
+        List<string> storedKeys,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = new MemoryStream(content, writable: false);
+        await imageStorage.WriteAsync(key, stream, cancellationToken);
+        storedKeys.Add(key);
+    }
+
+    private async Task DeleteImageFilesAsync(
+        string baseKey,
+        CancellationToken cancellationToken) =>
+        await DeleteStoredKeysAsync(
+            [
+                OriginalKey(baseKey),
+                LargeKey(baseKey),
+                ThumbnailKey(baseKey),
+            ],
+            cancellationToken);
+
+    private async Task DeleteStoredKeysAsync(
+        IEnumerable<string> keys,
+        CancellationToken cancellationToken)
+    {
+        foreach (var key in keys)
+        {
+            try
+            {
+                await imageStorage.DeleteAsync(key, cancellationToken);
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException)
+            {
+                LogUnreferencedImageDeleteFailure(logger, key, exception);
+            }
+        }
+    }
+
+    private static string OriginalKey(string baseKey) =>
+        $"{baseKey}/original.webp";
+
+    private static string LargeKey(string baseKey) =>
+        $"{baseKey}/large.webp";
+
+    private static string ThumbnailKey(string baseKey) =>
+        $"{baseKey}/thumb.webp";
 
     private Task<bool> SlugExistsAsync(
         string slug,

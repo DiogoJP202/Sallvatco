@@ -52,7 +52,7 @@ Valores iniciais, ajustáveis após teste de carga:
 | Recuperação de senha | 3 por IP e 3 por e-mail normalizado por hora, sem revelar existência. |
 | Cotação de frete | 30 por IP por minuto com cache curto. |
 | Checkout/criação de pedido | 10 por IP por 10 minutos e idempotência por tentativa. |
-| Upload administrativo | Limite de concorrência, tamanho e número por operação. |
+| Upload administrativo | 11 MB por multipart, 10 MB por arquivo, 25 megapixels, 10.000 px por dimensão e 10 imagens por produto. |
 
 Rate limiting complementa, mas não substitui Cloudflare, lockout, autorização e idempotência. Webhooks válidos podem chegar em rajada; aplicar limite de corpo e concorrência sem bloquear retries legítimos do provedor.
 
@@ -69,7 +69,7 @@ As três políticas de conta já são aplicadas pelo middleware nativo por IP. R
 
 ## Uploads
 
-Aplicar o pipeline de [STORAGE.md](STORAGE.md): limite antes da alocação, allowlist, magic bytes, decodificação, remoção de metadados, chave aleatória, diretório fora do web root e proteção contra decompression bomb/path traversal. Nunca executar ou interpretar conteúdo enviado.
+O pipeline implementado segue [STORAGE.md](STORAGE.md): autorização `Admin`, antiforgery, limite antes da alocação, allowlist de extensão, magic bytes, correspondência extensão/conteúdo, decodificação, remoção de metadados, recodificação WebP, chave aleatória, diretório fora do web root e proteção contra decompression bomb/path traversal. Nunca executar ou interpretar conteúdo enviado.
 
 ## Webhooks e idempotência
 

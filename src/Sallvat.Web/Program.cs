@@ -4,9 +4,11 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Sallvat.Application.Accounts;
@@ -14,6 +16,7 @@ using Sallvat.Application.Authorization;
 using Sallvat.Infrastructure;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Storage;
 using Sallvat.Web.Configuration;
 using Sallvat.Web.Email;
 using Sallvat.Web.Observability;
@@ -97,6 +100,49 @@ builder.Services
             && string.IsNullOrEmpty(uri.Fragment),
         $"{AccountLinkOptions.SectionName}:PublicOrigin must be an absolute HTTPS URL outside Development.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<ImageStorageOptions>()
+    .Bind(builder.Configuration.GetSection(ImageStorageOptions.SectionName))
+    .PostConfigure(options =>
+    {
+        if (!string.IsNullOrWhiteSpace(options.RootPath)
+            && !Path.IsPathFullyQualified(options.RootPath))
+        {
+            options.RootPath = Path.GetFullPath(
+                options.RootPath,
+                builder.Environment.ContentRootPath);
+        }
+    })
+    .Validate(
+        options => !string.IsNullOrWhiteSpace(options.RootPath)
+            && Path.IsPathFullyQualified(options.RootPath),
+        $"{ImageStorageOptions.SectionName}:RootPath must resolve to an absolute path.")
+    .Validate(
+        options => string.IsNullOrWhiteSpace(options.RootPath)
+            || DataProtectionPath.IsOutsideDirectory(
+                options.RootPath,
+                builder.Environment.WebRootPath
+                    ?? Path.Combine(
+                        builder.Environment.ContentRootPath,
+                        "wwwroot")),
+        $"{ImageStorageOptions.SectionName}:RootPath must be outside the web root.")
+    .Validate(
+        options => options.PublicPath.StartsWith('/')
+            && options.PublicPath.Length > 1
+            && !options.PublicPath.EndsWith('/'),
+        $"{ImageStorageOptions.SectionName}:PublicPath must be an absolute request path without a trailing slash.")
+    .Validate(
+        options => options.MaximumUploadBytes is >= 1_048_576 and <= 20_971_520
+            && options.MaximumPixelCount is >= 1_000_000 and <= 50_000_000
+            && options.MaximumDimension is >= 1_000 and <= 20_000
+            && options.MaximumImagesPerProduct is >= 1 and <= 20,
+        $"{ImageStorageOptions.SectionName}:configured limits are invalid.")
+    .ValidateOnStart();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MemoryBufferThreshold = 64 * 1024;
+    options.MultipartBodyLengthLimit = 11 * 1024 * 1024;
+});
 builder.Services
     .AddDataProtection()
     .SetApplicationName(
@@ -263,6 +309,21 @@ else
 }
 
 app.UseStaticFiles();
+var imageStorageOptions = app.Services
+    .GetRequiredService<IOptions<ImageStorageOptions>>()
+    .Value;
+Directory.CreateDirectory(imageStorageOptions.RootPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imageStorageOptions.RootPath),
+    RequestPath = imageStorageOptions.PublicPath,
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers.CacheControl =
+            "public,max-age=31536000,immutable";
+        context.Context.Response.Headers.XContentTypeOptions = "nosniff";
+    },
+});
 app.UseRequestLocalization();
 app.UseRouting();
 app.UseRateLimiter();

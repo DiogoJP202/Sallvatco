@@ -73,6 +73,28 @@ public interface ICatalogService
         AdminOperationContext operation,
         CancellationToken cancellationToken = default);
 
+    Task<CatalogMutationResult> AddImageAsync(
+        long productId,
+        Guid expectedVersion,
+        ProductImageUpload upload,
+        string altText,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default);
+
+    Task<CatalogMutationResult> UpdateImagesAsync(
+        long productId,
+        Guid expectedVersion,
+        IReadOnlyList<ProductImagePresentationInput> images,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default);
+
+    Task<CatalogMutationResult> RemoveImageAsync(
+        long productId,
+        long imageId,
+        Guid expectedVersion,
+        AdminOperationContext operation,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<InventoryMovementView>> ListMovementsAsync(
         long variantId,
         CancellationToken cancellationToken = default);

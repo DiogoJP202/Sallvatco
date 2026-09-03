@@ -70,6 +70,25 @@ public sealed class ProductImage
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
+    public void UpdatePresentation(
+        string altText,
+        int position,
+        bool isCover)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(altText);
+        ArgumentOutOfRangeException.ThrowIfNegative(position);
+
+        var normalizedAltText = altText.Trim();
+        if (normalizedAltText.Length > AltTextMaxLength)
+        {
+            throw new ArgumentOutOfRangeException(nameof(altText));
+        }
+
+        AltText = normalizedAltText;
+        Position = position;
+        IsCover = isCover;
+    }
+
     private static DateTimeOffset RequireUtc(
         DateTimeOffset value,
         string parameterName)

@@ -32,6 +32,22 @@
           "Npgsql": "10.0.3"
         }
       },
+      "SkiaSharp": {
+        "type": "Direct",
+        "requested": "[4.151.1, )",
+        "resolved": "4.151.1",
+        "contentHash": "FNlVsGZ9to3o9pObVqhIZanHjUGOoPb/Zxk5svCSLMJnKwxPKV7sIJrjs9BpB/jF3j9OdsaMOb4cfwSJbjueSw==",
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "4.151.1",
+          "SkiaSharp.NativeAssets.macOS": "4.151.1"
+        }
+      },
+      "SkiaSharp.NativeAssets.Linux.NoDependencies": {
+        "type": "Direct",
+        "requested": "[4.151.1, )",
+        "resolved": "4.151.1",
+        "contentHash": "lqPwXxYhKlmRfCuq1vGRLYEtRo3tn3ij1IGi0tI2qzkKHU6HOznHqZW+NqHV8aSKasPmRawbwlKLLPI132+SEA=="
+      },
       "Microsoft.EntityFrameworkCore.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.11",
@@ -54,6 +70,16 @@
         "type": "Transitive",
         "resolved": "10.0.3",
         "contentHash": "7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w=="
+      },
+      "SkiaSharp.NativeAssets.macOS": {
+        "type": "Transitive",
+        "resolved": "4.151.1",
+        "contentHash": "nLXwdhi0oB7pqqNLbSOLX+FIZQOMAU/yFPspzcDTJjTmPbMWyp0JWyeVj8sFJ/cweurEfT0J/lvfgdXX2EFHXA=="
+      },
+      "SkiaSharp.NativeAssets.Win32": {
+        "type": "Transitive",
+        "resolved": "4.151.1",
+        "contentHash": "G+nln30ZX2ZuhH+ungf6x/QMXCje38KTS0VTfQeMyeY8uyMBmsZwFz2D30ZxUjZqsVbEIcaC2bsYF65876s4Yg=="
       },
       "sallvat.application": {
         "type": "Project",

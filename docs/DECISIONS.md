@@ -98,11 +98,11 @@ Registros abaixo têm status **Aceita** em 2026-08-27. Mudança relevante cria n
 
 **Contexto:** guardar binários no PostgreSQL aumenta backup/custo, enquanto S3/R2 adiciona serviço ao MVP.
 
-**Decisão:** volume persistente local fora do web root e `IImageStorage`; banco guarda chaves/metadados. Processar WebP/thumbnails.
+**Decisão:** volume persistente local fora do web root e `IImageStorage`; banco guarda chaves/metadados. SkiaSharp `4.151.1` (MIT) decodifica JPEG/PNG/WebP, remove metadados ao recodificar e produz original, versão grande e thumbnail em WebP.
 
 **Alternativas consideradas:** bytea no PostgreSQL; R2/S3 desde o início; URLs de terceiros.
 
-**Consequências:** operação inicial simples e barata. Backup deve coordenar banco/arquivos e uma única VPS limita disponibilidade; migração futura preserva chaves.
+**Consequências:** operação inicial simples e barata, com biblioteca nativa também empacotada para Linux. Backup deve coordenar banco/arquivos e uma única VPS limita disponibilidade; migração futura preserva chaves.
 
 ## ADR-011 — Docker Compose, Nginx e Cloudflare na Hostinger
 

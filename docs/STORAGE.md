@@ -33,7 +33,9 @@ O contrato não expõe caminho físico e não assume semântica específica de S
 9. persistir arquivos e metadados de forma compensável;
 10. auditar inclusão, substituição e remoção.
 
-Tipos de entrada iniciais: JPEG, PNG e WebP. SVG, GIF animado, TIFF, PDF e arquivos executáveis não são aceitos. Limites exatos serão configurados; padrão proposto: 10 MB de upload, 25 megapixels e no máximo 10 imagens por produto, sujeito à validação visual.
+Tipos de entrada iniciais: JPEG, PNG e WebP. SVG, GIF animado, TIFF, PDF e arquivos executáveis não são aceitos. Os limites configurados são 10 MB de upload, 25 megapixels, 10.000 pixels por dimensão e no máximo 10 imagens por produto. O formulário multipart aceita até 11 MB para comportar o arquivo e os campos, mas o processador volta a impor 10 MB sobre o stream.
+
+O processamento usa SkiaSharp `4.151.1`, sob licença MIT, com assets nativos sem dependência de `fontconfig` no Linux. O conteúdo é integralmente decodificado e recodificado: `original.webp` preserva as dimensões após corrigir orientação; `large.webp` cabe em 1600 × 2000; `thumb.webp` cabe em 480 × 600. As qualidades iniciais são, respectivamente, 88, 84 e 80. Imagens animadas são recusadas.
 
 ## Organização lógica
 
@@ -43,11 +45,12 @@ products/{product-id}/{image-id}/large.webp
 products/{product-id}/{image-id}/thumb.webp
 ```
 
-IDs são gerados pelo servidor. Caminhos são normalizados e verificados contra traversal. Escrita local usa arquivo temporário no mesmo volume e rename atômico quando possível.
+O identificador de imagem no caminho é um UUID aleatório gerado pelo servidor, independente do ID sequencial do banco. Caminhos são normalizados e verificados contra traversal. Escrita local usa arquivo temporário no mesmo volume e rename atômico sem sobrescrita.
 
 ## Entrega
 
-- Nginx pode servir objetos públicos por rota controlada e cache imutável baseado em chave/versionamento;
+- a aplicação serve `/media/*` no ambiente atual; Nginx poderá assumir essa rota sem alterar as URLs;
+- respostas usam cache público de um ano e `immutable`, seguro porque uma alteração cria outra chave;
 - imagens não publicadas não devem ser acessíveis por enumeração;
 - `Content-Type`, `Content-Length`, `X-Content-Type-Options: nosniff` e política de cache são explícitos;
 - HTML usa dimensões, `srcset`, lazy loading fora do hero e texto alternativo editorial;

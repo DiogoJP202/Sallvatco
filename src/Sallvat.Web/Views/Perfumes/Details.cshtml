@@ -5,8 +5,26 @@
 }
 
 <section class="mx-auto grid max-w-7xl gap-12 px-5 py-12 sm:px-8 lg:grid-cols-2 lg:px-10 lg:py-20">
-    <div class="flex min-h-[32rem] items-center justify-center rounded-[2rem] bg-sand/60" aria-label="Imagem de @Model.Name">
-        <div class="h-56 w-40 rounded-t-2xl rounded-b-[3rem] border border-copper/40 bg-white/60 shadow-2xl"></div>
+    <div>
+        @{ var cover = Model.Images.First(image => image.IsCover); }
+        <img class="aspect-[4/5] w-full rounded-[2rem] bg-sand object-cover"
+             src="@cover.LargeUrl"
+             srcset="@cover.ThumbnailUrl 480w, @cover.LargeUrl 1600w"
+             sizes="(min-width: 1024px) 50vw, 100vw"
+             width="@cover.Width"
+             height="@cover.Height"
+             alt="@cover.AltText"
+             decoding="async"
+             fetchpriority="high" />
+        @if (Model.Images.Count > 1)
+        {
+            <div class="mt-4 grid grid-cols-4 gap-3" aria-label="Galeria de imagens">
+                @foreach (var image in Model.Images)
+                {
+                    <img class="aspect-[4/5] w-full rounded-xl bg-sand object-cover" src="@image.ThumbnailUrl" width="@image.Width" height="@image.Height" alt="@image.AltText" loading="lazy" decoding="async" />
+                }
+            </div>
+        }
     </div>
     <div class="self-center">
         <a class="text-sm font-semibold text-copper" asp-action="Index">← Voltar aos perfumes</a>
