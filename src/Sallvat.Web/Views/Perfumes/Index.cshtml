@@ -4,25 +4,39 @@
     ViewData["Description"] = "Conheça os perfumes publicados pela curadoria Sallvat & Co.";
 }
 
-<section class="border-b border-stone-300/70 bg-sand/40">
-    <div class="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
-        <p class="eyebrow">Catálogo</p>
-        <h1 class="mt-4 font-serif text-5xl tracking-tight sm:text-6xl">Perfumes</h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-stone-600">
-            Fragrâncias apresentadas com notas, concentração e opções de volume para uma escolha cuidadosa.
-        </p>
+<section class="relative isolate min-h-[28rem] overflow-hidden border-b border-stone-300/70 bg-[#ddd2c4]">
+    <img class="absolute inset-y-0 right-0 -z-20 h-full w-full object-cover object-[58%_center] sm:w-[68%] lg:w-[58%]"
+         src="~/images/home/collection-fresh.webp"
+         asp-append-version="true"
+         width="1152"
+         height="1440"
+         alt=""
+         decoding="async" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-[#ddd2c4] via-[#ddd2c4]/95 to-[#ddd2c4]/25 sm:via-[#ddd2c4]/80" aria-hidden="true"></div>
+    <div class="mx-auto flex min-h-[28rem] max-w-7xl items-center px-5 py-16 sm:px-8 lg:px-10">
+        <div class="max-w-2xl">
+            <p class="eyebrow">A coleção</p>
+            <h1 class="mt-5 font-serif text-6xl leading-none tracking-tight sm:text-7xl">Perfumes</h1>
+            <p class="mt-6 max-w-xl text-base leading-7 text-stone-700">
+                Fragrâncias apresentadas com notas, concentração e opções de volume para uma escolha cuidadosa e pessoal.
+            </p>
+            @if (Model.TotalItems > 0)
+            {
+                <p class="mt-8 text-[0.68rem] font-semibold tracking-[0.2em] text-stone-600 uppercase">@Model.TotalItems @(Model.TotalItems == 1 ? "fragrância publicada" : "fragrâncias publicadas")</p>
+            }
+        </div>
     </div>
 </section>
 
-<section class="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
+<section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
     @if (Model.Families.Count > 0)
     {
-        <nav class="mb-10 flex flex-wrap gap-2" aria-label="Filtrar por família olfativa">
-            <a class="rounded-full border px-4 py-2 text-sm font-semibold @(Model.SelectedFamily is null ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
+        <nav class="mb-12 flex flex-wrap gap-2" aria-label="Filtrar por família olfativa">
+            <a class="rounded-full border px-5 py-2.5 text-sm font-semibold transition @(Model.SelectedFamily is null ? "border-ink bg-ink text-white" : "border-stone-300 bg-white hover:border-copper hover:text-copper")"
                asp-action="Index">Todas</a>
             @foreach (var family in Model.Families)
             {
-                <a class="rounded-full border px-4 py-2 text-sm font-semibold @(family == Model.SelectedFamily ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
+                <a class="rounded-full border px-5 py-2.5 text-sm font-semibold transition @(family == Model.SelectedFamily ? "border-ink bg-ink text-white" : "border-stone-300 bg-white hover:border-copper hover:text-copper")"
                    asp-action="Index"
                    asp-route-familia="@family">@family</a>
             }

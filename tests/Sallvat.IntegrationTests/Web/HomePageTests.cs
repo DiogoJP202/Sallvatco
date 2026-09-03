@@ -20,6 +20,14 @@ public sealed class HomePageTests
         Assert.Contains("href=\"#conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("<main id=\"conteudo\"", content, StringComparison.Ordinal);
         Assert.Contains("/css/app.css?v=", content, StringComparison.Ordinal);
+        Assert.Contains(
+            "Toda fragrância começa com uma história.",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/images/home/hero-coastal.webp?v=",
+            content,
+            StringComparison.Ordinal);
         Assert.Contains("Conheça o catálogo", content, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("href=\"/perfumes\"", content, StringComparison.Ordinal);
         Assert.Contains("href=\"/conta/criar\"", content, StringComparison.Ordinal);
@@ -31,6 +39,13 @@ public sealed class HomePageTests
             "<meta name=\"robots\" content=\"noindex,nofollow\"",
             content,
             StringComparison.Ordinal);
+
+        using var campaignImage = await client.GetAsync(
+            "/images/home/hero-coastal.webp");
+        Assert.Equal(HttpStatusCode.OK, campaignImage.StatusCode);
+        Assert.Equal(
+            "image/webp",
+            campaignImage.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
