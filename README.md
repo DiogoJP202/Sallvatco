@@ -8,6 +8,10 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 O planejamento da Fase 0 e as **Fases 1 a 3** estão concluídos. Já existem fundação técnica, identidade e clientes, catálogo público, seleção de variantes, estoque auditável, imagens WebP seguras, destaques reais na home, metadados Open Graph e dados estruturados de produto. O Admin cadastra e publica perfumes, variantes, estoque e galeria em `/Admin/Produtos`; visitantes acessam apenas conteúdo publicado em `/perfumes`. O próximo incremento inicia a **Fase 4 — Carrinho e cupons**, mantendo preço e disponibilidade sob autoridade do servidor. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
+## Demonstração visual
+
+A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, catálogo e detalhe de produto com dados descartáveis gerados durante o workflow. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
+
 ## Stack definida
 
 - .NET 10 LTS e ASP.NET Core 10;
@@ -132,4 +136,4 @@ Com a aplicação em execução, `GET /health/live` confirma que o processo resp
 
 ## Integração contínua
 
-O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) restaura dependências bloqueadas, audita npm/NuGet, recompila e confere o CSS, valida Markdown e formatação, compila em Release e executa todos os testes. As actions externas estão fixadas por commit SHA.
+O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) restaura dependências bloqueadas, audita npm/NuGet, recompila e confere o CSS, valida Markdown e formatação, compila em Release e executa todos os testes. O workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) gera uma demonstração estática reproduzível e a publica no GitHub Pages. As actions externas estão fixadas por commit SHA.

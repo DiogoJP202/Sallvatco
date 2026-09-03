@@ -20,6 +20,8 @@ public sealed class ProjectDependencyTests
             ["tests/Sallvat.UnitTests/Sallvat.UnitTests.csproj"] =
                 ["Sallvat.Application", "Sallvat.Domain"],
             ["tests/Sallvat.IntegrationTests/Sallvat.IntegrationTests.csproj"] =
+                ["Sallvat.Infrastructure", "Sallvat.Web"],
+            ["tools/Sallvat.Showcase/Sallvat.Showcase.csproj"] =
                 ["Sallvat.Infrastructure", "Sallvat.Web"]
         };
 

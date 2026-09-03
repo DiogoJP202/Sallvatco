@@ -29,6 +29,27 @@ public sealed partial class ContinuousIntegrationWorkflowTests
         Assert.DoesNotMatch(FloatingActionVersionPattern(), workflow);
     }
 
+    [Fact]
+    public void PagesWorkflowExportsAndDeploysWithPinnedActions()
+    {
+        var repositoryRoot = RepositoryRoot.Find();
+        var workflow = File.ReadAllText(
+            Path.Combine(repositoryRoot, ".github", "workflows", "pages.yml"));
+
+        Assert.Contains(
+            "actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d",
+            workflow);
+        Assert.Contains(
+            "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9",
+            workflow);
+        Assert.Contains(
+            "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
+            workflow);
+        Assert.Contains("tools/Sallvat.Showcase/Sallvat.Showcase.csproj", workflow);
+        Assert.Contains("steps.pages.outputs.base_url", workflow);
+        Assert.DoesNotMatch(FloatingActionVersionPattern(), workflow);
+    }
+
     [GeneratedRegex(@"uses:\s+[^@\s]+@v\d", RegexOptions.CultureInvariant)]
     private static partial Regex FloatingActionVersionPattern();
 }
