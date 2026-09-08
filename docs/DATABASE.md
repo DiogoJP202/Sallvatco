@@ -24,7 +24,7 @@
 | `ProductSlugHistory` | Slug antigo único e produto atual, para redirect 301 após mudança editorial. |
 | `ProductVariant` | Volume, SKU, preço, moeda, peso, dimensões, `OnHand`, `Reserved`, ativo e versão de concorrência. |
 | `ProductImage` | Chave no storage, texto alternativo, dimensões, posição e flag de capa. |
-| `Cart` | Token público aleatório com hash/identificador seguro, cliente opcional, expiração e atualização. |
+| `Cart` | Token público aleatório com hash/identificador seguro, cliente opcional, cupom único opcional, expiração e atualização. |
 | `CartItem` | Variante, quantidade, data de inclusão e preço de referência somente para avisar mudanças; o preço vigente é sempre recalculado. |
 | `Order` | Número público, cliente opcional, contato snapshot, status, subtotais, desconto, frete, total, moeda e timestamps. |
 | `OrderAddress` | Snapshot imutável do endereço de entrega do pedido. |
@@ -33,8 +33,8 @@
 | `InventoryMovement` | Variante, tipo, quantidade assinada, saldo resultante, origem, ator e motivo. |
 | `Payment` | Tentativa/preferência, provedor, IDs externos, status, valor, idempotency key e timestamps. |
 | `Shipment` | Cotação escolhida, transportadora, serviço, valor/prazo snapshots, IDs externos, etiqueta e rastreio. |
-| `Coupon` | Código normalizado, tipo/valor, janela, limites, mínimo, ativo e versionamento. |
-| `CouponRedemption` | Cupom, pedido, cliente/e-mail, valor aplicado e instante. |
+| `Coupon` | Código normalizado, tipo/valor, janela, limites, mínimo, usos reivindicados, ativo e versionamento. |
+| `CouponRedemption` | Reserva idempotente do cupom, pedido opcional até o consumo, cliente/e-mail normalizado, valor, expiração e estado. |
 | `WebhookEvent` | Provedor, ID externo, tipo, hash/payload sanitizado, recebimento, processamento e resultado. |
 | `AuditLog` | Ator, ação, entidade, chave, antes/depois sanitizados, IP, correlation ID e instante. |
 
@@ -52,6 +52,7 @@ erDiagram
     PRODUCT ||--o{ PRODUCT_IMAGE : displays
     PRODUCT ||--o{ PRODUCT_SLUG_HISTORY : redirects
     CART ||--|{ CART_ITEM : contains
+    COUPON o|--o{ CART : previews
     PRODUCT_VARIANT ||--o{ CART_ITEM : selected
     ORDER ||--|{ ORDER_ITEM : snapshots
     ORDER ||--|| ORDER_ADDRESS : ships_to
@@ -96,6 +97,7 @@ Guarda `ProductName`, `VariantName`, `Sku`, `Quantity`, `UnitPrice`, `DiscountAm
 - `application_user.normalized_email` e `customer.application_user_id` unique conforme regras do Identity;
 - índices em produto/status, pedido/número, pedido/status/criação, pedido/cliente, pagamento/ID externo e shipment/tracking code;
 - `coupon.normalized_code` unique;
+- `coupon_redemption.reservation_key` unique e índices de contagem por cupom/cliente ou cupom/e-mail;
 - `webhook_event(provider, external_event_id)` unique para deduplicação;
 - `payment(provider, idempotency_key)` unique;
 - no máximo uma imagem de capa por produto por índice parcial;
@@ -125,6 +127,14 @@ Cancelamento ou expiração decrementa apenas `Reserved`, marca a reserva como l
 ### Ajuste administrativo
 
 Ajustes alteram `OnHand` por diferença e sempre criam movimento com ator e justificativa. Não podem reduzir `OnHand` abaixo de `Reserved`. Conflitos de versão retornam mensagem para recarregar, sem last-write-wins.
+
+## Cupons, rateio e concorrência
+
+O carrinho referencia no máximo um `Coupon` e exibe apenas uma prévia recalculada com os preços vigentes. A aplicação definitiva acontece na criação do pedido: uma `CouponRedemption` é reservada por chave idempotente, passa de `Reserved` para `Consumed` quando recebe o `OrderId`, ou para `Released` no cancelamento/expiração. `order_id` permanece sem FK apenas até a entidade `Order` ser criada na Fase 5; a migration dessa fase adicionará a restrição.
+
+`ClaimedUsageCount` contabiliza reservas ativas e consumos. Claim e criação da redemption ocorrem na mesma transação, protegidos por token de concorrência e constraints; liberar uma reserva decrementa o contador uma única vez. O job técnico também libera reservas expiradas em lotes.
+
+Percentuais e valores fixos são limitados ao subtotal. O desconto total usa arredondamento monetário `AwayFromZero` e é rateado proporcionalmente entre itens em centavos. Restos são distribuídos por maior fração e depois pelo ID da linha, produzindo o mesmo resultado em repetição e nunca tornando uma linha negativa.
 
 ## Soft delete e retenção
 

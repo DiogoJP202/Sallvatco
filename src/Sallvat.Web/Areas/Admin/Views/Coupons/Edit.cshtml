@@ -1,0 +1,34 @@
+@model CouponEditorViewModel
+@{
+    ViewData["Title"] = $"Editar {Model.Code}";
+}
+
+<section class="mx-auto max-w-3xl px-6 py-12 lg:px-8 lg:py-16">
+    <a class="text-sm font-semibold text-stone-600 hover:text-stone-950" asp-action="Index">← Voltar aos cupons</a>
+    <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold tracking-tight">@Model.Code</h1>
+            @if (ViewData["ClaimedUsageCount"] is int count)
+            {
+                <p class="mt-2 text-sm text-stone-600">@count @(count == 1 ? "uso reservado ou consumido" : "usos reservados ou consumidos")</p>
+            }
+        </div>
+        <form asp-action="SetActive" asp-route-id="@ViewContext.RouteData.Values["id"]" method="post">
+            <input name="concurrencyVersion" type="hidden" value="@Model.ConcurrencyVersion" />
+            <input name="isActive" type="hidden" value="@(!Model.IsActive)" />
+            <button class="btn-secondary" type="submit">@(Model.IsActive ? "Desativar" : "Ativar")</button>
+        </form>
+    </div>
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">@status</div>
+    }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">@error</div>
+    }
+    <form class="mt-8 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8" method="post">
+        <partial name="_Form" model="Model" />
+        <button class="btn-primary mt-8" type="submit">Salvar alterações</button>
+    </form>
+</section>

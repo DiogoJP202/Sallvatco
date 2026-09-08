@@ -94,6 +94,34 @@ public sealed class CartController(
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost("cupom")]
+    public async Task<IActionResult> ApplyCoupon(
+        ApplyCouponViewModel model,
+        CancellationToken cancellationToken)
+    {
+        var result = ModelState.IsValid
+            ? await cartService.ApplyCouponAsync(
+                CurrentOwner(createGuest: false),
+                model.Code,
+                cancellationToken)
+            : CartMutationResult.Failure(
+                CartMutationStatus.Invalid,
+                "Informe um código de cupom válido.");
+        SetFeedback(result, "Cupom aplicado à sacola.");
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("cupom/remover")]
+    public async Task<IActionResult> RemoveCoupon(
+        CancellationToken cancellationToken)
+    {
+        var result = await cartService.RemoveCouponAsync(
+            CurrentOwner(createGuest: false),
+            cancellationToken);
+        SetFeedback(result, "Cupom removido da sacola.");
+        return RedirectToAction(nameof(Index));
+    }
+
     private CartOwner CurrentOwner(bool createGuest)
     {
         if (User.Identity?.IsAuthenticated is true)

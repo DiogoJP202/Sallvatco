@@ -1,0 +1,48 @@
+@model CouponEditorViewModel
+
+<div asp-validation-summary="ModelOnly" class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900"></div>
+<div class="grid gap-6 sm:grid-cols-2">
+    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
+        Código
+        <input asp-for="Code" class="rounded-xl border border-stone-300 px-4 py-3 uppercase" autocomplete="off" placeholder="BEMVINDO10" />
+        <span asp-validation-for="Code" class="text-xs text-red-700"></span>
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Tipo de desconto
+        <select asp-for="DiscountType" class="rounded-xl border border-stone-300 px-4 py-3">
+            <option value="Percentage">Percentual</option>
+            <option value="FixedAmount">Valor fixo</option>
+        </select>
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Valor
+        <input asp-for="Value" class="rounded-xl border border-stone-300 px-4 py-3" type="number" min="0.01" step="0.01" />
+        <span asp-validation-for="Value" class="text-xs text-red-700"></span>
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Subtotal mínimo (R$)
+        <input asp-for="MinimumSubtotal" class="rounded-xl border border-stone-300 px-4 py-3" type="number" min="0" step="0.01" />
+    </label>
+    <div></div>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Início em UTC (opcional)
+        <input asp-for="StartsAtUtc" asp-format="{0:yyyy-MM-ddTHH:mm}" class="rounded-xl border border-stone-300 px-4 py-3" type="datetime-local" />
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Expiração em UTC (opcional)
+        <input asp-for="ExpiresAtUtc" asp-format="{0:yyyy-MM-ddTHH:mm}" class="rounded-xl border border-stone-300 px-4 py-3" type="datetime-local" />
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Limite total (opcional)
+        <input asp-for="TotalUsageLimit" class="rounded-xl border border-stone-300 px-4 py-3" type="number" min="1" />
+    </label>
+    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+        Limite por cliente/e-mail (opcional)
+        <input asp-for="UsageLimitPerIdentity" class="rounded-xl border border-stone-300 px-4 py-3" type="number" min="1" />
+    </label>
+    <label class="flex items-center gap-3 text-sm font-semibold text-stone-700 sm:col-span-2">
+        <input asp-for="IsActive" class="size-5 rounded border-stone-300" />
+        Disponível para aplicação e reserva
+    </label>
+</div>
+<input asp-for="ConcurrencyVersion" type="hidden" />

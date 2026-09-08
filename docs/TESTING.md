@@ -67,6 +67,19 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - JSON-LD contém `Product`, ofertas e disponibilidade derivada do estoque;
 - slug antigo responde 301 e produto arquivado responde 404.
 
+### Cobertura implementada do carrinho e cupons
+
+- token guest é armazenado somente como hash e adulteração não cria nem lê carrinho;
+- preço, estoque e desconto são recalculados pelo servidor após cada alteração relevante;
+- quantidade, variante inativa, remoção, limpeza, expiração e mesclagem após login são exercitadas;
+- código, valor, janela, mínimo e limites do cupom possuem testes de invariantes;
+- percentual e valor fixo são arredondados e rateados de forma determinística sem total negativo;
+- aplicação aceita um único cupom, reflete mudança de preço e marca mínimo não atendido sem conceder desconto;
+- reserva é idempotente, consumo não duplica efeito e cancelamento/expiração libera o limite;
+- limite por e-mail normalizado e corrida pelo último uso permitem somente a reserva elegível;
+- rotas de cupom exigem antiforgery e `/Admin/Cupons` exige role `Admin`;
+- criação e atualização administrativa registram auditoria sem permitir exclusão histórica.
+
 ### Testes manuais e homologação
 
 - responsividade, acessibilidade, conteúdo e experiência de marca;

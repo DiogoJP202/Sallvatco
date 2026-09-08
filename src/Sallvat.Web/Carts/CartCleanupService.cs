@@ -1,4 +1,5 @@
 using Sallvat.Application.Carts;
+using Sallvat.Application.Promotions;
 
 namespace Sallvat.Web.Carts;
 
@@ -38,9 +39,19 @@ public sealed partial class CartCleanupService(
             var deleted = await service.DeleteExpiredAsync(
                 BatchSize,
                 cancellationToken);
+            var couponService = scope.ServiceProvider
+                .GetRequiredService<ICouponService>();
+            var released = await couponService.ReleaseExpiredAsync(
+                BatchSize,
+                cancellationToken);
             if (deleted > 0)
             {
                 LogDeletedCarts(logger, deleted);
+            }
+
+            if (released > 0)
+            {
+                LogReleasedCoupons(logger, released);
             }
         }
         catch (Exception exception)
@@ -65,4 +76,12 @@ public sealed partial class CartCleanupService(
     private static partial void LogCleanupFailure(
         ILogger logger,
         Exception exception);
+
+    [LoggerMessage(
+        EventId = 4103,
+        Level = LogLevel.Information,
+        Message = "Released {CouponCount} expired coupon reservations.")]
+    private static partial void LogReleasedCoupons(
+        ILogger logger,
+        int couponCount);
 }

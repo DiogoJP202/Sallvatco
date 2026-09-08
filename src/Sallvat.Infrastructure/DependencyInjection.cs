@@ -5,11 +5,13 @@ using Microsoft.Extensions.Options;
 using Sallvat.Application.Accounts;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Catalog;
+using Sallvat.Application.Promotions;
 using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Carts;
 using Sallvat.Infrastructure.Catalog;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Promotions;
 using Sallvat.Infrastructure.Storage;
 using Sallvat.Infrastructure.Time;
 
@@ -54,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICatalogService, CatalogService>();
+        services.AddScoped<ICouponService, CouponService>();
         services.AddSingleton<IImageStorage, LocalImageStorage>();
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
         services.AddSingleton<IClock, SystemClock>();

@@ -3,10 +3,13 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Catalog;
+using Sallvat.Application.Promotions;
 using Sallvat.Application.Time;
 using Sallvat.Domain.Carts;
 using Sallvat.Domain.Catalog;
+using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Promotions;
 
 namespace Sallvat.Infrastructure.Carts;
 
@@ -212,9 +215,102 @@ internal sealed class CartService(
             .ToListAsync(cancellationToken);
         var now = clock.UtcNow;
         dbContext.CartItems.RemoveRange(items);
+        cart.RemoveCoupon(now);
         cart.Refresh(now, now.Add(CartLifetime));
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        return CartMutationResult.Success();
+    }
+
+    public async Task<CartMutationResult> ApplyCouponAsync(
+        CartOwner owner,
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        var cart = await FindCartAsync(
+            owner,
+            reactivateExpired: false,
+            cancellationToken);
+        if (cart is null)
+        {
+            return CartMutationResult.Failure(
+                CartMutationStatus.Invalid,
+                "Adicione um produto antes de aplicar o cupom.");
+        }
+
+        string normalizedCode;
+        try
+        {
+            normalizedCode = CouponCode.Normalize(code);
+        }
+        catch (ArgumentException)
+        {
+            return CartMutationResult.Failure(
+                CartMutationStatus.Invalid,
+                "Informe um código de cupom válido.");
+        }
+
+        var coupon = await dbContext.Coupons.SingleOrDefaultAsync(
+            candidate => candidate.NormalizedCode == normalizedCode,
+            cancellationToken);
+        if (coupon is null)
+        {
+            return CartMutationResult.Failure(
+                CartMutationStatus.NotFound,
+                "Cupom não encontrado.");
+        }
+
+        var subtotal = await CartSubtotalAsync(cart.Id, cancellationToken);
+        if (subtotal <= 0)
+        {
+            return CartMutationResult.Failure(
+                CartMutationStatus.Invalid,
+                "Adicione um produto antes de aplicar o cupom.");
+        }
+
+        var identityUsage = cart.CustomerId.HasValue
+            ? await ActiveIdentityUsageAsync(
+                coupon.Id,
+                cart.CustomerId.Value,
+                cancellationToken)
+            : 0;
+        var eligibility = coupon.Evaluate(
+            subtotal,
+            identityUsage,
+            clock.UtcNow);
+        if (eligibility != CouponEligibilityStatus.Eligible)
+        {
+            return CartMutationResult.Failure(
+                CartMutationStatus.Unavailable,
+                CouponService.EligibilityMessage(
+                    eligibility,
+                    coupon.MinimumSubtotal));
+        }
+
+        var now = clock.UtcNow;
+        cart.ApplyCoupon(coupon.Id, now);
+        cart.Refresh(now, now.Add(CartLifetime));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return CartMutationResult.Success();
+    }
+
+    public async Task<CartMutationResult> RemoveCouponAsync(
+        CartOwner owner,
+        CancellationToken cancellationToken = default)
+    {
+        var cart = await FindCartAsync(
+            owner,
+            reactivateExpired: false,
+            cancellationToken);
+        if (cart is null)
+        {
+            return CartMutationResult.Success();
+        }
+
+        var now = clock.UtcNow;
+        cart.RemoveCoupon(now);
+        cart.Refresh(now, now.Add(CartLifetime));
+        await dbContext.SaveChangesAsync(cancellationToken);
         return CartMutationResult.Success();
     }
 
@@ -262,6 +358,7 @@ internal sealed class CartService(
         else if (customerCart.ExpiresAtUtc <= now)
         {
             await RemoveItemsAsync(customerCart.Id, cancellationToken);
+            customerCart.RemoveCoupon(now);
             customerCartWasExpired = true;
         }
 
@@ -311,6 +408,12 @@ internal sealed class CartService(
             {
                 guestItem.MoveToCart(customerCart.Id, now);
             }
+        }
+
+
+        if (customerCart.CouponId is null && guestCart.CouponId.HasValue)
+        {
+            customerCart.ApplyCoupon(guestCart.CouponId.Value, now);
         }
 
         customerCart.Refresh(now, now.Add(CartLifetime));
@@ -395,12 +498,96 @@ internal sealed class CartService(
             .ToListAsync(cancellationToken);
 
         var items = rows.Select(ToCartLine).ToArray();
+        var subtotal = items.Sum(item => item.LineTotal);
+        var cartCoupon = await BuildCouponAsync(
+            cart,
+            items,
+            subtotal,
+            cancellationToken);
         return new CartSummary(
             items,
-            items.Sum(item => item.LineTotal),
+            subtotal,
             "BRL",
-            cart.ExpiresAtUtc);
+            cart.ExpiresAtUtc,
+            cartCoupon);
     }
+
+    private async Task<CartCoupon?> BuildCouponAsync(
+        Cart cart,
+        IReadOnlyList<CartLine> items,
+        decimal subtotal,
+        CancellationToken cancellationToken)
+    {
+        if (cart.CouponId is not long couponId)
+        {
+            return null;
+        }
+
+        var coupon = await dbContext.Coupons
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                candidate => candidate.Id == couponId,
+                cancellationToken);
+        if (coupon is null)
+        {
+            return null;
+        }
+
+        var identityUsage = cart.CustomerId.HasValue
+            ? await ActiveIdentityUsageAsync(
+                coupon.Id,
+                cart.CustomerId.Value,
+                cancellationToken)
+            : 0;
+        var eligibility = coupon.Evaluate(
+            subtotal,
+            identityUsage,
+            clock.UtcNow);
+        if (eligibility != CouponEligibilityStatus.Eligible)
+        {
+            return new CartCoupon(
+                coupon.Id,
+                coupon.Code,
+                0,
+                false,
+                CouponService.EligibilityMessage(
+                    eligibility,
+                    coupon.MinimumSubtotal));
+        }
+
+        var quote = CouponDiscountCalculator.Calculate(
+            coupon.DiscountType,
+            coupon.Value,
+            items.Select(item => new CouponDiscountLine(
+                item.ItemId,
+                item.LineTotal)).ToArray());
+        return new CartCoupon(
+            coupon.Id,
+            coupon.Code,
+            quote.DiscountTotal,
+            true,
+            null);
+    }
+
+    private Task<decimal> CartSubtotalAsync(
+        Guid cartId,
+        CancellationToken cancellationToken) =>
+        (from item in dbContext.CartItems
+         join variant in dbContext.ProductVariants
+             on item.ProductVariantId equals variant.Id
+         where item.CartId == cartId
+         select item.Quantity * variant.Price)
+        .SumAsync(cancellationToken);
+
+    private Task<int> ActiveIdentityUsageAsync(
+        long couponId,
+        long customerId,
+        CancellationToken cancellationToken) =>
+        dbContext.CouponRedemptions.CountAsync(
+            redemption => redemption.CouponId == couponId
+                && redemption.CustomerId == customerId
+                && redemption.Status != CouponRedemptionStatus.Released,
+            cancellationToken);
 
     private CartLine ToCartLine(CartRow row)
     {
@@ -481,6 +668,7 @@ internal sealed class CartService(
 
         await RemoveItemsAsync(cart.Id, cancellationToken);
         var now = clock.UtcNow;
+        cart.RemoveCoupon(now);
         cart.Refresh(now, now.Add(CartLifetime));
         return cart;
     }

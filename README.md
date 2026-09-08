@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 e as **Fases 1 a 3** estão concluídos. A primeira história da **Fase 4** também está pronta: a aplicação mantém sacola guest por token seguro, recalcula preço e estoque no servidor, permite alterar/remover itens, mescla o conteúdo após login e elimina carrinhos expirados em lotes. Já existem fundação técnica, identidade e clientes, catálogo público, estoque auditável, imagens WebP seguras e administração em `/Admin/Produtos`. O próximo incremento implementará cupons sem acumulação, conforme o padrão provisório de `PBD-009`. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 e as **Fases 1 a 4** estão concluídos. A aplicação mantém sacola guest por token seguro, recalcula preço, estoque e descontos no servidor, mescla o conteúdo após login e elimina carrinhos expirados em lotes. Cupons possuem janela, subtotal mínimo, limites global e por cliente/e-mail, rateio determinístico, reserva idempotente e administração auditada em `/Admin/Cupons`; permanece o padrão provisório de um cupom por pedido definido em `PBD-009`. Já existem fundação técnica, identidade e clientes, catálogo público, estoque auditável, imagens WebP seguras e administração em `/Admin/Produtos`. O próximo incremento inicia a **Fase 5** pelo formulário de comprador e entrega para cliente ou guest. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Demonstração visual
 
@@ -115,7 +115,7 @@ dotnet run --project src/Sallvat.Web
 
 ## Migrations
 
-As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory` e `AddShoppingCarts` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria e carrinhos. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
+As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory`, `AddShoppingCarts` e `AddCoupons` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria, carrinhos e promoções. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
 
 ```powershell
 dotnet ef migrations add NomeDaMudanca `

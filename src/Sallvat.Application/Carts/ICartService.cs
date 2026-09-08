@@ -27,6 +27,15 @@ public interface ICartService
         CartOwner owner,
         CancellationToken cancellationToken = default);
 
+    Task<CartMutationResult> ApplyCouponAsync(
+        CartOwner owner,
+        string code,
+        CancellationToken cancellationToken = default);
+
+    Task<CartMutationResult> RemoveCouponAsync(
+        CartOwner owner,
+        CancellationToken cancellationToken = default);
+
     Task MergeGuestCartAsync(
         string guestToken,
         Guid applicationUserId,

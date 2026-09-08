@@ -42,6 +42,8 @@ public sealed class Cart
 
     public long? CustomerId { get; private set; }
 
+    public long? CouponId { get; private set; }
+
     public DateTimeOffset ExpiresAtUtc { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -71,6 +73,24 @@ public sealed class Cart
         ConcurrencyVersion = Guid.NewGuid();
     }
 
+    public void ApplyCoupon(long couponId, DateTimeOffset updatedAtUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(couponId);
+        CouponId = couponId;
+        Touch(updatedAtUtc);
+    }
+
+    public void RemoveCoupon(DateTimeOffset updatedAtUtc)
+    {
+        if (CouponId is null)
+        {
+            return;
+        }
+
+        CouponId = null;
+        Touch(updatedAtUtc);
+    }
+
     private void SetExpiration(DateTimeOffset expiresAtUtc)
     {
         ExpiresAtUtc = RequireUtc(expiresAtUtc, nameof(expiresAtUtc));
@@ -80,6 +100,12 @@ public sealed class Cart
                 nameof(expiresAtUtc),
                 "Cart expiration must be later than its last update.");
         }
+    }
+
+    private void Touch(DateTimeOffset updatedAtUtc)
+    {
+        UpdatedAtUtc = RequireUtc(updatedAtUtc, nameof(updatedAtUtc));
+        ConcurrencyVersion = Guid.NewGuid();
     }
 
     private static string RequireTokenHash(string value)

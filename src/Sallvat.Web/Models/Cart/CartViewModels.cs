@@ -19,3 +19,10 @@ public sealed class UpdateCartItemViewModel
     [Range(1, CartLimits.MaximumQuantityPerItem)]
     public int Quantity { get; set; }
 }
+
+public sealed class ApplyCouponViewModel
+{
+    [Required]
+    [StringLength(40, MinimumLength = 3)]
+    public string Code { get; set; } = string.Empty;
+}

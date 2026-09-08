@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sallvat.Domain.Carts;
 using Sallvat.Domain.Customers;
+using Sallvat.Domain.Promotions;
 
 namespace Sallvat.Infrastructure.Persistence.Configurations;
 
@@ -24,6 +25,8 @@ internal sealed class CartConfiguration : IEntityTypeConfiguration<Cart>
             .IsFixedLength();
         builder.Property(cart => cart.CustomerId)
             .HasColumnName("customer_id");
+        builder.Property(cart => cart.CouponId)
+            .HasColumnName("coupon_id");
         builder.Property(cart => cart.ExpiresAtUtc)
             .HasColumnName("expires_at_utc")
             .HasColumnType("timestamptz");
@@ -47,10 +50,17 @@ internal sealed class CartConfiguration : IEntityTypeConfiguration<Cart>
             .HasDatabaseName("ux_cart_customer_id");
         builder.HasIndex(cart => cart.ExpiresAtUtc)
             .HasDatabaseName("ix_cart_expires_at_utc");
+        builder.HasIndex(cart => cart.CouponId)
+            .HasDatabaseName("ix_cart_coupon_id");
         builder.HasOne<Customer>()
             .WithMany()
             .HasForeignKey(cart => cart.CustomerId)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("fk_cart_customer");
+        builder.HasOne<Coupon>()
+            .WithMany()
+            .HasForeignKey(cart => cart.CouponId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("fk_cart_coupon");
     }
 }

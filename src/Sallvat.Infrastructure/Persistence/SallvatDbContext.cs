@@ -6,6 +6,7 @@ using Sallvat.Domain.Carts;
 using Sallvat.Domain.Catalog;
 using Sallvat.Domain.Customers;
 using Sallvat.Domain.Inventory;
+using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Identity;
 
 namespace Sallvat.Infrastructure.Persistence;
@@ -21,6 +22,11 @@ public sealed class SallvatDbContext(
     public DbSet<Cart> Carts => Set<Cart>();
 
     public DbSet<CartItem> CartItems => Set<CartItem>();
+
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+
+    public DbSet<CouponRedemption> CouponRedemptions =>
+        Set<CouponRedemption>();
 
     public DbSet<Product> Products => Set<Product>();
 

@@ -186,13 +186,13 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `Coupon` e `CouponRedemption` com invariantes.
-- [ ] Criar mappings, índices, checks e migration.
-- [ ] Implementar cálculo central de desconto e rateio.
-- [ ] Implementar CRUD Admin, ativação e auditoria.
-- [ ] Aplicar padrão não acumulável enquanto `PBD-009` estiver pendente.
-- [ ] Implementar reserva/consumo/liberação de limite junto ao pedido.
-- [ ] Testar expiração, mínimo, uso por cliente/e-mail, corrida e cancelamento.
+- [x] Criar `Coupon` e `CouponRedemption` com invariantes.
+- [x] Criar mappings, índices, checks e migration.
+- [x] Implementar cálculo central de desconto e rateio.
+- [x] Implementar CRUD Admin, ativação e auditoria.
+- [x] Aplicar padrão não acumulável enquanto `PBD-009` estiver pendente.
+- [x] Implementar reserva/consumo/liberação de limite junto ao pedido.
+- [x] Testar expiração, mínimo, uso por cliente/e-mail, corrida e cancelamento.
 
 ## EPIC F5 — Checkout e pedidos
 

@@ -47,16 +47,28 @@ public sealed record CartSummary(
     IReadOnlyList<CartLine> Items,
     decimal Subtotal,
     string Currency,
-    DateTimeOffset? ExpiresAtUtc)
+    DateTimeOffset? ExpiresAtUtc,
+    CartCoupon? Coupon = null)
 {
     public int TotalQuantity => Items.Sum(item => item.Quantity);
 
     public bool CanStartCheckout =>
         Items.Count > 0 && Items.All(item => item.IsAvailable);
 
+    public decimal DiscountTotal => Coupon?.DiscountTotal ?? 0m;
+
+    public decimal Total => Subtotal - DiscountTotal;
+
     public static CartSummary Empty { get; } =
         new([], 0m, "BRL", null);
 }
+
+public sealed record CartCoupon(
+    long Id,
+    string Code,
+    decimal DiscountTotal,
+    bool IsValid,
+    string? Message);
 
 public enum CartMutationStatus
 {

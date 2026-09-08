@@ -15,8 +15,10 @@ public sealed class AdminAuthorizationTests
 {
     private const string TestScheme = "Sallvat.Tests.Authentication";
 
-    [Fact]
-    public async Task AnonymousVisitorIsRedirectedToLogin()
+    [Theory]
+    [InlineData("/Admin")]
+    [InlineData("/Admin/Cupons")]
+    public async Task AnonymousVisitorIsRedirectedToLogin(string path)
     {
         await using var application = new SallvatWebApplicationFactory();
         using var client = application.CreateClient(
@@ -25,7 +27,7 @@ public sealed class AdminAuthorizationTests
                 AllowAutoRedirect = false,
             });
 
-        using var response = await client.GetAsync("/Admin");
+        using var response = await client.GetAsync(path);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith(
@@ -34,14 +36,16 @@ public sealed class AdminAuthorizationTests
             StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task CustomerIsForbiddenFromAdmin()
+    [Theory]
+    [InlineData("/Admin")]
+    [InlineData("/Admin/Cupons")]
+    public async Task CustomerIsForbiddenFromAdmin(string path)
     {
         await using var application = CreateAuthenticatedApplication(
             RoleNames.Customer);
         using var client = application.CreateClient();
 
-        using var response = await client.GetAsync("/Admin");
+        using var response = await client.GetAsync(path);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }

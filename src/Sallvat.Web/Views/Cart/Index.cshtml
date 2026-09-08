@@ -90,11 +90,46 @@
 
                 <aside class="rounded-[2rem] bg-ink p-7 text-white shadow-xl lg:sticky lg:top-28">
                     <p class="text-[0.62rem] font-semibold tracking-[0.18em] text-stone-400 uppercase">Resumo atual</p>
-                    <div class="mt-6 flex items-end justify-between gap-5 border-b border-white/15 pb-6">
+                    <div class="mt-6 flex items-end justify-between gap-5">
                         <span class="text-sm text-stone-300">Subtotal</span>
-                        <strong class="font-serif text-3xl">@Model.Cart.Subtotal.ToString("C")</strong>
+                        <strong class="font-serif text-2xl">@Model.Cart.Subtotal.ToString("C")</strong>
                     </div>
-                    <p class="mt-5 text-xs leading-5 text-stone-400">Frete, cupom e total final serão calculados nas próximas etapas do checkout.</p>
+                    @if (Model.Cart.Coupon is not null)
+                    {
+                        <div class="mt-4 rounded-2xl border px-4 py-4 @(Model.Cart.Coupon.IsValid ? "border-emerald-400/30 bg-emerald-950/40" : "border-amber-400/30 bg-amber-950/40")">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-[0.62rem] font-semibold tracking-[0.16em] text-stone-300 uppercase">Cupom @Model.Cart.Coupon.Code</p>
+                                    @if (Model.Cart.Coupon.IsValid)
+                                    {
+                                        <p class="mt-1 text-sm text-emerald-200">− @Model.Cart.Coupon.DiscountTotal.ToString("C")</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="mt-1 text-xs leading-5 text-amber-100">@Model.Cart.Coupon.Message</p>
+                                    }
+                                </div>
+                                <form asp-action="RemoveCoupon" method="post">
+                                    <button class="text-xs font-semibold text-stone-300 underline underline-offset-4 hover:text-white" type="submit">Remover</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <form class="mt-5 border-t border-white/15 pt-5" asp-action="ApplyCoupon" method="post">
+                            <label class="text-xs font-semibold text-stone-300" for="coupon-code">Código de cupom</label>
+                            <div class="mt-2 flex gap-2">
+                                <input class="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white uppercase placeholder:text-stone-500 focus:border-white focus:outline-none" id="coupon-code" name="Code" type="text" maxlength="40" autocomplete="off" placeholder="EXEMPLO10" />
+                                <button class="rounded-xl border border-white/30 px-4 py-2 text-xs font-semibold transition hover:bg-white hover:text-ink" type="submit">Aplicar</button>
+                            </div>
+                        </form>
+                    }
+                    <div class="mt-6 flex items-end justify-between gap-5 border-t border-white/15 pt-6">
+                        <span class="text-sm text-stone-200">Total parcial</span>
+                        <strong class="font-serif text-3xl">@Model.Cart.Total.ToString("C")</strong>
+                    </div>
+                    <p class="mt-5 text-xs leading-5 text-stone-400">O frete será calculado no checkout. Preços e cupons são sempre revalidados pelo servidor.</p>
                     <button class="mt-7 min-h-12 w-full cursor-not-allowed rounded-full bg-stone-600 px-6 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Checkout na próxima etapa</button>
                     <a class="mt-4 block text-center text-sm font-semibold text-stone-300 transition hover:text-white" asp-controller="Perfumes" asp-action="Index">Continuar escolhendo</a>
                     <form class="mt-7 border-t border-white/15 pt-6 text-center" asp-action="Clear" method="post">

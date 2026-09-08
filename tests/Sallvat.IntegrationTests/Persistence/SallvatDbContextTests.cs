@@ -40,6 +40,8 @@ public sealed class SallvatDbContextTests
                 "audit_log",
                 "cart",
                 "cart_item",
+                "coupon",
+                "coupon_redemption",
                 "customer",
                 "inventory_movement",
                 "product",

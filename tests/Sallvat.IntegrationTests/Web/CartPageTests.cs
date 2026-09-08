@@ -3,6 +3,8 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Sallvat.Application.Promotions;
+using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.IntegrationTests.Catalog;
 
@@ -148,6 +150,59 @@ public sealed partial class CartPageTests
         var persistedCart = Assert.Single(await context.Carts.ToListAsync());
         Assert.NotNull(persistedCart.CustomerId);
         Assert.Null(persistedCart.GuestTokenHash);
+    }
+
+    [Fact]
+    public async Task CouponPostUpdatesVisibleServerCalculatedTotal()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var product = await PublishedCatalogFixture.CreateAsync(
+            application,
+            "cart-web-coupon");
+        using (var scope = application.Services.CreateScope())
+        {
+            var service = scope.ServiceProvider
+                .GetRequiredService<ICouponService>();
+            Assert.True((await service.CreateAsync(
+                new CouponEditorInput(
+                    "WEB10",
+                    CouponDiscountType.Percentage,
+                    10,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    true),
+                new(product.ActorId, "cart-web-coupon"))).Succeeded);
+        }
+
+        using var client = CreateClient(application);
+        var productToken = await GetAntiforgeryTokenAsync(
+            client,
+            $"/perfumes/{product.Slug}");
+        using var addResponse = await client.PostAsync(
+            "/carrinho/itens",
+            Form(
+                productToken,
+                ("VariantId", product.AvailableVariantId.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)),
+                ("Quantity", "1")));
+        Assert.Equal(HttpStatusCode.Redirect, addResponse.StatusCode);
+
+        var cartToken = await GetAntiforgeryTokenAsync(client, "/carrinho");
+        using var couponResponse = await client.PostAsync(
+            "/carrinho/cupom",
+            Form(cartToken, ("Code", "web10")));
+        Assert.Equal(HttpStatusCode.Redirect, couponResponse.StatusCode);
+
+        using var cartResponse = await client.GetAsync("/carrinho");
+        var content = WebUtility.HtmlDecode(
+            await cartResponse.Content.ReadAsStringAsync());
+        Assert.Contains("Cupom WEB10", content, StringComparison.Ordinal);
+        Assert.Contains("29,99", content, StringComparison.Ordinal);
+        Assert.Contains("269,91", content, StringComparison.Ordinal);
     }
 
     private static HttpClient CreateClient(
