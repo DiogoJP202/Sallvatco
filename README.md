@@ -10,7 +10,7 @@ O planejamento da Fase 0 e as **Fases 1 a 3** estão concluídos. A primeira his
 
 ## Demonstração visual
 
-A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes e detalhe de produto com dados descartáveis gerados durante o workflow. Nomes, textos, preços, estoques e imagens ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
+A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes, detalhe de produto e uma página de linha corporal com nove fotografias reais fornecidas pela marca. Os dados do catálogo de perfumes continuam descartáveis e são gerados durante o workflow; nomes, textos, preços, estoques e disponibilidade ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
 
 ## Stack definida
 

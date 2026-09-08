@@ -1,0 +1,54 @@
+@model BodySplashCollectionPageViewModel
+@{
+    ViewData["Title"] = "Linha corporal";
+    ViewData["Description"] = "Conheça os body splashes fotografados da linha Sallvat & Co.";
+}
+
+<section class="relative isolate overflow-hidden bg-ink text-white" aria-labelledby="body-splashes-title">
+    <img class="absolute inset-0 -z-20 h-full w-full object-cover object-[48%_center] opacity-40"
+         src="~/images/showcase/real-products/sea-salt.webp"
+         asp-append-version="true"
+         width="1080"
+         height="1440"
+         alt=""
+         decoding="async"
+         fetchpriority="high" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/90 to-black/35" aria-hidden="true"></div>
+    <div class="mx-auto flex min-h-[38rem] max-w-7xl items-center px-5 py-20 sm:px-8 lg:px-10">
+        <div class="max-w-3xl">
+            <p class="text-xs font-semibold tracking-[0.22em] text-stone-300 uppercase">Linha corporal fotografada</p>
+            <h1 id="body-splashes-title" class="mt-6 font-serif text-6xl leading-[0.92] tracking-[-0.035em] sm:text-7xl">Produtos reais, agora em primeiro plano.</h1>
+            <p class="mt-8 max-w-2xl text-lg leading-8 text-stone-200">Uma seleção de body splashes de 200 ml apresentada com as fotografias fornecidas pela marca, preservando embalagens e rótulos originais.</p>
+            <p class="mt-5 max-w-2xl text-sm leading-7 text-stone-400">Nomes, valores, disponibilidade e referências olfativas exibidos nas imagens ainda precisam de validação comercial antes do lançamento.</p>
+        </div>
+    </div>
+</section>
+
+<section class="bg-paper" aria-labelledby="body-splashes-grid-title">
+    <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+        <div class="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div>
+                <p class="eyebrow">Seleção apresentada</p>
+                <h2 id="body-splashes-grid-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">Nove maneiras de prolongar a presença.</h2>
+            </div>
+            <p class="text-sm leading-7 text-stone-600 lg:text-right">As descrições abaixo reproduzem somente informações visíveis nos materiais enviados, sem criar promessas ou características não confirmadas.</p>
+        </div>
+
+        <div class="mt-12 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach (var product in Model.Products)
+            {
+                <partial name="_BodySplashCard" model="product" />
+            }
+        </div>
+    </div>
+</section>
+
+<section class="bg-[#ddd2c4]">
+    <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-5 py-16 sm:px-8 md:flex-row md:items-center lg:px-10">
+        <div>
+            <p class="eyebrow">Perfumes Sallvat &amp; Co.</p>
+            <h2 class="mt-4 font-serif text-4xl leading-none">Continue pela coleção de fragrâncias.</h2>
+        </div>
+        <a class="btn-primary" asp-controller="Perfumes" asp-action="Index">Explorar perfumes</a>
+    </div>
+</section>

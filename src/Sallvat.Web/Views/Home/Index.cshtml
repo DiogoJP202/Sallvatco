@@ -80,6 +80,35 @@
     </section>
 }
 
+@if (Model.BodySplashes.Count > 0)
+{
+    <section class="overflow-hidden bg-ink text-white" aria-labelledby="linha-corporal-title">
+        <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+            <div class="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div>
+                    <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Fotografias reais da marca</p>
+                    <h2 id="linha-corporal-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">A linha corporal ganha forma.</h2>
+                </div>
+                <div class="lg:text-right">
+                    <p class="text-sm leading-7 text-stone-300">Body splashes de 200 ml apresentados com as embalagens e os rótulos registrados nas imagens enviadas.</p>
+                    <a class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
+                       asp-controller="Home"
+                       asp-action="BodySplashes">Ver os produtos fotografados <span aria-hidden="true">↗</span></a>
+                </div>
+            </div>
+
+            <div class="mt-12 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach (var product in Model.BodySplashes)
+                {
+                    <partial name="_BodySplashCard" model="product" />
+                }
+            </div>
+
+            <p class="mt-8 max-w-3xl text-xs leading-6 text-stone-400">Valores, disponibilidade e referências olfativas ainda serão confirmados pela Sallvat &amp; Co. antes da publicação comercial.</p>
+        </div>
+    </section>
+}
+
 <section id="universos" class="bg-[#ddd2c4]" aria-labelledby="universos-title">
     <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
         <div class="max-w-3xl">

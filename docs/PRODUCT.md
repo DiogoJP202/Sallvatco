@@ -67,6 +67,7 @@ Mantém produtos, variantes, imagens, estoque, cupons e pedidos. Toda ação que
 | Hero | Apresentar a proposta central e levar ao catálogo ou lançamento principal. |
 | A Sallvat | Comunicar história, intenção e personalidade da marca. |
 | Perfumes em destaque | Levar a produtos selecionados manualmente pelo administrador. |
+| Linha corporal | Apresentar extensões fotografadas da marca sem misturá-las ao catálogo de perfumes. |
 | Lançamentos | Dar visibilidade a novidades sem depender de ordenação cronológica implícita. |
 | Conceito artesanal | Explicar processo, cuidado e diferenciais verificáveis. |
 | Experiência olfativa | Ajudar o visitante a compreender notas, projeção e fixação. |
@@ -80,7 +81,7 @@ Mantém produtos, variantes, imagens, estoque, cupons e pedidos. Toda ação que
 ## Rotas de experiência
 
 - `/`, `/perfumes` e `/perfumes/{slug}`;
-- `/sobre`, `/contato`, `/privacidade`, `/termos`, `/trocas` e `/entrega`;
+- `/sobre`, `/linha-corporal`, `/contato`, `/privacidade`, `/termos`, `/trocas` e `/entrega`;
 - `/carrinho` e `/checkout`;
 - `/conta/*` para identidade, endereços e pedidos;
 - `/Admin/*` para operação autorizada.

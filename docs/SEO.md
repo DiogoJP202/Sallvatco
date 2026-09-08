@@ -13,6 +13,7 @@ Tornar marca, páginas institucionais e produtos ativos compreensíveis para pes
 | `/` | Sim, canonical da home. |
 | `/perfumes` | Sim, canonical sem parâmetros de filtro. |
 | `/perfumes/{slug}` | Sim quando produto ativo/publicado. |
+| `/linha-corporal` | `noindex` enquanto nomes, valores e conteúdo aguardarem validação comercial. |
 | `/sobre`, `/privacidade`, `/termos`, `/trocas`, `/entrega` | Sim conforme conteúdo final. |
 | `/contato` | Sim se tiver conteúdo útil; formulário protegido. |
 | `/carrinho`, `/checkout`, `/conta/*`, `/Admin/*` | `noindex`, sem sitemap. |

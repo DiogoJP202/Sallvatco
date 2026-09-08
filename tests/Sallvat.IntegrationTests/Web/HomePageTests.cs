@@ -70,6 +70,18 @@ public sealed class HomePageTests
         Assert.Contains("data-menu-button", content, StringComparison.Ordinal);
         Assert.Contains("data-mobile-menu", content, StringComparison.Ordinal);
         Assert.Contains(
+            "Fotografias reais da marca",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "href=\"/linha-corporal\"",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/images/showcase/real-products/sea-salt-thumb.webp",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "/js/storefront.js?v=",
             content,
             StringComparison.Ordinal);
@@ -95,6 +107,52 @@ public sealed class HomePageTests
         Assert.Equal(
             "text/javascript",
             storefrontScript.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task BodySplashPageUsesTheNineProvidedProductPhotographs()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = application.CreateClient();
+
+        using var response = await client.GetAsync("/linha-corporal");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            9,
+            content.Split(
+                "data-body-splash-card",
+                StringSplitOptions.None).Length - 1);
+        Assert.Contains(
+            "Produtos reais, agora em primeiro plano.",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains("Aqua Imagination", content, StringComparison.Ordinal);
+        Assert.Contains("Golden Freesia", content, StringComparison.Ordinal);
+        Assert.Contains(
+            "<meta name=\"robots\" content=\"noindex,nofollow\"",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "<link rel=\"canonical\" href=\"https://tests.sallvat.invalid/linha-corporal\"",
+            content,
+            StringComparison.Ordinal);
+
+        using var thumbnail = await client.GetAsync(
+            "/images/showcase/real-products/vanilla-cream-thumb.webp");
+        Assert.Equal(HttpStatusCode.OK, thumbnail.StatusCode);
+        Assert.Equal(
+            "image/webp",
+            thumbnail.Content.Headers.ContentType?.MediaType);
+
+        using var largeImage = await client.GetAsync(
+            "/images/showcase/real-products/vanilla-cream.webp");
+        Assert.Equal(HttpStatusCode.OK, largeImage.StatusCode);
+        Assert.Equal(
+            "image/webp",
+            largeImage.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]

@@ -173,6 +173,11 @@ internal static partial class Program
             "/sobre",
             Path.Combine("sobre", "index.html"),
             options);
+        await ExportPageAsync(
+            client,
+            "/linha-corporal",
+            Path.Combine("linha-corporal", "index.html"),
+            options);
         foreach (var product in Products)
         {
             await ExportPageAsync(

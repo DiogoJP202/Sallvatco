@@ -26,7 +26,11 @@ public sealed class HomeController(
         return View(new HomePageViewModel(
             await catalogService.ListFeaturedAsync(
                 3,
-                cancellationToken)));
+                cancellationToken),
+            BodySplashPresentationCatalog.All
+                .Where(product => product.Featured)
+                .Take(3)
+                .ToArray()));
     }
 
     [HttpGet("sobre")]
@@ -38,5 +42,18 @@ public sealed class HomeController(
         ViewData["OpenGraphType"] = "website";
 
         return View();
+    }
+
+    [HttpGet("linha-corporal")]
+    public IActionResult BodySplashes()
+    {
+        ViewData["CanonicalUrl"] = new Uri(
+            publicOrigin,
+            "/linha-corporal").AbsoluteUri;
+        ViewData["OpenGraphType"] = "website";
+        ViewData["ForceNoIndex"] = true;
+
+        return View(new BodySplashCollectionPageViewModel(
+            BodySplashPresentationCatalog.All));
     }
 }
