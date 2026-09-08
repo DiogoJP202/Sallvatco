@@ -10,7 +10,7 @@ O planejamento da Fase 0 e as **Fases 1 a 3** estão concluídos. Já existem fu
 
 ## Demonstração visual
 
-A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, catálogo e detalhe de produto com dados descartáveis gerados durante o workflow. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
+A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes e detalhe de produto com dados descartáveis gerados durante o workflow. Nomes, textos, preços, estoques e imagens ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
 
 ## Stack definida
 

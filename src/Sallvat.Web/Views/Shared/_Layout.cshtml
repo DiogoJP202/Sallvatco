@@ -74,8 +74,7 @@
                    asp-action="Index">Perfumes</a>
                 <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
                    asp-controller="Home"
-                   asp-action="Index"
-                   asp-fragment="manifesto-title">Sobre</a>
+                   asp-action="About">Sobre</a>
                 @if (User.Identity?.IsAuthenticated is true)
                 {
                     @if (User.IsInRole("Admin"))
@@ -124,7 +123,7 @@
                 <div class="grid gap-1">
                     <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="Index">Início</a>
                     <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="" asp-controller="Perfumes" asp-action="Index">Perfumes</a>
-                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="Index" asp-fragment="manifesto-title">Sobre</a>
+                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="About">Sobre</a>
                     @if (User.Identity?.IsAuthenticated is true)
                     {
                         @if (User.IsInRole("Admin"))
@@ -167,6 +166,7 @@
                 <nav class="flex flex-wrap gap-x-5 gap-y-3 md:justify-end" aria-label="Navegação do rodapé">
                     <a class="text-sm transition hover:text-white" asp-controller="Home" asp-action="Index">Início</a>
                     <a class="text-sm transition hover:text-white" asp-controller="Perfumes" asp-action="Index">Perfumes</a>
+                    <a class="text-sm transition hover:text-white" asp-controller="Home" asp-action="About">Sobre</a>
                     <a class="text-sm transition hover:text-white" asp-controller="Account" asp-action="Login">Minha conta</a>
                 </nav>
                 <p class="mt-10 text-[0.62rem] tracking-[0.18em] text-stone-500 uppercase">Ambiente de desenvolvimento</p>

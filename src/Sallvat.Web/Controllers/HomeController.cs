@@ -28,4 +28,15 @@ public sealed class HomeController(
                 3,
                 cancellationToken)));
     }
+
+    [HttpGet("sobre")]
+    public IActionResult About()
+    {
+        ViewData["CanonicalUrl"] = new Uri(
+            publicOrigin,
+            "/sobre").AbsoluteUri;
+        ViewData["OpenGraphType"] = "website";
+
+        return View();
+    }
 }

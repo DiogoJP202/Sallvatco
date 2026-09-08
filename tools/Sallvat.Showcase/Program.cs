@@ -168,6 +168,11 @@ internal static partial class Program
             "/perfumes",
             Path.Combine("perfumes", "index.html"),
             options);
+        await ExportPageAsync(
+            client,
+            "/sobre",
+            Path.Combine("sobre", "index.html"),
+            options);
         foreach (var product in Products)
         {
             await ExportPageAsync(
@@ -196,6 +201,7 @@ internal static partial class Program
         await WriteTextAsync(
             Path.Combine(options.OutputDirectory, "robots.txt"),
             "User-agent: *\nDisallow: /\n");
+        ValidateOutput(options);
     }
 
     private static async Task InitializeDatabaseAsync(
@@ -458,6 +464,55 @@ internal static partial class Program
         Directory.CreateDirectory(outputDirectory);
     }
 
+    private static void ValidateOutput(ExportOptions options)
+    {
+        var missingTargets = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var htmlPath in Directory.EnumerateFiles(
+                     options.OutputDirectory,
+                     "*.html",
+                     SearchOption.AllDirectories))
+        {
+            var html = File.ReadAllText(htmlPath);
+            foreach (Match match in InternalReferencePattern().Matches(html))
+            {
+                var reference = WebUtility.HtmlDecode(
+                    match.Groups["path"].Value);
+                var path = reference.Split('?', '#')[0];
+                if (!string.IsNullOrEmpty(options.BasePath))
+                {
+                    if (!path.StartsWith(
+                            $"{options.BasePath}/",
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    path = path[options.BasePath.Length..];
+                }
+
+                var relativePath = Uri.UnescapeDataString(path).TrimStart('/');
+                var candidate = Path.Combine(
+                    options.OutputDirectory,
+                    relativePath.Replace('/', Path.DirectorySeparatorChar));
+                if (string.IsNullOrEmpty(Path.GetExtension(candidate)))
+                {
+                    candidate = Path.Combine(candidate, "index.html");
+                }
+
+                if (!File.Exists(candidate))
+                {
+                    missingTargets.Add(reference);
+                }
+            }
+        }
+
+        if (missingTargets.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"O export contém referências ausentes: {string.Join(", ", missingTargets)}");
+        }
+    }
+
     private static void CopyDirectory(string source, string destination)
     {
         foreach (var sourcePath in Directory.EnumerateFiles(
@@ -492,6 +547,11 @@ internal static partial class Program
 
     [GeneratedRegex(@", /(?!/)", RegexOptions.CultureInvariant)]
     private static partial Regex SrcSetContinuationPattern();
+
+    [GeneratedRegex(
+        "(?:href|src)=\\\"(?<path>/[^\\\"]+)\\\"",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex InternalReferencePattern();
 }
 
 internal sealed record ShowcaseProduct(

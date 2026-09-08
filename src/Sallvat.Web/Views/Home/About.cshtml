@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Sobre";
+    ViewData["Description"] = "Conheça a proposta sensorial e a direção de marca da Sallvat & Co.";
+}
+
+<section class="overflow-hidden bg-[#ddd2c4]" aria-labelledby="about-title">
+    <div class="mx-auto grid min-h-[42rem] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-24">
+        <div class="max-w-2xl">
+            <p class="eyebrow">Sobre a Sallvat &amp; Co.</p>
+            <h1 id="about-title" class="mt-6 font-serif text-6xl leading-[0.92] tracking-[-0.035em] sm:text-7xl">Uma história começa antes da primeira nota.</h1>
+            <p class="mt-8 max-w-xl text-lg leading-8 text-stone-700">A Sallvat &amp; Co. apresenta a perfumaria como uma forma de traduzir presença, memória e intenção. Cada universo é construído para tornar a descoberta mais clara, pessoal e sensorial.</p>
+            <p class="mt-5 max-w-xl text-sm leading-7 text-stone-600">A identidade, o catálogo e os textos exibidos nesta apresentação ainda estão em processo de curadoria e aprovação.</p>
+        </div>
+        <div class="grid grid-cols-[0.92fr_1.08fr] items-end gap-4">
+            <img class="mb-10 w-full rounded-[2rem] object-cover shadow-xl shadow-stone-900/10"
+                 src="~/images/showcase/brand-presentation.webp"
+                 asp-append-version="true"
+                 width="399"
+                 height="501"
+                 alt="Apresentação de perfume Sallvat & Co. ao lado de um frasco"
+                 decoding="async"
+                 fetchpriority="high" />
+            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-stone-900/15"
+                 src="~/images/showcase/brand-manifesto.webp"
+                 asp-append-version="true"
+                 width="432"
+                 height="462"
+                 alt="Manifesto visual Sallvat & Co. com sombras de folhas"
+                 decoding="async" />
+        </div>
+    </div>
+</section>
+
+<section class="bg-paper" aria-labelledby="principles-title">
+    <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+        <div class="grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
+            <div>
+                <p class="eyebrow">A proposta</p>
+                <h2 id="principles-title" class="mt-5 font-serif text-5xl leading-none tracking-tight sm:text-6xl">Escolher pelo que a fragrância faz sentir.</h2>
+            </div>
+            <div class="grid gap-px overflow-hidden rounded-[2rem] bg-stone-300 ring-1 ring-stone-300 sm:grid-cols-3">
+                <article class="bg-white p-7">
+                    <span class="font-serif text-2xl text-copper">01</span>
+                    <h3 class="mt-8 font-serif text-2xl">Clareza</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-600">Notas, família, projeção e ocasião apresentados de um jeito simples de comparar.</p>
+                </article>
+                <article class="bg-white p-7">
+                    <span class="font-serif text-2xl text-copper">02</span>
+                    <h3 class="mt-8 font-serif text-2xl">Atmosfera</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-600">Imagens, matérias e luz ajudam a antecipar o universo sensorial de cada criação.</p>
+                </article>
+                <article class="bg-white p-7">
+                    <span class="font-serif text-2xl text-copper">03</span>
+                    <h3 class="mt-8 font-serif text-2xl">Identidade</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-600">A escolha se completa quando a fragrância conversa com o momento e a intenção de quem usa.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="bg-ink text-white" aria-labelledby="brand-direction-title">
+    <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:px-10 lg:py-28">
+        <div class="mx-auto max-w-sm">
+            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
+                 src="~/images/showcase/sea-salt-body-splash.webp"
+                 asp-append-version="true"
+                 width="335"
+                 height="597"
+                 alt="Body splash Sea Salt da Sallvat & Co. em cenário costeiro"
+                 loading="lazy"
+                 decoding="async" />
+        </div>
+        <div>
+            <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Direção em construção</p>
+            <h2 id="brand-direction-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">Uma linguagem para acompanhar a coleção inteira.</h2>
+            <p class="mt-7 max-w-2xl text-base leading-8 text-stone-300">Do perfume ao cuidado corporal, a direção visual procura manter uma assinatura reconhecível: matérias naturais, luz precisa, informação essencial e espaço para cada produto respirar.</p>
+            <p class="mt-6 max-w-2xl text-sm leading-7 text-stone-400">A composição final da linha, embalagens e extensões de produto será definida após validação comercial.</p>
+            <a class="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-ink transition hover:bg-sand" asp-controller="Perfumes" asp-action="Index">Explorar a coleção</a>
+        </div>
+    </div>
+</section>

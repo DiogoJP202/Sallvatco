@@ -85,44 +85,122 @@
         <div class="max-w-3xl">
             <p class="eyebrow">Universos olfativos</p>
             <h2 id="universos-title" class="mt-5 font-serif text-5xl leading-none tracking-tight sm:text-6xl">
-                Para cada momento, uma atmosfera.
+                Quatro maneiras de ocupar o espaço.
             </h2>
         </div>
 
-        <div class="mt-12 grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
-            <article class="group relative min-h-[34rem] overflow-hidden rounded-[2rem] bg-sand sm:min-h-[42rem]">
+        <div class="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
+               asp-controller="Perfumes"
+               asp-action="Index"
+               asp-route-familia="Fresco aquático">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
-                     src="~/images/home/collection-fresh.webp"
+                     src="~/images/showcase/atmosphere-sea-salt.webp"
                      asp-append-version="true"
-                     width="1152"
-                     height="1440"
-                     alt="Frasco transparente diante de um mar azul e luminoso"
+                     width="900"
+                     height="1125"
+                     alt="Cristais de sal sobre pedra clara diante do mar"
                      loading="lazy"
                      decoding="async" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" aria-hidden="true"></div>
-                <div class="absolute inset-x-0 bottom-0 p-7 text-white sm:p-10">
-                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Leveza luminosa</p>
-                    <h3 class="mt-3 font-serif text-4xl sm:text-5xl">Frescos</h3>
-                    <p class="mt-3 max-w-sm text-sm leading-6 text-stone-100">Notas transparentes para acompanhar dias leves e encontros ao ar livre.</p>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-x-0 bottom-0 p-7 text-white">
+                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Sea Salt · Mineral</p>
+                    <h3 class="mt-3 font-serif text-4xl">Fresco</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-100">Sal, transparência e uma sensação de horizonte aberto.</p>
                 </div>
-            </article>
+            </a>
 
-            <article class="group relative min-h-[34rem] overflow-hidden rounded-[2rem] bg-ink sm:min-h-[42rem]">
+            <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-ink"
+               asp-controller="Perfumes"
+               asp-action="Index"
+               asp-route-familia="Âmbar gourmand">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
-                     src="~/images/home/collection-amber.webp"
+                     src="~/images/showcase/atmosphere-hibernum.webp"
                      asp-append-version="true"
-                     width="1152"
-                     height="1440"
-                     alt="Frasco com fragrância âmbar entre madeiras e luzes quentes"
+                     width="900"
+                     height="1125"
+                     alt="Baunilha, fava-tonka e resina âmbar sob luz quente"
                      loading="lazy"
                      decoding="async" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" aria-hidden="true"></div>
-                <div class="absolute inset-x-0 bottom-0 p-7 text-white sm:p-10">
-                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Calor que envolve</p>
-                    <h3 class="mt-3 font-serif text-4xl sm:text-5xl">Intensos</h3>
-                    <p class="mt-3 max-w-md text-sm leading-6 text-stone-100">Madeiras e acordes quentes para uma presença profunda e memorável.</p>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-x-0 bottom-0 p-7 text-white">
+                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Hibernum · Envolvente</p>
+                    <h3 class="mt-3 font-serif text-4xl">Âmbar</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-100">Calor, especiarias e texturas que permanecem próximas.</p>
                 </div>
-            </article>
+            </a>
+
+            <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
+               asp-controller="Perfumes"
+               asp-action="Index"
+               asp-route-familia="Amadeirado">
+                <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
+                     src="~/images/showcase/atmosphere-corium.webp"
+                     asp-append-version="true"
+                     width="900"
+                     height="1125"
+                     alt="Couro, cedro e pedra em composição de luz lateral"
+                     loading="lazy"
+                     decoding="async" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-x-0 bottom-0 p-7 text-white">
+                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Corium · Tátil</p>
+                    <h3 class="mt-3 font-serif text-4xl">Madeira</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-100">Matéria, sombra e uma elegância de contornos precisos.</p>
+                </div>
+            </a>
+
+            <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
+               asp-controller="Perfumes"
+               asp-action="Index"
+               asp-route-familia="Cítrico amadeirado">
+                <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
+                     src="~/images/showcase/atmosphere-cumiere.webp"
+                     asp-append-version="true"
+                     width="900"
+                     height="1125"
+                     alt="Bergamota, folhas verdes e madeira sob luz dourada"
+                     loading="lazy"
+                     decoding="async" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true"></div>
+                <div class="absolute inset-x-0 bottom-0 p-7 text-white">
+                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Cumiere · Luminoso</p>
+                    <h3 class="mt-3 font-serif text-4xl">Cítrico</h3>
+                    <p class="mt-3 text-sm leading-6 text-stone-100">Folhas, cascas e luz para começar o dia em movimento.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="overflow-hidden bg-ink text-white" aria-labelledby="editorial-title">
+    <div class="mx-auto grid max-w-7xl gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-28">
+        <div class="grid grid-cols-[1.1fr_0.9fr] items-end gap-4">
+            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
+                 src="~/images/showcase/brand-manifesto.webp"
+                 asp-append-version="true"
+                 width="432"
+                 height="462"
+                 alt="Apresentação Sallvat & Co. com sombras botânicas"
+                 loading="lazy"
+                 decoding="async" />
+            <img class="mb-8 w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
+                 src="~/images/showcase/brand-presentation.webp"
+                 asp-append-version="true"
+                 width="399"
+                 height="501"
+                 alt="Frasco e apresentação de perfume Sallvat & Co."
+                 loading="lazy"
+                 decoding="async" />
+        </div>
+        <div>
+            <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Direção de marca</p>
+            <h2 id="editorial-title" class="mt-5 font-serif text-5xl leading-[0.98] tracking-tight sm:text-6xl">Perfume como gesto de identidade.</h2>
+            <p class="mt-7 max-w-xl text-base leading-8 text-stone-300">Cada criação é apresentada pelo que desperta: notas, texturas, momentos e presença. Uma linguagem visual que aproxima a escolha antes mesmo da primeira borrifada.</p>
+            <p class="mt-6 max-w-xl text-sm leading-7 text-stone-400">Esta coleção está em curadoria. Nomes, descrições, preços e disponibilidade serão confirmados antes do lançamento comercial.</p>
+            <a class="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-ink transition hover:bg-sand"
+               asp-controller="Home"
+               asp-action="About">Conhecer a proposta</a>
         </div>
     </div>
 </section>

@@ -6,6 +6,42 @@ namespace Sallvat.IntegrationTests.Web;
 public sealed class HomePageTests
 {
     [Fact]
+    public async Task AboutPageUsesProvisionalBrandNarrativeAndWebpAssets()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = application.CreateClient();
+
+        using var response = await client.GetAsync("/sobre");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(
+            "Uma história começa antes da primeira nota.",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ainda estão em processo de curadoria e aprovação",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/images/showcase/brand-manifesto.webp?v=",
+            content,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "<link rel=\"canonical\" href=\"https://tests.sallvat.invalid/sobre\"",
+            content,
+            StringComparison.Ordinal);
+
+        using var brandImage = await client.GetAsync(
+            "/images/showcase/brand-manifesto.webp");
+        Assert.Equal(HttpStatusCode.OK, brandImage.StatusCode);
+        Assert.Equal(
+            "image/webp",
+            brandImage.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
     public async Task HomeRendersAccessibleAccountLaunchExperience()
     {
         await using var application = new AccountWebApplicationFactory();
