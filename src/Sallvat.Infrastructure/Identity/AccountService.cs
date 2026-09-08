@@ -135,7 +135,7 @@ internal sealed class AccountService(
         return result.Succeeded;
     }
 
-    public async Task<AccountSignInStatus> SignInAsync(
+    public async Task<AccountSignInResult> SignInAsync(
         string email,
         string password,
         bool rememberMe)
@@ -148,17 +148,22 @@ internal sealed class AccountService(
 
         if (result.Succeeded)
         {
-            return AccountSignInStatus.Succeeded;
+            var user = await userManager.FindByEmailAsync(email.Trim());
+            return user is null
+                ? AccountSignInResult.Failure(AccountSignInStatus.Failed)
+                : AccountSignInResult.Success(user.Id);
         }
 
         if (result.IsLockedOut)
         {
-            return AccountSignInStatus.LockedOut;
+            return AccountSignInResult.Failure(
+                AccountSignInStatus.LockedOut);
         }
 
-        return result.IsNotAllowed
-            ? AccountSignInStatus.NotAllowed
-            : AccountSignInStatus.Failed;
+        return AccountSignInResult.Failure(
+            result.IsNotAllowed
+                ? AccountSignInStatus.NotAllowed
+                : AccountSignInStatus.Failed);
     }
 
     public Task SignOutAsync() => signInManager.SignOutAsync();

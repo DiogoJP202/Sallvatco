@@ -15,7 +15,7 @@ public interface IAccountService
         string token,
         CancellationToken cancellationToken = default);
 
-    Task<AccountSignInStatus> SignInAsync(
+    Task<AccountSignInResult> SignInAsync(
         string email,
         string password,
         bool rememberMe);

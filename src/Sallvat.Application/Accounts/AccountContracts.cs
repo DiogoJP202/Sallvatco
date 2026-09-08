@@ -33,6 +33,17 @@ public enum AccountSignInStatus
     NotAllowed,
 }
 
+public sealed record AccountSignInResult(
+    AccountSignInStatus Status,
+    Guid? UserId)
+{
+    public static AccountSignInResult Success(Guid userId) =>
+        new(AccountSignInStatus.Succeeded, userId);
+
+    public static AccountSignInResult Failure(AccountSignInStatus status) =>
+        new(status, null);
+}
+
 public sealed record AccountOperationResult(
     bool Succeeded,
     IReadOnlyList<string> Errors)

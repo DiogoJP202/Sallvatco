@@ -20,7 +20,7 @@ Segurança é requisito de todas as fases. Controles deste documento devem ser t
 - cookies de autenticação: `Secure`, `HttpOnly`, `SameSite=Lax` e nome específico por ambiente;
 - chaves do ASP.NET Data Protection persistem em volume protegido e são separadas por ambiente;
 - cookie administrativo tem duração menor e reautenticação pode ser exigida para operação sensível;
-- carrinho usa identificador aleatório, sem dados pessoais ou preço no cookie;
+- carrinho usa token aleatório de 256 bits em cookie `HttpOnly`, `Secure` fora do HTTP local e `SameSite=Lax`; somente o hash SHA-256 é persistido, sem dados pessoais ou preço no cookie;
 - sessão e cookies são invalidados após reset de senha ou revogação administrativa quando aplicável.
 
 ## CSRF, XSS e CSP

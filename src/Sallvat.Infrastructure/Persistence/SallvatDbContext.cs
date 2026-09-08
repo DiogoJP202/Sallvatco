@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Sallvat.Domain.Auditing;
+using Sallvat.Domain.Carts;
 using Sallvat.Domain.Catalog;
 using Sallvat.Domain.Customers;
 using Sallvat.Domain.Inventory;
@@ -16,6 +17,10 @@ public sealed class SallvatDbContext(
     public DbSet<Customer> Customers => Set<Customer>();
 
     public DbSet<Address> Addresses => Set<Address>();
+
+    public DbSet<Cart> Carts => Set<Cart>();
+
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     public DbSet<Product> Products => Set<Product>();
 

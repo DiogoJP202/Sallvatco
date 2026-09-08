@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Sallvat.Application.Accounts;
+using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Persistence;
 
 namespace Sallvat.IntegrationTests.Web;
@@ -13,10 +14,14 @@ public sealed class AccountWebApplicationFactory :
     SallvatWebApplicationFactory
 {
     private readonly string databaseName = $"sallvat-{Guid.NewGuid():N}";
+    private readonly IClock? clock;
 
-    public AccountWebApplicationFactory(long? maximumPixelCount = null)
+    public AccountWebApplicationFactory(
+        long? maximumPixelCount = null,
+        IClock? clock = null)
         : base(maximumPixelCount: maximumPixelCount)
     {
+        this.clock = clock;
     }
 
     public FakeAccountEmailSender EmailSender { get; } = new();
@@ -32,6 +37,12 @@ public sealed class AccountWebApplicationFactory :
             services.RemoveAll<SallvatDbContext>();
             services.AddDbContext<SallvatDbContext>(options =>
                 options.UseInMemoryDatabase(databaseName));
+
+            if (clock is not null)
+            {
+                services.RemoveAll<IClock>();
+                services.AddSingleton(clock);
+            }
 
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(EmailSender);

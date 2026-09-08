@@ -56,7 +56,9 @@
   const selectedVolume = document.querySelector("[data-selected-volume]");
   const selectedPrice = document.querySelector("[data-selected-price]");
   const selectedAvailability = document.querySelector("[data-selected-availability]");
+  const selectedVariant = document.querySelector("[data-selected-variant]");
   const purchaseButton = document.querySelector("[data-demo-purchase]");
+  const isShowcase = document.body.dataset.showcase === "true";
 
   const selectVariant = (option, updateAddress) => {
     const available = Number.parseInt(option.dataset.available ?? "0", 10);
@@ -64,6 +66,7 @@
     option.setAttribute("aria-current", "true");
     if (selectedVolume) selectedVolume.textContent = `${option.dataset.volume} ml`;
     if (selectedPrice) selectedPrice.textContent = option.dataset.price;
+    if (selectedVariant) selectedVariant.value = option.dataset.variantId;
     if (selectedAvailability) {
       selectedAvailability.textContent = available > 0
         ? `${available} ${available === 1 ? "unidade disponível" : "unidades disponíveis"}. Valores e estoque ilustrativos.`
@@ -72,7 +75,7 @@
     if (purchaseButton) {
       purchaseButton.disabled = available === 0;
       purchaseButton.textContent = available > 0
-        ? "Adicionar à sacola · demonstração"
+        ? (isShowcase ? "Adicionar à sacola · demonstração" : "Adicionar à sacola")
         : "Variante esgotada";
     }
     if (updateAddress) history.replaceState({}, "", option.href);
@@ -87,8 +90,13 @@
 
   const purchaseDialog = document.querySelector("[data-purchase-dialog]");
   const dialogClose = document.querySelector("[data-dialog-close]");
-  if (purchaseButton && purchaseDialog) {
-    purchaseButton.addEventListener("click", () => {
+  const purchaseForm = document.querySelector("[data-purchase-form]");
+  if (isShowcase && purchaseButton && purchaseDialog && purchaseForm) {
+    purchaseButton.textContent = purchaseButton.disabled
+      ? "Variante esgotada"
+      : "Adicionar à sacola · demonstração";
+    purchaseForm.addEventListener("submit", (event) => {
+      event.preventDefault();
       if (!purchaseButton.disabled) purchaseDialog.showModal();
     });
     dialogClose?.addEventListener("click", () => purchaseDialog.close());

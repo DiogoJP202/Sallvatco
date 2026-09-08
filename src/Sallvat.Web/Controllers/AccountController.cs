@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Sallvat.Application.Accounts;
+using Sallvat.Application.Carts;
+using Sallvat.Web.Carts;
 using Sallvat.Web.Configuration;
 using Sallvat.Web.Email;
 using Sallvat.Web.Models.Account;
@@ -16,6 +18,8 @@ namespace Sallvat.Web.Controllers;
 [Route("conta")]
 public sealed class AccountController(
     IAccountService accountService,
+    ICartService cartService,
+    CartCookieManager cartCookieManager,
     IEmailSender emailSender,
     IRecoveryRequestLimiter recoveryRequestLimiter,
     IOptions<AccountLinkOptions> accountLinkOptions) : Controller
@@ -138,7 +142,9 @@ public sealed class AccountController(
     [AllowAnonymous]
     [HttpPost("entrar")]
     [EnableRateLimiting(RateLimitPolicyNames.Login)]
-    public async Task<IActionResult> Login(LoginViewModel model)
+    public async Task<IActionResult> Login(
+        LoginViewModel model,
+        CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -149,8 +155,18 @@ public sealed class AccountController(
             model.Email,
             model.Password,
             model.RememberMe);
-        if (result == AccountSignInStatus.Succeeded)
+        if (result.Status == AccountSignInStatus.Succeeded)
         {
+            var guestToken = cartCookieManager.ReadToken(HttpContext);
+            if (guestToken is not null && result.UserId is Guid userId)
+            {
+                await cartService.MergeGuestCartAsync(
+                    guestToken,
+                    userId,
+                    cancellationToken);
+                cartCookieManager.Delete(HttpContext);
+            }
+
             return Url.IsLocalUrl(model.ReturnUrl)
                 ? LocalRedirect(model.ReturnUrl)
                 : RedirectToAction(nameof(Index));
@@ -158,7 +174,7 @@ public sealed class AccountController(
 
         ModelState.AddModelError(
             string.Empty,
-            result == AccountSignInStatus.LockedOut
+            result.Status == AccountSignInStatus.LockedOut
                 ? "Acesso temporariamente bloqueado. Aguarde 15 minutos e tente novamente."
                 : "Não foi possível entrar com os dados informados.");
 

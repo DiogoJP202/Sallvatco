@@ -171,14 +171,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `Cart` e `CartItem`, mappings, índices e migration.
-- [ ] Gerar token guest aleatório e cookie seguro.
-- [ ] Implementar adicionar, alterar quantidade, remover e limpar.
-- [ ] Recalcular catálogo, preço e disponibilidade em cada resumo relevante.
-- [ ] Implementar carrinho autenticado e mesclagem após login.
-- [ ] Implementar expiração e limpeza em lote.
-- [ ] Criar views responsivas e mensagens de alteração de preço/estoque.
-- [ ] Testar cookie adulterado, variante inativa, limite de quantidade e mesclagem.
+- [x] Criar `Cart` e `CartItem`, mappings, índices e migration.
+- [x] Gerar token guest aleatório e cookie seguro.
+- [x] Implementar adicionar, alterar quantidade, remover e limpar.
+- [x] Recalcular catálogo, preço e disponibilidade em cada resumo relevante.
+- [x] Implementar carrinho autenticado e mesclagem após login.
+- [x] Implementar expiração e limpeza em lote.
+- [x] Criar views responsivas e mensagens de alteração de preço/estoque.
+- [x] Testar cookie adulterado, variante inativa, limite de quantidade e mesclagem.
 
 ### STORY F4-S2 — Administrador cria cupom com limites verificáveis
 

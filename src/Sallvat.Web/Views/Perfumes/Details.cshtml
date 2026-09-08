@@ -68,6 +68,7 @@
                            asp-route-variante="@variant.Id"
                            aria-current="@(isSelected ? "true" : null)"
                            data-variant-option
+                           data-variant-id="@variant.Id"
                            data-volume="@variant.VolumeMl"
                            data-price="@variant.Price.ToString("C")"
                            data-available="@variant.Available">
@@ -84,12 +85,16 @@
                     <strong class="font-serif text-3xl" data-selected-price>@Model.SelectedVariant.Price.ToString("C")</strong>
                 </div>
                 <p class="mt-3 border-t border-stone-200 pt-4 text-xs leading-5 text-stone-500" data-selected-availability>@(Model.SelectedVariant.Available > 0 ? $"{Model.SelectedVariant.Available} {(Model.SelectedVariant.Available == 1 ? "unidade disponível" : "unidades disponíveis")}. Valores e estoque ilustrativos." : "Esta variante está temporariamente esgotada.")</p>
-                <button class="btn-primary mt-5 w-full"
-                        type="button"
-                        disabled="@(Model.SelectedVariant.Available == 0)"
-                        data-demo-purchase>
-                    @(Model.SelectedVariant.Available > 0 ? "Adicionar à sacola · demonstração" : "Variante esgotada")
-                </button>
+                <form asp-controller="Cart" asp-action="AddItem" method="post" data-purchase-form>
+                    <input type="hidden" name="VariantId" value="@Model.SelectedVariant.Id" data-selected-variant />
+                    <input type="hidden" name="Quantity" value="1" />
+                    <button class="btn-primary mt-5 w-full"
+                            type="submit"
+                            disabled="@(Model.SelectedVariant.Available == 0)"
+                            data-demo-purchase>
+                        @(Model.SelectedVariant.Available > 0 ? "Adicionar à sacola" : "Variante esgotada")
+                    </button>
+                </form>
             </div>
         </div>
     </div>

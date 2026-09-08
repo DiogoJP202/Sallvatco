@@ -75,6 +75,10 @@
                 <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
                    asp-controller="Home"
                    asp-action="About">Sobre</a>
+                <a class="text-sm font-medium text-stone-700 transition hover:text-copper"
+                   asp-area=""
+                   asp-controller="Cart"
+                   asp-action="Index">Sacola</a>
                 @if (User.Identity?.IsAuthenticated is true)
                 {
                     @if (User.IsInRole("Admin"))
@@ -124,6 +128,7 @@
                     <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="Index">Início</a>
                     <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="" asp-controller="Perfumes" asp-action="Index">Perfumes</a>
                     <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-controller="Home" asp-action="About">Sobre</a>
+                    <a class="rounded-2xl px-4 py-3 text-sm font-semibold transition hover:bg-white" asp-area="" asp-controller="Cart" asp-action="Index">Sacola</a>
                     @if (User.Identity?.IsAuthenticated is true)
                     {
                         @if (User.IsInRole("Admin"))
@@ -167,6 +172,7 @@
                     <a class="text-sm transition hover:text-white" asp-controller="Home" asp-action="Index">Início</a>
                     <a class="text-sm transition hover:text-white" asp-controller="Perfumes" asp-action="Index">Perfumes</a>
                     <a class="text-sm transition hover:text-white" asp-controller="Home" asp-action="About">Sobre</a>
+                    <a class="text-sm transition hover:text-white" asp-area="" asp-controller="Cart" asp-action="Index">Sacola</a>
                     <a class="text-sm transition hover:text-white" asp-controller="Account" asp-action="Login">Minha conta</a>
                 </nav>
                 <p class="mt-10 text-[0.62rem] tracking-[0.18em] text-stone-500 uppercase">Ambiente de desenvolvimento</p>

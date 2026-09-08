@@ -418,6 +418,14 @@ internal static partial class Program
             $"href=\"{options.BasePath}/conta/criar\"",
             $"href=\"{noticePath}\"",
             StringComparison.Ordinal);
+        html = html.Replace(
+            $"href=\"{options.BasePath}/carrinho\"",
+            $"href=\"{noticePath}\"",
+            StringComparison.Ordinal);
+        html = html.Replace(
+            $"action=\"{options.BasePath}/carrinho/itens\"",
+            $"action=\"{noticePath}\"",
+            StringComparison.Ordinal);
         return html.Replace(
             "A coleção Sallvat &amp; Co. está ganhando forma",
             "Apresentação visual · produtos, preços e textos sujeitos à validação",
@@ -549,7 +557,7 @@ internal static partial class Program
     private static partial Regex SrcSetContinuationPattern();
 
     [GeneratedRegex(
-        "(?:href|src)=\\\"(?<path>/[^\\\"]+)\\\"",
+        "(?:action|href|src)=\\\"(?<path>/[^\\\"]+)\\\"",
         RegexOptions.CultureInvariant)]
     private static partial Regex InternalReferencePattern();
 }

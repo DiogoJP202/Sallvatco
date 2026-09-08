@@ -25,7 +25,7 @@
 | `ProductVariant` | Volume, SKU, preço, moeda, peso, dimensões, `OnHand`, `Reserved`, ativo e versão de concorrência. |
 | `ProductImage` | Chave no storage, texto alternativo, dimensões, posição e flag de capa. |
 | `Cart` | Token público aleatório com hash/identificador seguro, cliente opcional, expiração e atualização. |
-| `CartItem` | Variante, quantidade e data de inclusão; preço é sempre recalculado. |
+| `CartItem` | Variante, quantidade, data de inclusão e preço de referência somente para avisar mudanças; o preço vigente é sempre recalculado. |
 | `Order` | Número público, cliente opcional, contato snapshot, status, subtotais, desconto, frete, total, moeda e timestamps. |
 | `OrderAddress` | Snapshot imutável do endereço de entrega do pedido. |
 | `OrderItem` | Snapshot de produto, variante, SKU, quantidade, preço unitário, desconto rateado e subtotal. |

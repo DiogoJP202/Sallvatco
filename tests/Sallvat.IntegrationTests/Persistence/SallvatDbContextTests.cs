@@ -38,6 +38,8 @@ public sealed class SallvatDbContextTests
                 "application_user_role",
                 "application_user_token",
                 "audit_log",
+                "cart",
+                "cart_item",
                 "customer",
                 "inventory_movement",
                 "product",

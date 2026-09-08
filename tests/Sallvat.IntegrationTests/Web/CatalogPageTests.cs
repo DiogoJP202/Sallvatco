@@ -120,6 +120,11 @@ public sealed class CatalogPageTests
         Assert.Contains("data-gallery-main", content, StringComparison.Ordinal);
         Assert.Contains("data-variant-option", content, StringComparison.Ordinal);
         Assert.Contains("data-demo-purchase", content, StringComparison.Ordinal);
+        Assert.Contains("action=\"/carrinho/itens\"", content, StringComparison.Ordinal);
+        Assert.Contains(
+            $"data-variant-id=\"{product.OutOfStockVariantId}\"",
+            content,
+            StringComparison.Ordinal);
         Assert.Contains("data-purchase-dialog", content, StringComparison.Ordinal);
         Assert.Contains(
             "Esta variante está temporariamente esgotada.",

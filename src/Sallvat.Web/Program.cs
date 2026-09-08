@@ -17,6 +17,7 @@ using Sallvat.Infrastructure;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Infrastructure.Storage;
+using Sallvat.Web.Carts;
 using Sallvat.Web.Configuration;
 using Sallvat.Web.Email;
 using Sallvat.Web.Observability;
@@ -152,6 +153,8 @@ builder.Services.AddSingleton<
     DataProtectionKeyRepositoryConfigurator>();
 builder.Services.AddHostedService<DataProtectionKeyRingInitializer>();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<CartCookieManager>();
+builder.Services.AddHostedService<CartCleanupService>();
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     {
