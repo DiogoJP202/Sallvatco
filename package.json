@@ -16,5 +16,8 @@
     "@tailwindcss/cli": "4.3.3",
     "markdownlint-cli2": "0.23.2",
     "tailwindcss": "4.3.3"
+  },
+  "overrides": {
+    "smol-toml": "1.7.1"
   }
 }
