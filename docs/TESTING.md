@@ -121,6 +121,8 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 
 O teste integrado inicia duas transações concorrentes tentando reservar a última unidade. Apenas uma confirma; a outra recebe indisponibilidade. Ao final, `OnHand >= Reserved >= 0`, existe uma reserva ativa e nenhum pedido parcial. O mesmo padrão cobre limite final de cupom.
 
+A criação de pedido também cobre repetição da mesma tentativa, snapshots que permanecem iguais após alteração do catálogo, rateio determinístico do cupom, limpeza da sacola somente no sucesso e rollback quando uma linha posterior fica indisponível. O contrato rejeita frete zerado sem regra aprovada, cotação vencida e qualquer total recebido do navegador.
+
 ## Webhook
 
 - payload com assinatura correta é consultado na API fake;

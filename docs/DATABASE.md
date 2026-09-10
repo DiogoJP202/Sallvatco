@@ -130,7 +130,7 @@ Ajustes alteram `OnHand` por diferença e sempre criam movimento com ator e just
 
 ## Cupons, rateio e concorrência
 
-O carrinho referencia no máximo um `Coupon` e exibe apenas uma prévia recalculada com os preços vigentes. A aplicação definitiva acontece na criação do pedido: uma `CouponRedemption` é reservada por chave idempotente, passa de `Reserved` para `Consumed` quando recebe o `OrderId`, ou para `Released` no cancelamento/expiração. `order_id` permanece sem FK apenas até a entidade `Order` ser criada na Fase 5; a migration dessa fase adicionará a restrição.
+O carrinho referencia no máximo um `Coupon` e exibe apenas uma prévia recalculada com os preços vigentes. A aplicação definitiva acontece na criação do pedido: uma `CouponRedemption` é reservada por chave idempotente, passa de `Reserved` para `Consumed` quando recebe o `OrderId`, ou para `Released` no cancelamento/expiração. A migration `AddOrdersAndReservations` adiciona a FK de `coupon_redemption.order_id` e garante no máximo um consumo por pedido.
 
 `ClaimedUsageCount` contabiliza reservas ativas e consumos. Claim e criação da redemption ocorrem na mesma transação, protegidos por token de concorrência e constraints; liberar uma reserva decrementa o contador uma única vez. O job técnico também libera reservas expiradas em lotes.
 

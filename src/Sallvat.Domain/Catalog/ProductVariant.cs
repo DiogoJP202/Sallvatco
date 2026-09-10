@@ -150,6 +150,21 @@ public sealed class ProductVariant
         return difference;
     }
 
+    public bool Reserve(
+        int quantity,
+        DateTimeOffset reservedAtUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        if (!IsSellable || Available < quantity)
+        {
+            return false;
+        }
+
+        Reserved += quantity;
+        Touch(reservedAtUtc);
+        return true;
+    }
+
     private void ApplyCommercialData(
         string sku,
         int volumeMl,

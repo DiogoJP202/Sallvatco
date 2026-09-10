@@ -6,7 +6,7 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 e as **Fases 1 a 4** estão concluídos. A primeira história da **Fase 5** também está pronta: `/checkout` coleta e normaliza somente contato e entrega, atende guest e cliente, pré-preenche endereços sem alterar a conta, impede acesso a endereço alheio e revisa o resumo recalculado pelo servidor. CPF e aceite genérico não são solicitados; nenhum pedido ou cobrança ocorre nessa tela. A aplicação também mantém sacola guest por token seguro, recalcula preço, estoque e descontos, mescla o conteúdo após login e elimina carrinhos expirados. Cupons possuem limites concorrentes, reserva idempotente e administração auditada em `/Admin/Cupons`. O próximo incremento criará `Order`, snapshots e reservas atômicas de estoque. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 e as **Fases 1 a 4** estão concluídos. As histórias **F5-S1** e **F5-S2** também estão prontas: `/checkout` coleta e normaliza somente contato e entrega, atende guest e cliente, pré-preenche endereços sem alterar a conta, impede acesso a endereço alheio e revisa o resumo recalculado pelo servidor. O caso de uso interno cria `Order`, snapshots comerciais e de frete, consumo de cupom e reservas de estoque na mesma transação, com idempotência por tentativa e proteção contra overselling. A ação pública permanece desabilitada até a Fase 6 fornecer e revalidar uma cotação de frete real; nenhum pedido ou cobrança é criado pela tela atual. CPF e aceite genérico não são solicitados. A aplicação também mantém sacola guest por token seguro, recalcula preço, estoque e descontos, mescla o conteúdo após login e elimina carrinhos expirados. O próximo incremento implementará a máquina de estados, expiração e liberação idempotente das reservas. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Demonstração visual
 
@@ -115,7 +115,7 @@ dotnet run --project src/Sallvat.Web
 
 ## Migrations
 
-As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory`, `AddShoppingCarts` e `AddCoupons` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria, carrinhos e promoções. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
+As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory`, `AddShoppingCarts`, `AddCoupons` e `AddOrdersAndReservations` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria, carrinhos, promoções, pedidos, snapshots e reservas. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
 
 ```powershell
 dotnet ef migrations add NomeDaMudanca `

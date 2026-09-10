@@ -16,7 +16,7 @@
 
 Antes da criação do pedido, `/checkout` monta um draft somente em memória. Nome, e-mail, telefone, CEP e endereço são normalizados no servidor; endereços salvos são pré-preenchimento editável para aquela compra e nunca são atualizados implicitamente. O ID de endereço enviado só é aceito quando pertence ao usuário autenticado. Guest informa os mesmos dados necessários sem criar credencial. CPF permanece ausente conforme `PBD-003`.
 
-A tela de revisão não persiste PII, não reserva estoque e não representa aceite comercial. A ação final de criar o pedido, introduzida na história seguinte, exibirá as políticas oficiais aprovadas e registrará suas versões por consequência explícita do botão, sem checkbox genérico ou pré-marcado.
+A tela de revisão não persiste PII, não reserva estoque e não representa aceite comercial. O caso de uso transacional de criação já existe, mas a ação pública continuará bloqueada até a Fase 6 fornecer e revalidar uma cotação real de frete. Quando liberada, a ação exibirá as políticas oficiais aprovadas e registrará suas versões por consequência explícita do botão, sem checkbox genérico ou pré-marcado.
 
 Nenhum total enviado pelo navegador é aceito. O cálculo central segue a fórmula registrada em [DATABASE.md](DATABASE.md#order).
 
@@ -63,7 +63,7 @@ Transições para o mesmo estado retornam sucesso idempotente quando o mesmo eve
 
 1. identificar carrinho e comprador;
 2. validar itens ativos, quantidades e dados de entrega;
-3. consultar/revalidar frete escolhido;
+3. exigir um snapshot de frete positivo, vigente e completo; na Fase 6, consultar/revalidar a cotação escolhida antes do comando;
 4. recalcular preços e cupom;
 5. iniciar transação;
 6. reservar estoque de todas as variantes;
@@ -74,6 +74,8 @@ Transições para o mesmo estado retornam sucesso idempotente quando o mesmo eve
 11. persistir resultado e redirecionar.
 
 Falha ao criar a preferência mantém o pedido pendente e permite retry com a mesma chave. Se não for recuperado antes da expiração, um job libera a reserva e cancela o pedido.
+
+O comando usa `CheckoutAttemptId` e o carrinho de origem como identidade da tentativa. Repetir a mesma tentativa retorna o pedido existente sem duplicar estoque, cupom ou itens. O número público vem da sequence `order_number_sequence` e segue `SVT-aaaammdd-########`; a expiração inicial é configurável e começa em 30 minutos enquanto `PBD-005` não for decidida. O carrinho só é esvaziado depois que pedido, snapshots, resgates e reservas foram gravados com sucesso.
 
 ## Transições inválidas relevantes
 

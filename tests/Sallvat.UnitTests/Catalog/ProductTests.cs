@@ -90,6 +90,20 @@ public sealed class ProductTests
             variant.AdjustOnHand(-1, Timestamp.AddMinutes(1)));
     }
 
+    [Fact]
+    public void ReservationUsesAvailableBalanceAndChangesConcurrencyToken()
+    {
+        var variant = CreateVariant();
+        variant.AdjustOnHand(2, Timestamp.AddMinutes(1));
+        var previousVersion = variant.ConcurrencyVersion;
+
+        Assert.True(variant.Reserve(2, Timestamp.AddMinutes(2)));
+        Assert.Equal(0, variant.Available);
+        Assert.NotEqual(previousVersion, variant.ConcurrencyVersion);
+        Assert.False(variant.Reserve(1, Timestamp.AddMinutes(3)));
+        Assert.Equal(2, variant.Reserved);
+    }
+
     [Theory]
     [InlineData("../secret.webp")]
     [InlineData("/absolute/image.webp")]

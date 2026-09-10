@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sallvat.Domain.Customers;
+using Sallvat.Domain.Orders;
 using Sallvat.Domain.Promotions;
 
 namespace Sallvat.Infrastructure.Persistence.Configurations;
@@ -95,6 +96,8 @@ internal sealed class CouponRedemptionConfiguration :
             .HasDatabaseName("ix_coupon_redemption_email_usage");
         builder.HasIndex(redemption => redemption.CustomerId)
             .HasDatabaseName("ix_coupon_redemption_customer_id");
+        builder.HasIndex(redemption => redemption.OrderId)
+            .HasDatabaseName("ix_coupon_redemption_order_id");
 
         builder.HasOne<Coupon>()
             .WithMany()
@@ -106,5 +109,10 @@ internal sealed class CouponRedemptionConfiguration :
             .HasForeignKey(redemption => redemption.CustomerId)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("fk_coupon_redemption_customer");
+        builder.HasOne<Order>()
+            .WithMany()
+            .HasForeignKey(redemption => redemption.OrderId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("fk_coupon_redemption_order");
     }
 }

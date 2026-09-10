@@ -6,6 +6,7 @@ using Sallvat.Domain.Carts;
 using Sallvat.Domain.Catalog;
 using Sallvat.Domain.Customers;
 using Sallvat.Domain.Inventory;
+using Sallvat.Domain.Orders;
 using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Identity;
 
@@ -40,6 +41,15 @@ public sealed class SallvatDbContext(
     public DbSet<InventoryMovement> InventoryMovements =>
         Set<InventoryMovement>();
 
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+    public DbSet<OrderAddress> OrderAddresses => Set<OrderAddress>();
+
+    public DbSet<StockReservation> StockReservations =>
+        Set<StockReservation>();
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -49,6 +59,8 @@ public sealed class SallvatDbContext(
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(
             typeof(SallvatDbContext).Assembly);
+        builder.HasSequence<long>("order_number_sequence")
+            .StartsAt(1_000L);
         IdentityModelConfiguration.Configure(builder);
     }
 }

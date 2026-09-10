@@ -44,10 +44,14 @@ public sealed class SallvatDbContextTests
                 "coupon_redemption",
                 "customer",
                 "inventory_movement",
+                "order",
+                "order_address",
+                "order_item",
                 "product",
                 "product_image",
                 "product_slug_history",
                 "product_variant",
+                "stock_reservation",
             ],
             tableNames);
 

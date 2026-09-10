@@ -40,9 +40,9 @@
                 <div>
                     <p class="text-[0.62rem] font-semibold tracking-[0.18em] text-stone-400 uppercase">Total parcial revalidado</p>
                     <p class="mt-3 font-serif text-4xl">@Model.Cart.Total.ToString("C")</p>
-                    <p class="mt-3 max-w-xl text-xs leading-5 text-stone-400">A próxima história implementará criação idempotente do pedido e reserva atômica de estoque. O botão permanece indisponível até essa garantia existir.</p>
+                    <p class="mt-3 max-w-xl text-xs leading-5 text-stone-400">A criação transacional e a reserva atômica já estão prontas. O botão será liberado quando a próxima fase fornecer e revalidar uma cotação de frete real.</p>
                 </div>
-                <button class="min-h-12 cursor-not-allowed rounded-full bg-stone-600 px-7 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Criar pedido na próxima etapa</button>
+                <button class="min-h-12 cursor-not-allowed rounded-full bg-stone-600 px-7 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Aguardando cotação de frete</button>
             </div>
             <a class="mt-6 inline-block text-sm font-semibold text-stone-300 underline underline-offset-4 hover:text-white" asp-action="Index">Corrigir os dados</a>
         </div>

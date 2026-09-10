@@ -6,12 +6,14 @@ using Sallvat.Application.Accounts;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Catalog;
 using Sallvat.Application.Checkout;
+using Sallvat.Application.Orders;
 using Sallvat.Application.Promotions;
 using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Carts;
 using Sallvat.Infrastructure.Catalog;
 using Sallvat.Infrastructure.Checkout;
 using Sallvat.Infrastructure.Identity;
+using Sallvat.Infrastructure.Orders;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Infrastructure.Promotions;
 using Sallvat.Infrastructure.Storage;
@@ -55,10 +57,18 @@ public static class DependencyInjection
                     npgsql.MigrationsHistoryTable("__ef_migrations_history");
                 });
         });
+        services
+            .AddOptions<OrderOptions>()
+            .Bind(configuration.GetSection(OrderOptions.SectionName))
+            .Validate(
+                options => options.ReservationMinutes is >= 5 and <= 1_440,
+                "Orders:ReservationMinutes must be between 5 and 1440.")
+            .ValidateOnStart();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICatalogService, CatalogService>();
         services.AddScoped<ICheckoutService, CheckoutService>();
+        services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICouponService, CouponService>();
         services.AddSingleton<IImageStorage, LocalImageStorage>();
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();

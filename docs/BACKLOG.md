@@ -215,15 +215,15 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `Order`, `OrderItem`, `OrderAddress` e estados.
-- [ ] Criar `StockReservation` e configurações/migration.
-- [ ] Implementar calculador único de totais.
-- [ ] Implementar snapshots de item, contato, endereço, cupom e frete.
-- [ ] Implementar update condicional de reserva em ordem estável.
-- [ ] Gerar número público único e expiração configurável.
-- [ ] Tornar criação idempotente por tentativa de checkout.
-- [ ] Limpar/associar carrinho somente após sucesso.
-- [ ] Testar rollback, última unidade concorrente, total adulterado e snapshot.
+- [x] Criar `Order`, `OrderItem`, `OrderAddress` e estados.
+- [x] Criar `StockReservation` e configurações/migration.
+- [x] Implementar calculador único de totais.
+- [x] Implementar snapshots de item, contato, endereço, cupom e frete.
+- [x] Implementar update condicional de reserva em ordem estável.
+- [x] Gerar número público único e expiração configurável.
+- [x] Tornar criação idempotente por tentativa de checkout.
+- [x] Limpar/associar carrinho somente após sucesso.
+- [x] Testar rollback, última unidade concorrente, total adulterado e snapshot.
 
 ### STORY F5-S3 — Pedidos expiram e transitam de forma controlada
 
