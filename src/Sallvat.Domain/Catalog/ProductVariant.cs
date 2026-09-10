@@ -165,6 +165,37 @@ public sealed class ProductVariant
         return true;
     }
 
+    public void ReleaseReservation(
+        int quantity,
+        DateTimeOffset releasedAtUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        if (Reserved < quantity)
+        {
+            throw new InvalidOperationException(
+                "Cannot release more stock than is reserved.");
+        }
+
+        Reserved -= quantity;
+        Touch(releasedAtUtc);
+    }
+
+    public void ConsumeReservation(
+        int quantity,
+        DateTimeOffset consumedAtUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        if (Reserved < quantity || OnHand < quantity)
+        {
+            throw new InvalidOperationException(
+                "Cannot consume more stock than is reserved and on hand.");
+        }
+
+        Reserved -= quantity;
+        OnHand -= quantity;
+        Touch(consumedAtUtc);
+    }
+
     private void ApplyCommercialData(
         string sku,
         int volumeMl,

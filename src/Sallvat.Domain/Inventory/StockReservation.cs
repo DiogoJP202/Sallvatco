@@ -57,6 +57,69 @@ public sealed class StockReservation
 
     public Guid ConcurrencyVersion { get; private set; }
 
+    public bool Consume(DateTimeOffset consumedAtUtc)
+    {
+        if (Status == StockReservationStatus.Consumed)
+        {
+            return false;
+        }
+
+        if (Status != StockReservationStatus.Reserved)
+        {
+            throw new InvalidOperationException(
+                "Only a reserved stock hold can be consumed.");
+        }
+
+        var timestamp = CompletionTimestamp(
+            consumedAtUtc,
+            nameof(consumedAtUtc));
+        Status = StockReservationStatus.Consumed;
+        ConsumedAtUtc = timestamp;
+        Touch(timestamp);
+        return true;
+    }
+
+    public bool Release(DateTimeOffset releasedAtUtc)
+    {
+        if (Status == StockReservationStatus.Released)
+        {
+            return false;
+        }
+
+        if (Status != StockReservationStatus.Reserved)
+        {
+            throw new InvalidOperationException(
+                "Consumed stock cannot be released as a reservation.");
+        }
+
+        var timestamp = CompletionTimestamp(
+            releasedAtUtc,
+            nameof(releasedAtUtc));
+        Status = StockReservationStatus.Released;
+        ReleasedAtUtc = timestamp;
+        Touch(timestamp);
+        return true;
+    }
+
+    private DateTimeOffset CompletionTimestamp(
+        DateTimeOffset value,
+        string parameterName)
+    {
+        var timestamp = RequireUtc(value, parameterName);
+        if (timestamp < ReservedAtUtc)
+        {
+            throw new ArgumentOutOfRangeException(parameterName);
+        }
+
+        return timestamp;
+    }
+
+    private void Touch(DateTimeOffset timestamp)
+    {
+        UpdatedAtUtc = timestamp;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
     private static DateTimeOffset RequireUtc(
         DateTimeOffset value,
         string parameterName)

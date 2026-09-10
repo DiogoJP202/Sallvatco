@@ -104,6 +104,24 @@ public sealed class ProductTests
         Assert.Equal(2, variant.Reserved);
     }
 
+    [Fact]
+    public void ReservedBalanceCanBeReleasedOrConsumed()
+    {
+        var variant = CreateVariant();
+        variant.AdjustOnHand(4, Timestamp.AddMinutes(1));
+        variant.Reserve(3, Timestamp.AddMinutes(2));
+
+        variant.ReleaseReservation(1, Timestamp.AddMinutes(3));
+        Assert.Equal(4, variant.OnHand);
+        Assert.Equal(2, variant.Reserved);
+
+        variant.ConsumeReservation(2, Timestamp.AddMinutes(4));
+        Assert.Equal(2, variant.OnHand);
+        Assert.Equal(0, variant.Reserved);
+        Assert.Throws<InvalidOperationException>(() =>
+            variant.ReleaseReservation(1, Timestamp.AddMinutes(5)));
+    }
+
     [Theory]
     [InlineData("../secret.webp")]
     [InlineData("/absolute/image.webp")]

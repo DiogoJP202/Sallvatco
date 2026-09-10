@@ -37,7 +37,8 @@ internal sealed class InventoryMovementConfiguration :
         builder.Property(movement => movement.ResultingReserved)
             .HasColumnName("resulting_reserved");
         builder.Property(movement => movement.ActorUserId)
-            .HasColumnName("actor_user_id");
+            .HasColumnName("actor_user_id")
+            .IsRequired(false);
         builder.Property(movement => movement.Reason)
             .HasColumnName("reason")
             .HasMaxLength(InventoryMovement.ReasonMaxLength)

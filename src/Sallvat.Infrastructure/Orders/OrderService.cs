@@ -225,6 +225,15 @@ internal sealed class OrderService(
                     line.Quantity,
                     now,
                     expiration));
+                dbContext.InventoryMovements.Add(new InventoryMovement(
+                    line.ProductVariantId,
+                    InventoryMovementType.Reservation,
+                    line.Quantity,
+                    line.OnHand,
+                    line.Reserved + line.Quantity,
+                    null,
+                    $"Reserva do pedido {order.OrderNumber}",
+                    now));
             }
 
             if (couponResult.Coupon is not null
@@ -457,6 +466,8 @@ internal sealed class OrderService(
                 variant.Price,
                 variant.Currency,
                 variant.IsActive,
+                variant.OnHand,
+                variant.Reserved,
                 variant.WeightKg,
                 variant.HeightCm,
                 variant.WidthCm,
@@ -664,6 +675,8 @@ internal sealed class OrderService(
         decimal UnitPrice,
         string Currency,
         bool VariantActive,
+        int OnHand,
+        int Reserved,
         decimal WeightKg,
         decimal HeightCm,
         decimal WidthCm,

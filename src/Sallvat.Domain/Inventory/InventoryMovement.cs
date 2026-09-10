@@ -14,7 +14,7 @@ public sealed class InventoryMovement
         int quantity,
         int resultingOnHand,
         int resultingReserved,
-        Guid actorUserId,
+        Guid? actorUserId,
         string reason,
         DateTimeOffset createdAtUtc)
     {
@@ -70,7 +70,7 @@ public sealed class InventoryMovement
 
     public int ResultingReserved { get; private set; }
 
-    public Guid ActorUserId { get; private set; }
+    public Guid? ActorUserId { get; private set; }
 
     public string Reason { get; private set; } = string.Empty;
 

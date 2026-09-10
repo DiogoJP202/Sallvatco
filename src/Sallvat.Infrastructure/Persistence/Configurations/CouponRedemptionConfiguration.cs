@@ -27,8 +27,9 @@ internal sealed class CouponRedemptionConfiguration :
                 "expires_at_utc > reserved_at_utc");
             table.HasCheckConstraint(
                 "ck_coupon_redemption_order",
-                "(status = 'Consumed' AND order_id IS NOT NULL AND consumed_at_utc IS NOT NULL) OR " +
-                "(status <> 'Consumed' AND order_id IS NULL AND consumed_at_utc IS NULL)");
+                "(status = 'Reserved' AND order_id IS NULL AND consumed_at_utc IS NULL AND released_at_utc IS NULL) OR " +
+                "(status = 'Consumed' AND order_id IS NOT NULL AND consumed_at_utc IS NOT NULL AND released_at_utc IS NULL) OR " +
+                "(status = 'Released' AND released_at_utc IS NOT NULL)");
         });
         builder.HasKey(redemption => redemption.Id)
             .HasName("pk_coupon_redemption");
@@ -97,7 +98,8 @@ internal sealed class CouponRedemptionConfiguration :
         builder.HasIndex(redemption => redemption.CustomerId)
             .HasDatabaseName("ix_coupon_redemption_customer_id");
         builder.HasIndex(redemption => redemption.OrderId)
-            .HasDatabaseName("ix_coupon_redemption_order_id");
+            .IsUnique()
+            .HasDatabaseName("ux_coupon_redemption_order_id");
 
         builder.HasOne<Coupon>()
             .WithMany()

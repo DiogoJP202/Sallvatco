@@ -18,6 +18,7 @@ public sealed class AdminAuthorizationTests
     [Theory]
     [InlineData("/Admin")]
     [InlineData("/Admin/Cupons")]
+    [InlineData("/Admin/Pedidos")]
     public async Task AnonymousVisitorIsRedirectedToLogin(string path)
     {
         await using var application = new SallvatWebApplicationFactory();
@@ -39,6 +40,7 @@ public sealed class AdminAuthorizationTests
     [Theory]
     [InlineData("/Admin")]
     [InlineData("/Admin/Cupons")]
+    [InlineData("/Admin/Pedidos")]
     public async Task CustomerIsForbiddenFromAdmin(string path)
     {
         await using var application = CreateAuthenticatedApplication(
@@ -64,9 +66,31 @@ public sealed class AdminAuthorizationTests
         Assert.Contains("Administração", content, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task AdminCanAccessOrderQueue()
+    {
+        await using var databaseApplication =
+            new AccountWebApplicationFactory();
+        await databaseApplication.InitializeDatabaseAsync();
+        await using var application = CreateAuthenticatedApplication(
+            RoleNames.Admin,
+            databaseApplication);
+        using var client = application.CreateClient();
+
+        using var response = await client.GetAsync("/Admin/Pedidos");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Pedidos abertos", content, StringComparison.Ordinal);
+        Assert.Contains("Nenhum pedido aberto", content, StringComparison.Ordinal);
+    }
+
     private static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>
-        CreateAuthenticatedApplication(string role) =>
-        new SallvatWebApplicationFactory().WithWebHostBuilder(builder =>
+        CreateAuthenticatedApplication(
+            string role,
+            SallvatWebApplicationFactory? rootApplication = null) =>
+        (rootApplication ?? new SallvatWebApplicationFactory())
+            .WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {
                 services

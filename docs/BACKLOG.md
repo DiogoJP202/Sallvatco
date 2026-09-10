@@ -231,13 +231,13 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Implementar máquina de estados no domínio.
-- [ ] Implementar job de expiração em lotes.
-- [ ] Liberar reserva/cupom idempotentemente.
-- [ ] Criar casos de uso Admin com versão e justificativa.
-- [ ] Criar `RequiresAttention` e fila de resolução.
-- [ ] Auditar transições manuais.
-- [ ] Testar todas as arestas válidas e inválidas.
+- [x] Implementar máquina de estados no domínio.
+- [x] Implementar job de expiração em lotes.
+- [x] Liberar reserva/cupom idempotentemente.
+- [x] Criar casos de uso Admin com versão e justificativa.
+- [x] Criar `RequiresAttention` e fila de resolução.
+- [x] Auditar transições manuais.
+- [x] Testar todas as arestas válidas e inválidas.
 
 ## EPIC F6 — Frete e Melhor Envio
 

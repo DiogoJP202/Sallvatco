@@ -43,6 +43,10 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
                 "ck_order_expiration",
                 "expires_at_utc > created_at_utc AND " +
                 "shipping_quoted_at_utc <= created_at_utc");
+            table.HasCheckConstraint(
+                "ck_order_attention",
+                "(status = 'RequiresAttention' AND attention_reason IS NOT NULL AND attention_since_utc IS NOT NULL) OR " +
+                "(status <> 'RequiresAttention' AND attention_reason IS NULL AND attention_since_utc IS NULL)");
         });
     }
 
@@ -135,6 +139,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(order => order.ConcurrencyVersion)
             .HasColumnName("concurrency_version")
             .IsConcurrencyToken();
+        builder.Property(order => order.AttentionReason)
+            .HasColumnName("attention_reason")
+            .HasMaxLength(Order.AttentionReasonMaxLength);
+        builder.Property(order => order.AttentionSinceUtc)
+            .HasColumnName("attention_since_utc")
+            .HasColumnType("timestamptz");
     }
 
     private static void ConfigureIndexes(EntityTypeBuilder<Order> builder)

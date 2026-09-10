@@ -146,6 +146,42 @@ public sealed class CouponRedemption
         return true;
     }
 
+    public bool ReleaseForOrder(
+        long orderId,
+        DateTimeOffset releasedAtUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(orderId);
+        if (Status == CouponRedemptionStatus.Released)
+        {
+            if (OrderId != orderId)
+            {
+                throw new InvalidOperationException(
+                    "Redemption belongs to another order.");
+            }
+
+            return false;
+        }
+
+        if (Status != CouponRedemptionStatus.Consumed
+            || OrderId != orderId)
+        {
+            throw new InvalidOperationException(
+                "Only this order's consumed redemption can be released.");
+        }
+
+        var timestamp = RequireUtc(releasedAtUtc, nameof(releasedAtUtc));
+        if (ConsumedAtUtc is not DateTimeOffset consumedAtUtc
+            || timestamp < consumedAtUtc)
+        {
+            throw new ArgumentOutOfRangeException(nameof(releasedAtUtc));
+        }
+
+        Status = CouponRedemptionStatus.Released;
+        ReleasedAtUtc = timestamp;
+        Touch(timestamp);
+        return true;
+    }
+
     private void Touch(DateTimeOffset timestamp)
     {
         UpdatedAtUtc = timestamp;

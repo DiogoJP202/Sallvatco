@@ -11,6 +11,7 @@ public sealed class Order
     public const int ShippingCarrierMaxLength = 120;
     public const int ShippingServiceMaxLength = 120;
     public const int ShippingQuoteIdMaxLength = 160;
+    public const int AttentionReasonMaxLength = 500;
 
     private Order()
     {
@@ -214,6 +215,10 @@ public sealed class Order
 
     public Guid ConcurrencyVersion { get; private set; }
 
+    public string? AttentionReason { get; private set; }
+
+    public DateTimeOffset? AttentionSinceUtc { get; private set; }
+
     public void AssignGuestCustomer(Customer customer)
     {
         ArgumentNullException.ThrowIfNull(customer);
@@ -232,6 +237,80 @@ public sealed class Order
 
         Customer = customer;
     }
+
+    public bool TransitionTo(
+        OrderStatus targetStatus,
+        DateTimeOffset transitionedAtUtc,
+        string? attentionReason = null)
+    {
+        if (!Enum.IsDefined(targetStatus))
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetStatus));
+        }
+
+        var timestamp = RequireUtc(
+            transitionedAtUtc,
+            nameof(transitionedAtUtc));
+        if (timestamp < UpdatedAtUtc)
+        {
+            throw new ArgumentOutOfRangeException(nameof(transitionedAtUtc));
+        }
+
+        if (targetStatus == Status)
+        {
+            return false;
+        }
+
+        if (!CanTransition(Status, targetStatus))
+        {
+            throw new InvalidOperationException(
+                $"Order cannot transition from {Status} to {targetStatus}.");
+        }
+
+        if (targetStatus == OrderStatus.RequiresAttention)
+        {
+            AttentionReason = Required(
+                attentionReason!,
+                AttentionReasonMaxLength,
+                nameof(attentionReason));
+            AttentionSinceUtc = timestamp;
+        }
+        else if (Status == OrderStatus.RequiresAttention)
+        {
+            AttentionReason = null;
+            AttentionSinceUtc = null;
+        }
+
+        Status = targetStatus;
+        UpdatedAtUtc = timestamp;
+        ConcurrencyVersion = Guid.NewGuid();
+        return true;
+    }
+
+    public static bool CanTransition(
+        OrderStatus sourceStatus,
+        OrderStatus targetStatus) =>
+        (sourceStatus, targetStatus) switch
+        {
+            (OrderStatus.PendingPayment, OrderStatus.Paid) => true,
+            (OrderStatus.PendingPayment, OrderStatus.Cancelled) => true,
+            (OrderStatus.PendingPayment, OrderStatus.RequiresAttention) => true,
+            (OrderStatus.Paid, OrderStatus.Preparing) => true,
+            (OrderStatus.Paid, OrderStatus.Refunded) => true,
+            (OrderStatus.Paid, OrderStatus.RequiresAttention) => true,
+            (OrderStatus.Preparing, OrderStatus.Shipped) => true,
+            (OrderStatus.Preparing, OrderStatus.Refunded) => true,
+            (OrderStatus.Preparing, OrderStatus.RequiresAttention) => true,
+            (OrderStatus.Shipped, OrderStatus.Delivered) => true,
+            (OrderStatus.Shipped, OrderStatus.Refunded) => true,
+            (OrderStatus.Shipped, OrderStatus.RequiresAttention) => true,
+            (OrderStatus.Delivered, OrderStatus.Refunded) => true,
+            (OrderStatus.RequiresAttention, OrderStatus.Paid) => true,
+            (OrderStatus.RequiresAttention, OrderStatus.Preparing) => true,
+            (OrderStatus.RequiresAttention, OrderStatus.Cancelled) => true,
+            (OrderStatus.RequiresAttention, OrderStatus.Refunded) => true,
+            _ => false,
+        };
 
     private static decimal Money(decimal value, string parameterName)
     {

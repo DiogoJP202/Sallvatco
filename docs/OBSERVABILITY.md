@@ -61,6 +61,8 @@ Para webhook, registrar recebimento, validação de assinatura, deduplicação, 
 
 Jobs de expiração, conciliação e rastreio registram nome, execução, lote, processados, ignorados, falhas e duração. Cada item usa transação/idempotência própria para que um erro não descarte o lote. Falhas repetidas produzem alerta operacional; não fazem loop sem backoff.
 
+O job de pedidos usa os eventos estáveis `4201` para lote com expirações concluídas e `4202` para falha do ciclo. Execuções sem pedidos vencidos permanecem silenciosas para evitar ruído; o motivo técnico fica no movimento de estoque correspondente.
+
 ## Auditoria administrativa
 
 `AuditLog` contém:

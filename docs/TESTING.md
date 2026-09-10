@@ -91,6 +91,17 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - campos extras por overposting são ignorados e o resumo continua derivado da sacola;
 - carrinho vazio ou indisponível não abre checkout, e POST sem antiforgery recebe `400`.
 
+### Cobertura implementada de pedidos e ciclo de vida
+
+- snapshots comerciais e de endereço permanecem imutáveis após alteração do catálogo;
+- criação repetida pela mesma tentativa devolve o pedido existente sem duplicar estoque, cupom ou cliente guest;
+- duas compras concorrentes da última unidade têm um único vencedor e falha parcial faz rollback completo;
+- a matriz de estados testa todas as combinações, aceitando somente as arestas documentadas;
+- expiração respeita o limite do lote e libera reserva, saldo e cupom exatamente uma vez;
+- transição manual exige motivo e versão atuais, repetição é idempotente e versão obsoleta retorna conflito;
+- entrada e saída de `RequiresAttention` preservam ou limpam o contexto corretamente;
+- ações manuais registram ator, motivo e correlação em auditoria; expiração técnica não cria ator fictício.
+
 ### Testes manuais e homologação
 
 - responsividade, acessibilidade, conteúdo e experiência de marca;

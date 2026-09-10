@@ -68,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICatalogService, CatalogService>();
         services.AddScoped<ICheckoutService, CheckoutService>();
+        services.AddScoped<IOrderLifecycleService, OrderLifecycleService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICouponService, CouponService>();
         services.AddSingleton<IImageStorage, LocalImageStorage>();

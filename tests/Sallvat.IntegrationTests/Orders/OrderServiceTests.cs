@@ -79,6 +79,11 @@ public sealed class OrderServiceTests
         Assert.Equal(2, reservation.Quantity);
         Assert.Equal(StockReservationStatus.Reserved, reservation.Status);
         Assert.Equal(2, variant.Reserved);
+        var reservationMovement = await context.InventoryMovements
+            .SingleAsync(movement =>
+                movement.Type == InventoryMovementType.Reservation);
+        Assert.Equal(2, reservationMovement.Quantity);
+        Assert.Null(reservationMovement.ActorUserId);
         Assert.Null(cart.CouponId);
         Assert.Empty(await context.CartItems.ToListAsync());
 

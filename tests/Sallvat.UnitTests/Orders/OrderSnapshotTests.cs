@@ -52,6 +52,80 @@ public sealed class OrderSnapshotTests
             order.AssignGuestCustomer(guest));
     }
 
+    [Fact]
+    public void AttentionTransitionStoresContextAndLeavingClearsIt()
+    {
+        var order = Create(discountTotal: 0m, couponId: null);
+        var initialVersion = order.ConcurrencyVersion;
+
+        Assert.True(order.TransitionTo(
+            OrderStatus.RequiresAttention,
+            Now.AddMinutes(1),
+            "Pagamento recebido após a expiração."));
+        Assert.Equal("Pagamento recebido após a expiração.", order.AttentionReason);
+        Assert.Equal(Now.AddMinutes(1), order.AttentionSinceUtc);
+        Assert.NotEqual(initialVersion, order.ConcurrencyVersion);
+        Assert.False(order.TransitionTo(
+            OrderStatus.RequiresAttention,
+            Now.AddMinutes(2),
+            "Nova tentativa não deve sobrescrever o motivo."));
+
+        Assert.True(order.TransitionTo(
+            OrderStatus.Cancelled,
+            Now.AddMinutes(3)));
+        Assert.Null(order.AttentionReason);
+        Assert.Null(order.AttentionSinceUtc);
+    }
+
+    [Fact]
+    public void StateMachineExposesOnlyTheDocumentedEdges()
+    {
+        var expected = new HashSet<(OrderStatus Source, OrderStatus Target)>
+        {
+            (OrderStatus.PendingPayment, OrderStatus.Paid),
+            (OrderStatus.PendingPayment, OrderStatus.Cancelled),
+            (OrderStatus.PendingPayment, OrderStatus.RequiresAttention),
+            (OrderStatus.Paid, OrderStatus.Preparing),
+            (OrderStatus.Paid, OrderStatus.Refunded),
+            (OrderStatus.Paid, OrderStatus.RequiresAttention),
+            (OrderStatus.Preparing, OrderStatus.Shipped),
+            (OrderStatus.Preparing, OrderStatus.Refunded),
+            (OrderStatus.Preparing, OrderStatus.RequiresAttention),
+            (OrderStatus.Shipped, OrderStatus.Delivered),
+            (OrderStatus.Shipped, OrderStatus.Refunded),
+            (OrderStatus.Shipped, OrderStatus.RequiresAttention),
+            (OrderStatus.Delivered, OrderStatus.Refunded),
+            (OrderStatus.RequiresAttention, OrderStatus.Paid),
+            (OrderStatus.RequiresAttention, OrderStatus.Preparing),
+            (OrderStatus.RequiresAttention, OrderStatus.Cancelled),
+            (OrderStatus.RequiresAttention, OrderStatus.Refunded),
+        };
+
+        foreach (var source in Enum.GetValues<OrderStatus>())
+        {
+            foreach (var target in Enum.GetValues<OrderStatus>())
+            {
+                Assert.Equal(
+                    expected.Contains((source, target)),
+                    Order.CanTransition(source, target));
+            }
+        }
+    }
+
+    [Fact]
+    public void InvalidOrTerminalTransitionIsRejected()
+    {
+        var order = Create(discountTotal: 0m, couponId: null);
+        order.TransitionTo(OrderStatus.Cancelled, Now.AddMinutes(1));
+
+        Assert.Throws<InvalidOperationException>(() => order.TransitionTo(
+            OrderStatus.Paid,
+            Now.AddMinutes(2)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => order.TransitionTo(
+            (OrderStatus)999,
+            Now.AddMinutes(2)));
+    }
+
     private static Order Create(
         decimal discountTotal,
         long? couponId,

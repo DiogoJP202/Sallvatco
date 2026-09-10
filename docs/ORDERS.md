@@ -59,6 +59,8 @@ stateDiagram-v2
 
 Transições para o mesmo estado retornam sucesso idempotente quando o mesmo evento já foi aplicado. Transições ausentes no diagrama são inválidas e geram conflito, não alteração forçada.
 
+A máquina está implementada no domínio e atualiza um token de concorrência a cada mudança. `RequiresAttention` exige motivo e instante UTC; os dois campos são protegidos por constraint e são limpos quando a ocorrência é resolvida. Nesta etapa, a operação manual expõe apenas `PendingPayment/RequiresAttention → RequiresAttention/Cancelled`; as demais arestas serão acionadas pelos casos de uso de pagamento, separação, envio e reembolso nas fases correspondentes.
+
 ## Criação do pedido
 
 1. identificar carrinho e comprador;
@@ -104,4 +106,8 @@ Cada comando exige estado de origem, versão de concorrência, ator e motivo qua
 
 ## Expiração e jobs
 
-Um job periódico busca pedidos pendentes vencidos em lotes, usa update condicional e processa cada pedido de forma idempotente. Antes de cancelar, consulta pagamento quando houver preferência conhecida e risco de evento atrasado. Falhas são retentadas e observadas conforme [OBSERVABILITY.md](OBSERVABILITY.md).
+O serviço hospedado inicia após dois minutos e, a cada minuto, busca até 100 pedidos `PendingPayment` vencidos em ordem de expiração. Cada pedido é processado isoladamente: a reserva passa de `Reserved` para `Released`, o saldo `Reserved` da variante diminui, um movimento `ReservationRelease` é gravado e eventual consumo de cupom é liberado preservando o vínculo histórico com o pedido. Repetição não duplica nenhum efeito. Quando a Fase 7 introduzir preferências de pagamento, a expiração consultará o provedor antes de cancelar nos casos com risco de evento atrasado.
+
+## Implementação administrativa atual
+
+`GET /Admin/Pedidos` lista até 100 pedidos aguardando pagamento ou revisão, com prioridade para ocorrências. Os comandos usam antiforgery e policy `Admin`, exigem token de concorrência e justificativa de 5 a 500 caracteres. Marcar revisão ou cancelar gera `AuditLog` com origem, destino, motivo, ator e correlation ID. Expiração automática não inventa usuário: seus movimentos possuem ator nulo e motivo técnico explícito.

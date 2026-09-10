@@ -97,6 +97,27 @@ public sealed class CouponTests
             late.Consume(43, Now.AddMinutes(15)));
     }
 
+    [Fact]
+    public void ConsumedRedemptionCanBeReleasedForItsOrderOnlyOnce()
+    {
+        var redemption = new CouponRedemption(
+            1,
+            Guid.NewGuid(),
+            null,
+            "cliente@example.com",
+            10,
+            Now,
+            Now.AddMinutes(15));
+        redemption.Consume(42, Now.AddMinutes(1));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            redemption.ReleaseForOrder(43, Now.AddMinutes(2)));
+        Assert.True(redemption.ReleaseForOrder(42, Now.AddMinutes(2)));
+        Assert.Equal(CouponRedemptionStatus.Released, redemption.Status);
+        Assert.Equal(42, redemption.OrderId);
+        Assert.False(redemption.ReleaseForOrder(42, Now.AddMinutes(3)));
+    }
+
     private static Coupon Create(string code) => new(
         code,
         CouponDiscountType.Percentage,
