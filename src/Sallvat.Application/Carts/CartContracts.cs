@@ -53,7 +53,9 @@ public sealed record CartSummary(
     public int TotalQuantity => Items.Sum(item => item.Quantity);
 
     public bool CanStartCheckout =>
-        Items.Count > 0 && Items.All(item => item.IsAvailable);
+        Items.Count > 0
+        && Items.All(item => item.IsAvailable)
+        && (Coupon is null || Coupon.IsValid);
 
     public decimal DiscountTotal => Coupon?.DiscountTotal ?? 0m;
 

@@ -130,7 +130,14 @@
                         <strong class="font-serif text-3xl">@Model.Cart.Total.ToString("C")</strong>
                     </div>
                     <p class="mt-5 text-xs leading-5 text-stone-400">O frete será calculado no checkout. Preços e cupons são sempre revalidados pelo servidor.</p>
-                    <button class="mt-7 min-h-12 w-full cursor-not-allowed rounded-full bg-stone-600 px-6 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Checkout na próxima etapa</button>
+                    @if (Model.Cart.CanStartCheckout)
+                    {
+                        <a class="mt-7 flex min-h-12 w-full items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:bg-sand" asp-controller="Checkout" asp-action="Index">Ir para checkout</a>
+                    }
+                    else
+                    {
+                        <button class="mt-7 min-h-12 w-full cursor-not-allowed rounded-full bg-stone-600 px-6 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Revise a sacola</button>
+                    }
                     <a class="mt-4 block text-center text-sm font-semibold text-stone-300 transition hover:text-white" asp-controller="Perfumes" asp-action="Index">Continuar escolhendo</a>
                     <form class="mt-7 border-t border-white/15 pt-6 text-center" asp-action="Clear" method="post">
                         <button class="text-xs font-semibold tracking-wide text-stone-400 uppercase transition hover:text-white" type="submit">Esvaziar sacola</button>

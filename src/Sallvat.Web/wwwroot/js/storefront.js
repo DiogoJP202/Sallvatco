@@ -150,4 +150,25 @@
       applyFilter(new URL(window.location.href).searchParams.get("familia") ?? "", false);
     });
   }
+
+  const addressSelect = document.querySelector("[data-checkout-address]");
+  if (addressSelect) {
+    const fields = {
+      recipient: document.querySelector("#Form_RecipientName"),
+      postalCode: document.querySelector("#Form_PostalCode"),
+      street: document.querySelector("#Form_Street"),
+      number: document.querySelector("#Form_Number"),
+      complement: document.querySelector("#Form_Complement"),
+      district: document.querySelector("#Form_District"),
+      city: document.querySelector("#Form_City"),
+      stateCode: document.querySelector("#Form_StateCode"),
+    };
+    addressSelect.addEventListener("change", () => {
+      const option = addressSelect.selectedOptions[0];
+      if (!option?.value) return;
+      Object.entries(fields).forEach(([name, field]) => {
+        if (field) field.value = option.dataset[name] ?? "";
+      });
+    });
+  }
 })();

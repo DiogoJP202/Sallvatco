@@ -69,7 +69,7 @@ public sealed partial class CartPageTests
         Assert.Contains("Âmbar Noturno", content, StringComparison.Ordinal);
         Assert.Contains("599,80", content, StringComparison.Ordinal);
         Assert.Contains("Quantidade", content, StringComparison.Ordinal);
-        Assert.Contains("Checkout na próxima etapa", content, StringComparison.Ordinal);
+        Assert.Contains("Ir para checkout", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -203,6 +203,90 @@ public sealed partial class CartPageTests
         Assert.Contains("Cupom WEB10", content, StringComparison.Ordinal);
         Assert.Contains("29,99", content, StringComparison.Ordinal);
         Assert.Contains("269,91", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task EmptyCartCannotOpenCheckout()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = CreateClient(application);
+
+        using var response = await client.GetAsync("/checkout");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/carrinho", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task GuestCanValidateCheckoutAndOverpostedTotalsAreIgnored()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var product = await PublishedCatalogFixture.CreateAsync(
+            application,
+            "checkout-web");
+        using var client = CreateClient(application);
+        var productToken = await GetAntiforgeryTokenAsync(
+            client,
+            $"/perfumes/{product.Slug}");
+        using var addResponse = await client.PostAsync(
+            "/carrinho/itens",
+            Form(
+                productToken,
+                ("VariantId", product.AvailableVariantId.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)),
+                ("Quantity", "1")));
+        Assert.Equal(HttpStatusCode.Redirect, addResponse.StatusCode);
+
+        var checkoutToken = await GetAntiforgeryTokenAsync(
+            client,
+            "/checkout");
+        using var checkoutPage = await client.GetAsync("/checkout");
+        var checkoutHtml = await checkoutPage.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("name=\"Cpf\"", checkoutHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("name=\"Form.AcceptTerms\"", checkoutHtml, StringComparison.OrdinalIgnoreCase);
+
+        using var response = await client.PostAsync(
+            "/checkout/revisar",
+            Form(
+                checkoutToken,
+                ("Form.BuyerName", "  Cliente   Web "),
+                ("Form.Email", " CLIENTE@EXAMPLE.COM "),
+                ("Form.Phone", "(11) 99999-8888"),
+                ("Form.RecipientName", "Cliente Web"),
+                ("Form.PostalCode", "01310-100"),
+                ("Form.Street", "Avenida Paulista"),
+                ("Form.Number", "1000"),
+                ("Form.Complement", ""),
+                ("Form.District", "Bela Vista"),
+                ("Form.City", "São Paulo"),
+                ("Form.StateCode", "sp"),
+                ("Form.Cart.Total", "0.01"),
+                ("Form.Cpf", "00000000000")));
+        var content = WebUtility.HtmlDecode(
+            await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Dados validados pelo servidor", content, StringComparison.Ordinal);
+        Assert.Contains("Cliente Web", content, StringComparison.Ordinal);
+        Assert.Contains("cliente@example.com", content, StringComparison.Ordinal);
+        Assert.Contains("299,90", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("00000000000", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CheckoutPostWithoutAntiforgeryIsRejected()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = CreateClient(application);
+
+        using var response = await client.PostAsync(
+            "/checkout/revisar",
+            new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private static HttpClient CreateClient(

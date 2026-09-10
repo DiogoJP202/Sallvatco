@@ -202,12 +202,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar view models em etapas ou formulário único conforme teste de UX.
-- [ ] Implementar validação e normalização de contato/CEP/endereço.
-- [ ] Pré-preencher dados autenticados sem exigir salvamento.
-- [ ] Não coletar CPF enquanto `PBD-003` não exigir.
-- [ ] Implementar confirmação das políticas aplicáveis sem checkbox abusivo.
-- [ ] Testar overposting, campos ausentes, endereço de outro cliente e guest.
+- [x] Criar view models em etapas ou formulário único conforme teste de UX.
+- [x] Implementar validação e normalização de contato/CEP/endereço.
+- [x] Pré-preencher dados autenticados sem exigir salvamento.
+- [x] Não coletar CPF enquanto `PBD-003` não exigir.
+- [x] Implementar confirmação das políticas aplicáveis sem checkbox abusivo.
+- [x] Testar overposting, campos ausentes, endereço de outro cliente e guest.
 
 ### STORY F5-S2 — Sistema cria pedido e reserva estoque atomicamente
 

@@ -80,6 +80,17 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - rotas de cupom exigem antiforgery e `/Admin/Cupons` exige role `Admin`;
 - criação e atualização administrativa registram auditoria sem permitir exclusão histórica.
 
+### Cobertura implementada da entrada do checkout
+
+- guest revisa contato e entrega sem criação de conta;
+- cliente recebe perfil e endereços ativos como pré-preenchimento, sem atualização implícita;
+- ID de endereço pertencente a outra conta é rejeitado antes de usar seus dados;
+- nome, e-mail, telefone, CEP, espaços e UF são normalizados novamente no servidor;
+- campos ausentes ou malformados voltam associados ao campo correto;
+- CPF, aceite genérico, preço e total não integram o modelo de entrada;
+- campos extras por overposting são ignorados e o resumo continua derivado da sacola;
+- carrinho vazio ou indisponível não abre checkout, e POST sem antiforgery recebe `400`.
+
 ### Testes manuais e homologação
 
 - responsividade, acessibilidade, conteúdo e experiência de marca;

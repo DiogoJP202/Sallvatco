@@ -1,0 +1,129 @@
+@model CheckoutPageViewModel
+@{
+    ViewData["Title"] = "Checkout";
+    ViewData["Description"] = "Informe contato e endereço para revisar a entrega do pedido.";
+}
+
+<section class="border-b border-stone-300/70 bg-[#e8ded0]">
+    <div class="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+        <p class="eyebrow">Checkout seguro</p>
+        <h1 class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-7xl">Para quem e para onde?</h1>
+        <p class="mt-5 max-w-2xl text-base leading-7 text-stone-600">Coletamos somente contato e entrega. Nenhum CPF é solicitado e nenhum pedido ou cobrança acontece nesta etapa.</p>
+    </div>
+</section>
+
+<section class="bg-paper">
+    <div class="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_22rem] lg:items-start lg:px-10 lg:py-16">
+        <form class="grid gap-8" asp-action="Review" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900 empty:hidden" role="alert"></div>
+
+            <fieldset class="rounded-[2rem] border border-stone-300 bg-white p-6 shadow-sm sm:p-8">
+                <legend class="px-2 font-serif text-3xl">Contato do comprador</legend>
+                <p class="mt-2 text-sm leading-6 text-stone-600">Usaremos estes dados apenas para atualizações deste pedido.</p>
+                <div class="mt-6 grid gap-5 sm:grid-cols-2">
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
+                        <span>Nome completo</span>
+                        <input asp-for="Form.BuyerName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="name" />
+                        <span asp-validation-for="Form.BuyerName" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+                        E-mail
+                        <input asp-for="Form.Email" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="email" inputmode="email" />
+                        <span asp-validation-for="Form.Email" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700">
+                        Telefone com DDD
+                        <input asp-for="Form.Phone" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" />
+                        <span asp-validation-for="Form.Phone" class="text-xs text-red-700"></span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="rounded-[2rem] border border-stone-300 bg-white p-6 shadow-sm sm:p-8">
+                <legend class="px-2 font-serif text-3xl">Endereço de entrega</legend>
+                @if (Model.SavedAddresses.Count > 0)
+                {
+                    <label class="mt-3 grid gap-2 text-sm font-semibold text-stone-700">
+                        Usar endereço salvo
+                        <select asp-for="Form.SavedAddressId" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" data-checkout-address>
+                            <option value="">Informar outro endereço</option>
+                            @foreach (var address in Model.SavedAddresses)
+                            {
+                                <option value="@address.Id"
+                                        data-recipient="@address.RecipientName"
+                                        data-postal-code="@address.PostalCode"
+                                        data-street="@address.Street"
+                                        data-number="@address.Number"
+                                        data-complement="@address.Complement"
+                                        data-district="@address.District"
+                                        data-city="@address.City"
+                                        data-state-code="@address.StateCode">@address.Label · @address.Street, @address.Number</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Form.SavedAddressId" class="text-xs text-red-700"></span>
+                    </label>
+                    <p class="mt-3 text-xs leading-5 text-stone-500">A seleção apenas preenche o checkout; alterações aqui não modificam sua conta.</p>
+                }
+                <div class="mt-6 grid gap-5 sm:grid-cols-6">
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
+                        Destinatário
+                        <input asp-for="Form.RecipientName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping name" />
+                        <span asp-validation-for="Form.RecipientName" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
+                        CEP
+                        <input asp-for="Form.PostalCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping postal-code" inputmode="numeric" placeholder="00000-000" />
+                        <span asp-validation-for="Form.PostalCode" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
+                        Rua ou avenida
+                        <input asp-for="Form.Street" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line1" />
+                        <span asp-validation-for="Form.Street" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
+                        Número
+                        <input asp-for="Form.Number" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line2" />
+                        <span asp-validation-for="Form.Number" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-3">
+                        Complemento (opcional)
+                        <input asp-for="Form.Complement" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line3" />
+                        <span asp-validation-for="Form.Complement" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-3">
+                        Bairro
+                        <input asp-for="Form.District" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" />
+                        <span asp-validation-for="Form.District" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
+                        Cidade
+                        <input asp-for="Form.City" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level2" />
+                        <span asp-validation-for="Form.City" class="text-xs text-red-700"></span>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
+                        UF
+                        <input asp-for="Form.StateCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal uppercase text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level1" maxlength="2" />
+                        <span asp-validation-for="Form.StateCode" class="text-xs text-red-700"></span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="rounded-2xl border border-copper/25 bg-[#f4eadf] px-5 py-5 text-sm leading-6 text-stone-700">
+                <strong class="text-ink">Sem checkbox de consentimento genérico.</strong>
+                Ao avançar, você confirma apenas que os dados acima estão corretos. O aceite das políticas oficiais ocorrerá junto à criação do pedido, depois que os textos comerciais forem aprovados e publicados.
+            </div>
+            <button class="btn-primary justify-self-start" type="submit">Revisar dados e entrega</button>
+        </form>
+
+        <aside class="rounded-[2rem] bg-ink p-7 text-white shadow-xl lg:sticky lg:top-28">
+            <p class="text-[0.62rem] font-semibold tracking-[0.18em] text-stone-400 uppercase">Sua sacola</p>
+            <p class="mt-5 text-sm text-stone-300">@Model.Cart.TotalQuantity @(Model.Cart.TotalQuantity == 1 ? "item" : "itens")</p>
+            <div class="mt-5 flex items-end justify-between gap-4 border-t border-white/15 pt-5">
+                <span class="text-sm text-stone-300">Total parcial</span>
+                <strong class="font-serif text-3xl">@Model.Cart.Total.ToString("C")</strong>
+            </div>
+            <p class="mt-5 text-xs leading-5 text-stone-400">Frete ainda será cotado e o total será revalidado antes da criação do pedido.</p>
+            <a class="mt-5 block text-sm font-semibold text-stone-300 underline underline-offset-4 hover:text-white" asp-controller="Cart" asp-action="Index">Voltar à sacola</a>
+        </aside>
+    </div>
+</section>

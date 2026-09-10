@@ -14,6 +14,10 @@
 
 `Order` contém número público, cliente opcional, e-mail/nome/telefone snapshots, totais, moeda, cupom aplicado, opção de frete e status. `OrderItem` contém nome do produto, variante, SKU, quantidade, preço unitário, desconto e subtotal. `OrderAddress` preserva o endereço usado no envio.
 
+Antes da criação do pedido, `/checkout` monta um draft somente em memória. Nome, e-mail, telefone, CEP e endereço são normalizados no servidor; endereços salvos são pré-preenchimento editável para aquela compra e nunca são atualizados implicitamente. O ID de endereço enviado só é aceito quando pertence ao usuário autenticado. Guest informa os mesmos dados necessários sem criar credencial. CPF permanece ausente conforme `PBD-003`.
+
+A tela de revisão não persiste PII, não reserva estoque e não representa aceite comercial. A ação final de criar o pedido, introduzida na história seguinte, exibirá as políticas oficiais aprovadas e registrará suas versões por consequência explícita do botão, sem checkbox genérico ou pré-marcado.
+
 Nenhum total enviado pelo navegador é aceito. O cálculo central segue a fórmula registrada em [DATABASE.md](DATABASE.md#order).
 
 ## Estados
