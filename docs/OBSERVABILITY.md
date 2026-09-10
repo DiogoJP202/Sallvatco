@@ -63,6 +63,8 @@ Jobs de expiração, conciliação e rastreio registram nome, execução, lote, 
 
 O job de pedidos usa os eventos estáveis `4201` para lote com expirações concluídas e `4202` para falha do ciclo. Execuções sem pedidos vencidos permanecem silenciosas para evitar ruído; o motivo técnico fica no movimento de estoque correspondente.
 
+A cotação do Melhor Envio usa `4301` para sucesso com quantidade de opções, `4302` para status HTTP externo, `4303` para ausência de opção válida, `4304` para timeout, `4305` para falha de transporte e `4306` para resposta inválida. Esses eventos não incluem token, payload, CEP, endereço ou corpo da resposta.
+
 ## Auditoria administrativa
 
 `AuditLog` contém:

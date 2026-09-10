@@ -90,6 +90,8 @@ O pipeline implementado segue [STORAGE.md](STORAGE.md): autorização `Admin`, a
 - tokens possuem escopo mínimo e rotação documentada;
 - `.env` produtivo não é versionado nem incluído em backup sem criptografia.
 
+O access token do Melhor Envio é lido somente de user-secrets/variável protegida, enviado em `Authorization: Bearer` e nunca incluído na chave de cache, UI ou logs. A integração fica desabilitada quando origem e credenciais não foram homologadas; habilitá-la com token estático não substitui a futura renovação OAuth protegida.
+
 ## Logging seguro
 
 Proibido registrar: senha, hash de senha, cookie, token, assinatura, connection string, access/refresh token, CVV, cartão, documento completo, endereço completo, corpo integral de checkout ou URL de reset. E-mail, telefone, CEP e IP são mascarados ou hasheados quando a finalidade permitir. Consulte [OBSERVABILITY.md](OBSERVABILITY.md).

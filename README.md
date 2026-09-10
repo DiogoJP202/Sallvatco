@@ -6,7 +6,9 @@ Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanai
 
 ## Estado atual
 
-O planejamento da Fase 0 e as **Fases 1 a 5** estão concluídos. `/checkout` coleta e normaliza somente contato e entrega, atende guest e cliente, pré-preenche endereços sem alterar a conta, impede acesso a endereço alheio e revisa o resumo recalculado pelo servidor. O caso de uso interno cria `Order`, snapshots comerciais e de frete, consumo de cupom e reservas de estoque na mesma transação, com idempotência por tentativa e proteção contra overselling. A máquina de estados rejeita arestas inválidas; um job cancela pedidos vencidos em lotes e libera estoque e cupom uma única vez. A fila `/Admin/Pedidos` permite sinalizar revisão ou cancelar pedidos ainda sem captura, sempre com versão, justificativa e auditoria. A ação pública permanece desabilitada até a Fase 6 fornecer e revalidar uma cotação de frete real; nenhum pedido ou cobrança é criado pela tela atual. CPF e aceite genérico não são solicitados. A aplicação também mantém sacola guest por token seguro, recalcula preço, estoque e descontos, mescla o conteúdo após login e elimina carrinhos expirados. O próximo incremento implementará cotações reais e revalidação de frete. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+O planejamento da Fase 0 e as **Fases 1 a 5** estão concluídos. A primeira fatia da Fase 6 também está implementada: `/checkout` pode consultar opções reais no Melhor Envio a partir do CEP e dos itens físicos atuais, mostrar preço/prazo e revalidar a seleção sem aceitar frete zero ou valor enviado pelo navegador. A integração fica desabilitada por padrão; origem, embalagem, credenciais sandbox e renovação OAuth ainda dependem de homologação e de `PBD-007`. Nenhum pedido ou cobrança é criado pela tela enquanto essas decisões e a Fase 7 não estiverem prontas.
+
+O checkout coleta e normaliza somente contato e entrega, atende guest e cliente, pré-preenche endereços sem alterar a conta e impede acesso a endereço alheio. O caso de uso interno cria `Order`, snapshots comerciais e de frete, consumo de cupom e reservas de estoque na mesma transação, com idempotência por tentativa e proteção contra overselling. A máquina de estados rejeita arestas inválidas; um job cancela pedidos vencidos em lotes e libera estoque e cupom uma única vez. A fila `/Admin/Pedidos` permite sinalizar revisão ou cancelar pedidos ainda sem captura, sempre com versão, justificativa e auditoria. CPF e aceite genérico não são solicitados. A aplicação também mantém sacola guest por token seguro, recalcula preço, estoque e descontos, mescla o conteúdo após login e elimina carrinhos expirados. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
 
 ## Demonstração visual
 
@@ -106,6 +108,17 @@ AccountLinks__PublicOrigin=https://dominio-do-ambiente.example
 ```
 
 Enquanto `PBD-010` não define o provedor transacional, Development grava as mensagens em `.local/emails`. Esses arquivos podem conter links temporários e nunca são versionados ou registrados nos logs. Fora de Development, o envio permanece indisponível de forma explícita.
+
+A cotação do Melhor Envio também permanece desligada até que os dados de homologação sejam aprovados. Para um teste sandbox, configure por user-secrets — nunca em `appsettings.json` ou no Git — os valores abaixo e só então altere `Enabled`:
+
+```powershell
+dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:OriginPostalCode" "CEP_DE_ORIGEM"
+dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:AccessToken" "TOKEN_SANDBOX"
+dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:SupportEmail" "EMAIL_DE_SUPORTE"
+dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:Enabled" "true"
+```
+
+O ambiente padrão usa `https://sandbox.melhorenvio.com.br/`, timeout de 10 segundos, cache de 120 segundos e cotação válida por 10 minutos. O token estático serve apenas para a homologação técnica inicial; armazenamento e renovação segura do OAuth ainda não estão concluídos.
 
 Inicie a aplicação:
 

@@ -102,6 +102,18 @@ Mercado Pago, Melhor Envio e e-mail usam servidores HTTP fake controlados nos te
 - entrada e saída de `RequiresAttention` preservam ou limpam o contexto corretamente;
 - ações manuais registram ator, motivo e correlação em auditoria; expiração técnica não cria ator fictício.
 
+### Cobertura implementada da fundação de frete
+
+- o cliente Melhor Envio envia o payload por produtos, CEPs normalizados, valor declarado, dimensões, peso e quantidade atuais;
+- base URL sandbox, timeout, `Accept` e `User-Agent` obrigatório são conferidos na configuração do cliente HTTP;
+- apenas respostas válidas produzem opções; uma resposta vazia não vira frete grátis e não é armazenada no cache;
+- cache atende repetição equivalente e a revalidação força nova consulta;
+- CEP inválido não chama o provedor; `401/403`, `400/422`, `429`, indisponibilidade, timeout e resposta inválida são normalizados;
+- o checkout remonta a cotação pelo carrinho e catálogo atuais, rejeita mudança de preço e só então cria um snapshot confiável;
+- token, CEP e detalhe interno do provedor não aparecem nas mensagens devolvidas ao cliente.
+
+A chamada real ao sandbox continua manual e pendente de `PBD-007`, credencial própria e e-mail de suporte. Os testes automatizados usam handlers HTTP determinísticos e não dependem da disponibilidade externa.
+
 ### Testes manuais e homologação
 
 - responsividade, acessibilidade, conteúdo e experiência de marca;

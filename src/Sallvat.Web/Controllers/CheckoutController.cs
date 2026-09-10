@@ -73,9 +73,14 @@ public sealed class CheckoutController(
                 prefill.Addresses));
         }
 
+        var freight = await checkoutService.QuoteFreightAsync(
+            owner,
+            result.Draft.Delivery.PostalCode,
+            cancellationToken);
         return View(new CheckoutReviewViewModel(
             result.Draft,
-            result.Cart));
+            result.Cart,
+            freight));
     }
 
     private CartOwner CurrentOwner()

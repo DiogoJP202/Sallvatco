@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Sallvat.Application.Catalog;
 using Sallvat.Application.Checkout;
 using Sallvat.Application.Orders;
 using Sallvat.Application.Promotions;
+using Sallvat.Application.Shipping;
 using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Carts;
 using Sallvat.Infrastructure.Catalog;
@@ -16,6 +18,7 @@ using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Orders;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Infrastructure.Promotions;
+using Sallvat.Infrastructure.Shipping;
 using Sallvat.Infrastructure.Storage;
 using Sallvat.Infrastructure.Time;
 
@@ -64,6 +67,35 @@ public static class DependencyInjection
                 options => options.ReservationMinutes is >= 5 and <= 1_440,
                 "Orders:ReservationMinutes must be between 5 and 1440.")
             .ValidateOnStart();
+        services
+            .AddOptions<MelhorEnvioOptions>()
+            .Bind(configuration.GetSection(MelhorEnvioOptions.SectionName))
+            .Validate(
+                MelhorEnvioOptions.IsValid,
+                "Shipping:MelhorEnvio configuration is invalid.")
+            .ValidateOnStart();
+        services.AddMemoryCache();
+        services.AddHttpClient<IFreightService, MelhorEnvioFreightService>(
+            (serviceProvider, client) =>
+            {
+                var freightOptions = serviceProvider
+                    .GetRequiredService<IOptions<MelhorEnvioOptions>>()
+                    .Value;
+                var baseUrl = freightOptions.BaseUrl.EndsWith('/')
+                        ? freightOptions.BaseUrl
+                        : $"{freightOptions.BaseUrl}/";
+                client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+                client.Timeout = TimeSpan.FromSeconds(
+                    freightOptions.TimeoutSeconds);
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+                if (freightOptions.Enabled)
+                {
+                    client.DefaultRequestHeaders.TryAddWithoutValidation(
+                        "User-Agent",
+                        $"{freightOptions.ApplicationName.Trim()} ({freightOptions.SupportEmail.Trim()})");
+                }
+            });
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICatalogService, CatalogService>();

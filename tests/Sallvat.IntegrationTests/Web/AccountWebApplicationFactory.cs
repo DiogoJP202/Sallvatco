@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Sallvat.Application.Accounts;
+using Sallvat.Application.Shipping;
 using Sallvat.Application.Time;
 using Sallvat.Infrastructure.Persistence;
 
@@ -15,13 +16,16 @@ public sealed class AccountWebApplicationFactory :
 {
     private readonly string databaseName = $"sallvat-{Guid.NewGuid():N}";
     private readonly IClock? clock;
+    private readonly IFreightService? freightService;
 
     public AccountWebApplicationFactory(
         long? maximumPixelCount = null,
-        IClock? clock = null)
+        IClock? clock = null,
+        IFreightService? freightService = null)
         : base(maximumPixelCount: maximumPixelCount)
     {
         this.clock = clock;
+        this.freightService = freightService;
     }
 
     public FakeAccountEmailSender EmailSender { get; } = new();
@@ -42,6 +46,12 @@ public sealed class AccountWebApplicationFactory :
             {
                 services.RemoveAll<IClock>();
                 services.AddSingleton(clock);
+            }
+
+            if (freightService is not null)
+            {
+                services.RemoveAll<IFreightService>();
+                services.AddSingleton(freightService);
             }
 
             services.RemoveAll<IEmailSender>();

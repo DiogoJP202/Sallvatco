@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Checkout;
+using Sallvat.Application.Shipping;
 using Sallvat.Domain.Customers;
 
 namespace Sallvat.Web.Models.Checkout;
@@ -110,4 +111,5 @@ public sealed record CheckoutPageViewModel(
 
 public sealed record CheckoutReviewViewModel(
     CheckoutDraft Draft,
-    CartSummary Cart);
+    CartSummary Cart,
+    FreightQuoteResult Freight);

@@ -247,12 +247,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Definir DTOs internos e `IFreightService`.
-- [ ] Implementar cliente Melhor Envio com options, timeout e `User-Agent`.
+- [x] Definir DTOs internos e `IFreightService`.
+- [x] Implementar cliente Melhor Envio com options, timeout e `User-Agent`.
 - [ ] Implementar autenticação/refresh conforme credencial aprovada.
 - [ ] Implementar algoritmo de embalagem validado com `PBD-007`.
-- [ ] Implementar cotação e cache curto sem PII excessiva.
-- [ ] Revalidar opção no checkout e tratar mudança de preço.
+- [x] Implementar cotação e cache curto sem PII excessiva.
+- [x] Revalidar opção no checkout e tratar mudança de preço.
 - [ ] Persistir snapshot no pedido/shipment.
 - [ ] Testar CEP, nenhuma cotação, timeout, 401/429 e sandbox.
 

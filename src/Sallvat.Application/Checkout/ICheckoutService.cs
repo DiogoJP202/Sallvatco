@@ -1,4 +1,5 @@
 using Sallvat.Application.Carts;
+using Sallvat.Application.Shipping;
 
 namespace Sallvat.Application.Checkout;
 
@@ -12,5 +13,17 @@ public interface ICheckoutService
         CartOwner owner,
         Guid? applicationUserId,
         CheckoutDraftInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<FreightQuoteResult> QuoteFreightAsync(
+        CartOwner owner,
+        string destinationPostalCode,
+        CancellationToken cancellationToken = default);
+
+    Task<FreightSelectionResult> RevalidateFreightAsync(
+        CartOwner owner,
+        string destinationPostalCode,
+        string quoteId,
+        decimal expectedPrice,
         CancellationToken cancellationToken = default);
 }

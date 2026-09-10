@@ -8,6 +8,21 @@ O MVP integra Melhor Envio através de `IFreightService`. O domínio conhece cot
 
 Referências: [introdução à API](https://docs.melhorenvio.com.br/reference/introducao-api-melhor-envio) e [cotação de fretes](https://docs.melhorenvio.com.br/docs/cotacao-de-fretes).
 
+## Estado da implementação
+
+A fundação de cotação da Fase 6 está disponível, mas permanece desabilitada por padrão:
+
+- o adapter envia produtos para `POST /api/v2/me/shipment/calculate` usando base URL HTTPS por ambiente;
+- origem, token, identificação da aplicação, e-mail de suporte, serviços, timeout e validade são options validadas no startup;
+- `Authorization: Bearer`, `Accept: application/json` e `User-Agent` com aplicação/contato são aplicados pelo cliente HTTP tipado;
+- somente `custom_price` e o prazo customizado válidos viram opções internas em BRL;
+- `400/422`, `401/403`, `429`, timeout, transporte e resposta inválida possuem resultados distintos e seguros;
+- sucesso é mantido em cache de memória por hash de origem, destino, serviços e itens; falhas não são cacheadas;
+- a revalidação ignora o cache, procura a mesma opção e exige nova confirmação se o preço mudar;
+- a tela de revisão mostra opções apenas quando há resultado válido e não habilita criação de pedido ou pagamento.
+
+O adapter atual recebe um access token por configuração protegida. Renovação OAuth, persistência protegida de tokens e controle de corrida no refresh serão implementados somente após a estratégia de credenciais ser aprovada. O mesmo vale para o empacotamento: os itens físicos atuais já formam a requisição, mas o uso produtivo aguarda origem e dimensões/peso de embalagem definidos em `PBD-007`.
+
 ## Contrato interno
 
 ### Entrada de cotação
@@ -26,7 +41,7 @@ Referências: [introdução à API](https://docs.melhorenvio.com.br/reference/in
 - mensagens, restrições e validade da cotação;
 - dados suficientes para auditoria sem armazenar payload sensível desnecessário.
 
-`IFreightService` também cria o envio/etiqueta e consulta rastreamento. Erros são normalizados como validação, indisponibilidade, autenticação, limite ou falha permanente.
+Nesta primeira fatia, `IFreightService` implementa cotação. A criação de envio/etiqueta e a consulta de rastreamento ampliarão o limite na `F6-S2`. Erros de cotação já são normalizados como validação, indisponibilidade, autenticação ou limite.
 
 ## Cálculo no carrinho e checkout
 
