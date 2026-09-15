@@ -5,6 +5,24 @@ namespace Sallvat.IntegrationTests.Web;
 
 public sealed class HomePageTests
 {
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/sobre")]
+    [InlineData("/linha-corporal")]
+    public async Task PublicPagesOmitImageProductionNotes(string route)
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = application.CreateClient();
+
+        var content = WebUtility.HtmlDecode(await client.GetStringAsync(route));
+
+        Assert.DoesNotContain("imagem tratada", content, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("imagens tratadas", content, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("tratadas com IA", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("noindex,nofollow", content, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task AboutPageUsesProvisionalBrandNarrativeAndWebpAssets()
     {

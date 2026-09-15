@@ -41,7 +41,7 @@ internal static partial class Program
                 new("SAL-SEA-100", 100, 449.90m, 7),
             ],
             [
-                new("packshots/sea-salt.webp", "Frasco Sea Salt da Sallvat & Co. sobre fundo claro — imagem tratada"),
+                new("packshots/sea-salt.webp", "Frasco Sea Salt da Sallvat & Co. sobre fundo claro"),
                 new("sea-salt-atmosphere.png", "Cristais de sal sobre pedra clara diante do mar"),
             ]),
         new(
@@ -66,7 +66,7 @@ internal static partial class Program
                 new("SAL-HIB-100", 100, 449.90m, 0),
             ],
             [
-                new("packshots/hibernum.webp", "Frasco Hibernum da Sallvat & Co. sobre fundo claro — imagem tratada"),
+                new("packshots/hibernum.webp", "Frasco Hibernum da Sallvat & Co. sobre fundo claro"),
                 new("hibernum-atmosphere.png", "Baunilha, fava-tonka e resina âmbar sob luz quente"),
             ]),
         new(
@@ -91,7 +91,7 @@ internal static partial class Program
                 new("SAL-COR-100", 100, 449.90m, 3),
             ],
             [
-                new("packshots/corium.webp", "Frasco Corium da Sallvat & Co. sobre fundo claro — imagem tratada"),
+                new("packshots/corium.webp", "Frasco Corium da Sallvat & Co. sobre fundo claro"),
                 new("corium-atmosphere.png", "Couro, cedro e pedra em composição de luz lateral"),
             ]),
         new(
@@ -116,7 +116,7 @@ internal static partial class Program
                 new("SAL-CUM-100", 100, 449.90m, 2),
             ],
             [
-                new("packshots/cumiere.webp", "Frasco Lumiere da Sallvat & Co. sobre fundo claro — imagem tratada"),
+                new("packshots/cumiere.webp", "Frasco Lumiere da Sallvat & Co. sobre fundo claro"),
                 new("cumiere-atmosphere.png", "Bergamota, folhas verdes e madeira sob luz dourada"),
             ]),
     ];
@@ -430,10 +430,6 @@ internal static partial class Program
         html = html.Replace(
             $"action=\"{options.BasePath}/carrinho/itens\"",
             $"action=\"{noticePath}\"",
-            StringComparison.Ordinal);
-        html = html.Replace(
-            "</main>",
-            "<p class=\"mx-auto max-w-4xl px-5 py-6 text-center text-sm leading-6 text-stone-600\">Imagens de produto tratadas com IA a partir dos materiais da marca. Rótulos e embalagens sujeitos à aprovação antes do uso comercial.</p></main>",
             StringComparison.Ordinal);
         return html.Replace(
             "A coleção Sallvat &amp; Co. está ganhando forma",
