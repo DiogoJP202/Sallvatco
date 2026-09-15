@@ -46,7 +46,9 @@
         galleryButtons.forEach((item) => item.setAttribute("aria-pressed", "false"));
         button.setAttribute("aria-pressed", "true");
         galleryMain.src = button.dataset.largeUrl;
-        galleryMain.srcset = `${button.dataset.thumbnailUrl} 480w, ${button.dataset.largeUrl} 1600w`;
+        galleryMain.srcset = button.dataset.srcset;
+        galleryMain.width = Number(button.dataset.width);
+        galleryMain.height = Number(button.dataset.height);
         galleryMain.alt = button.dataset.alt;
       });
     });

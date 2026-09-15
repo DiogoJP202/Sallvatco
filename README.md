@@ -12,7 +12,7 @@ O checkout coleta e normaliza somente contato e entrega, atende guest e cliente,
 
 ## Demonstração visual
 
-A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes, detalhe de produto e uma página de linha corporal com nove fotografias reais fornecidas pela marca. Os dados do catálogo de perfumes continuam descartáveis e são gerados durante o workflow; nomes, textos, preços, estoques e disponibilidade ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
+A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes, detalhe de produto e uma página de linha corporal com nove produtos. As treze imagens principais foram tratadas com IA a partir dos materiais enviados pela marca, com fundo limpo e enquadramento consistente; não são fotografias originais sem alteração. Rótulos e embalagens precisam de aprovação antes do uso comercial. O [registro das imagens](docs/IMAGES.md) documenta arquivos, limites e prompts. Os dados do catálogo de perfumes continuam descartáveis e são gerados durante o workflow; nomes, textos, preços, estoques e disponibilidade ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
 
 ## Stack definida
 

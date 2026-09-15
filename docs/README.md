@@ -11,6 +11,7 @@ Esta pasta é a fonte de verdade do projeto. Código, migrations, infraestrutura
 - [PRODUCT.md](PRODUCT.md) — visão do produto, MVP, pós-MVP e experiência da home;
 - [REQUIREMENTS.md](REQUIREMENTS.md) — requisitos rastreáveis, regras conhecidas e decisões comerciais pendentes;
 - [SEO.md](SEO.md) — indexação, metadados, dados estruturados e performance de descoberta.
+- [IMAGES.md](IMAGES.md) — imagens tratadas da demonstração, arquivos, prompts e limites de uso.
 
 ### Arquitetura e domínio
 

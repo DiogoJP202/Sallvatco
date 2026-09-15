@@ -13,7 +13,10 @@ internal static class PublishedCatalogFixture
     public static async Task<PublishedProductData> CreateAsync(
         AccountWebApplicationFactory application,
         string slug,
-        bool featured = true)
+        bool featured = true,
+        int imageWidth = 800,
+        int imageHeight = 1000,
+        int imageCount = 1)
     {
         var actorId = await CreateActorAsync(application);
         using var scope = application.Services.CreateScope();
@@ -61,16 +64,19 @@ internal static class PublishedCatalogFixture
             Operation(actorId));
         Assert.True(stock.Succeeded);
 
-        var bytes = CreatePng();
-        using var content = new MemoryStream(bytes);
-        product = await service.GetAdminAsync(productId);
-        var image = await service.AddImageAsync(
-            productId,
-            product!.ConcurrencyVersion,
-            new ProductImageUpload(content, bytes.Length, "ambar.png"),
-            "Frasco de Âmbar Noturno sobre fundo claro",
-            Operation(actorId));
-        Assert.True(image.Succeeded);
+        var bytes = CreatePng(imageWidth, imageHeight);
+        for (var imageIndex = 0; imageIndex < imageCount; imageIndex++)
+        {
+            using var content = new MemoryStream(bytes);
+            product = await service.GetAdminAsync(productId);
+            var image = await service.AddImageAsync(
+                productId,
+                product!.ConcurrencyVersion,
+                new ProductImageUpload(content, bytes.Length, "ambar.png"),
+                "Frasco de Âmbar Noturno sobre fundo claro",
+                Operation(actorId));
+            Assert.True(image.Succeeded);
+        }
 
         product = await service.GetAdminAsync(productId);
         var published = await service.PublishAsync(
@@ -134,9 +140,9 @@ internal static class PublishedCatalogFixture
         return actor.Id;
     }
 
-    private static byte[] CreatePng()
+    private static byte[] CreatePng(int width, int height)
     {
-        using var bitmap = new SKBitmap(800, 1000);
+        using var bitmap = new SKBitmap(width, height);
         bitmap.Erase(new SKColor(119, 74, 54));
         using var image = SKImage.FromBitmap(bitmap);
         using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);

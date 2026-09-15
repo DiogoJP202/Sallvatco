@@ -41,7 +41,7 @@ internal static partial class Program
                 new("SAL-SEA-100", 100, 449.90m, 7),
             ],
             [
-                new("sea-salt.png", "Frasco Sea Salt da Sallvat & Co. em composição editorial"),
+                new("packshots/sea-salt.webp", "Frasco Sea Salt da Sallvat & Co. sobre fundo claro — imagem tratada"),
                 new("sea-salt-atmosphere.png", "Cristais de sal sobre pedra clara diante do mar"),
             ]),
         new(
@@ -66,7 +66,7 @@ internal static partial class Program
                 new("SAL-HIB-100", 100, 449.90m, 0),
             ],
             [
-                new("hibernum.png", "Frasco Hibernum da Sallvat & Co. entre notas quentes"),
+                new("packshots/hibernum.webp", "Frasco Hibernum da Sallvat & Co. sobre fundo claro — imagem tratada"),
                 new("hibernum-atmosphere.png", "Baunilha, fava-tonka e resina âmbar sob luz quente"),
             ]),
         new(
@@ -91,12 +91,12 @@ internal static partial class Program
                 new("SAL-COR-100", 100, 449.90m, 3),
             ],
             [
-                new("corium.png", "Frasco Corium da Sallvat & Co. diante de uma paisagem costeira"),
+                new("packshots/corium.webp", "Frasco Corium da Sallvat & Co. sobre fundo claro — imagem tratada"),
                 new("corium-atmosphere.png", "Couro, cedro e pedra em composição de luz lateral"),
             ]),
         new(
             new ProductEditorInput(
-                "Cumiere",
+                "Lumiere",
                 "cumiere",
                 "Claridade cítrica e madeiras suaves para uma presença luminosa.",
                 "Bergamota e petitgrain conduzem a uma textura verde, apoiada por cedro claro e um acorde âmbar delicado.",
@@ -116,7 +116,7 @@ internal static partial class Program
                 new("SAL-CUM-100", 100, 449.90m, 2),
             ],
             [
-                new("cumiere.png", "Frasco Cumiere da Sallvat & Co. sob luz natural"),
+                new("packshots/cumiere.webp", "Frasco Lumiere da Sallvat & Co. sobre fundo claro — imagem tratada"),
                 new("cumiere-atmosphere.png", "Bergamota, folhas verdes e madeira sob luz dourada"),
             ]),
     ];
@@ -431,6 +431,10 @@ internal static partial class Program
             $"action=\"{options.BasePath}/carrinho/itens\"",
             $"action=\"{noticePath}\"",
             StringComparison.Ordinal);
+        html = html.Replace(
+            "</main>",
+            "<p class=\"mx-auto max-w-4xl px-5 py-6 text-center text-sm leading-6 text-stone-600\">Imagens de produto tratadas com IA a partir dos materiais da marca. Rótulos e embalagens sujeitos à aprovação antes do uso comercial.</p></main>",
+            StringComparison.Ordinal);
         return html.Replace(
             "A coleção Sallvat &amp; Co. está ganhando forma",
             "Apresentação visual · produtos, preços e textos sujeitos à validação",
@@ -486,10 +490,9 @@ internal static partial class Program
                      SearchOption.AllDirectories))
         {
             var html = File.ReadAllText(htmlPath);
-            foreach (Match match in InternalReferencePattern().Matches(html))
+            foreach (var rawReference in InternalReferences(html))
             {
-                var reference = WebUtility.HtmlDecode(
-                    match.Groups["path"].Value);
+                var reference = WebUtility.HtmlDecode(rawReference);
                 var path = reference.Split('?', '#')[0];
                 if (!string.IsNullOrEmpty(options.BasePath))
                 {
@@ -546,6 +549,27 @@ internal static partial class Program
         }
     }
 
+    private static IEnumerable<string> InternalReferences(string html)
+    {
+        foreach (Match match in InternalReferencePattern().Matches(html))
+        {
+            yield return match.Groups["path"].Value;
+        }
+
+        foreach (Match match in SourceSetPattern().Matches(html))
+        {
+            foreach (var candidate in match.Groups["sources"].Value.Split(','))
+            {
+                var path = candidate.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault();
+                if (path is not null && path.StartsWith('/') && !path.StartsWith("//", StringComparison.Ordinal))
+                {
+                    yield return path;
+                }
+            }
+        }
+    }
+
     private static async Task WriteTextAsync(string path, string content)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -565,6 +589,9 @@ internal static partial class Program
         "(?:action|href|src)=\\\"(?<path>/[^\\\"]+)\\\"",
         RegexOptions.CultureInvariant)]
     private static partial Regex InternalReferencePattern();
+
+    [GeneratedRegex("(?:data-)?srcset=\"(?<sources>[^\"]+)\"", RegexOptions.CultureInvariant)]
+    private static partial Regex SourceSetPattern();
 }
 
 internal sealed record ShowcaseProduct(

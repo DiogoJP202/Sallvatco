@@ -12,20 +12,22 @@
             <p class="mt-5 max-w-xl text-sm leading-7 text-stone-600">A identidade, o catálogo e os textos exibidos nesta apresentação ainda estão em processo de curadoria e aprovação.</p>
         </div>
         <div class="grid grid-cols-[0.92fr_1.08fr] items-end gap-4">
-            <img class="mb-10 w-full rounded-[2rem] object-cover shadow-xl shadow-stone-900/10"
-                 src="~/images/showcase/brand-presentation.webp"
+            <img class="mb-10 aspect-[4/5] w-full rounded-[2rem] bg-[#f2ece3] object-contain shadow-xl shadow-stone-900/10"
+                 src="~/images/showcase/packshots/body-sea-salt.webp"
+                 srcset="@Url.Content("~/images/showcase/packshots/body-sea-salt-thumb.webp") 480w, @Url.Content("~/images/showcase/packshots/body-sea-salt.webp") 1120w"
+                 sizes="(min-width: 1280px) 280px, (min-width: 1024px) 23vw, (min-width: 640px) 44vw, 42vw"
                  asp-append-version="true"
-                 width="399"
-                 height="501"
-                 alt="Apresentação de perfume Sallvat & Co. ao lado de um frasco"
+                 width="1120"
+                 height="1400"
+                 alt="Body splash Sea Salt em imagem tratada para apresentação"
                  decoding="async"
                  fetchpriority="high" />
-            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-stone-900/15"
-                 src="~/images/showcase/brand-manifesto.webp"
+            <img class="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-2xl shadow-stone-900/15"
+                 src="~/images/showcase/atmosphere-hibernum.webp"
                  asp-append-version="true"
-                 width="432"
-                 height="462"
-                 alt="Manifesto visual Sallvat & Co. com sombras de folhas"
+                 width="900"
+                 height="1125"
+                 alt="Baunilha e resina âmbar em uma composição de luz quente"
                  decoding="async" />
         </div>
     </div>
@@ -62,12 +64,14 @@
 <section class="bg-ink text-white" aria-labelledby="brand-direction-title">
     <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:px-10 lg:py-28">
         <div class="mx-auto max-w-sm">
-            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
-                 src="~/images/showcase/sea-salt-body-splash.webp"
+            <img class="aspect-[4/5] w-full rounded-[2rem] bg-[#f2ece3] object-contain shadow-2xl shadow-black/30"
+                 src="~/images/showcase/packshots/body-vanilla-cream.webp"
+                 srcset="@Url.Content("~/images/showcase/packshots/body-vanilla-cream-thumb.webp") 480w, @Url.Content("~/images/showcase/packshots/body-vanilla-cream.webp") 1120w"
+                 sizes="(min-width: 424px) 384px, calc(100vw - 40px)"
                  asp-append-version="true"
-                 width="335"
-                 height="597"
-                 alt="Body splash Sea Salt da Sallvat & Co. em cenário costeiro"
+                 width="1120"
+                 height="1400"
+                 alt="Body splash Vanilla Cream em imagem tratada para apresentação"
                  loading="lazy"
                  decoding="async" />
         </div>
@@ -75,7 +79,7 @@
             <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Direção em construção</p>
             <h2 id="brand-direction-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">Uma linguagem para acompanhar a coleção inteira.</h2>
             <p class="mt-7 max-w-2xl text-base leading-8 text-stone-300">Do perfume ao cuidado corporal, a direção visual procura manter uma assinatura reconhecível: matérias naturais, luz precisa, informação essencial e espaço para cada produto respirar.</p>
-            <p class="mt-6 max-w-2xl text-sm leading-7 text-stone-400">A composição final da linha, embalagens e extensões de produto será definida após validação comercial.</p>
+            <p class="mt-6 max-w-2xl text-sm leading-7 text-stone-400">Imagens tratadas para apresentação. A composição final da linha, embalagens e extensões de produto será definida após validação comercial.</p>
             <a class="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-ink transition hover:bg-sand" asp-controller="Perfumes" asp-action="Index">Explorar a coleção</a>
         </div>
     </div>

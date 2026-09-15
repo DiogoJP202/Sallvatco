@@ -3,11 +3,76 @@ using Microsoft.Extensions.DependencyInjection;
 using Sallvat.Application.Catalog;
 using Sallvat.IntegrationTests.Catalog;
 using Sallvat.Web.Models.Catalog;
+using SkiaSharp;
 
 namespace Sallvat.IntegrationTests.Web;
 
 public sealed class CatalogPageTests
 {
+    [Theory]
+    [InlineData(399, 501, 399, 399)]
+    [InlineData(335, 597, 335, 335)]
+    [InlineData(1120, 1400, 480, 1120)]
+    public async Task ProductImagesAdvertiseActualWidthsAndPreserveGallerySources(
+        int sourceWidth,
+        int sourceHeight,
+        int expectedThumbnailWidth,
+        int expectedLargeWidth)
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var product = await PublishedCatalogFixture.CreateAsync(
+            application,
+            "imagem-responsiva",
+            imageWidth: sourceWidth,
+            imageHeight: sourceHeight,
+            imageCount: 2);
+        using var client = application.CreateClient();
+        using var scope = application.Services.CreateScope();
+        var catalog = scope.ServiceProvider.GetRequiredService<ICatalogService>();
+        var published = await catalog.FindPublishedAsync(product.Slug);
+        var images = published.Product!.Images;
+        var details = await client.GetStringAsync($"/perfumes/{product.Slug}");
+        var listing = await client.GetStringAsync("/perfumes");
+        var home = await client.GetStringAsync("/");
+
+        Assert.Equal(2, images.Count);
+        foreach (var image in images)
+        {
+            using var thumbnail = SKBitmap.Decode(
+                await client.GetByteArrayAsync(image.ThumbnailUrl));
+            using var large = SKBitmap.Decode(
+                await client.GetByteArrayAsync(image.LargeUrl));
+            Assert.NotNull(thumbnail);
+            Assert.NotNull(large);
+            Assert.Equal(expectedThumbnailWidth, thumbnail.Width);
+            Assert.Equal(expectedLargeWidth, large.Width);
+            Assert.InRange(large.Width, 1, sourceWidth);
+            Assert.InRange(large.Height, 1, sourceHeight);
+
+            var expectedSourceSet = expectedThumbnailWidth == expectedLargeWidth
+                ? $"{image.LargeUrl} {expectedLargeWidth}w"
+                : $"{image.ThumbnailUrl} {expectedThumbnailWidth}w, {image.LargeUrl} {expectedLargeWidth}w";
+            Assert.Contains(
+                $"data-srcset=\"{expectedSourceSet}\"",
+                details,
+                StringComparison.Ordinal);
+            if (image.IsCover)
+            {
+                foreach (var html in new[] { details, listing, home })
+                {
+                    Assert.Contains(
+                        $" srcset=\"{expectedSourceSet}\"",
+                        html,
+                        StringComparison.Ordinal);
+                }
+            }
+        }
+
+        Assert.Contains($"data-width=\"{sourceWidth}\"", details, StringComparison.Ordinal);
+        Assert.Contains($"data-height=\"{sourceHeight}\"", details, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ProductInputModelDoesNotBindLifecycleOrFeaturedState()
     {

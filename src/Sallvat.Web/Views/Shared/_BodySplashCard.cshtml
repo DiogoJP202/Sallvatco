@@ -1,24 +1,24 @@
 @model BodySplashPresentation
 @{
     var thumbnailUrl = Url.Content(
-        $"~/images/showcase/real-products/{Model.ImageSlug}-thumb.webp");
+        $"~/images/showcase/packshots/body-{Model.ImageSlug}-thumb.webp");
     var largeUrl = Url.Content(
-        $"~/images/showcase/real-products/{Model.ImageSlug}.webp");
+        $"~/images/showcase/packshots/body-{Model.ImageSlug}.webp");
 }
 
 <article class="group overflow-hidden rounded-[2rem] bg-white text-ink shadow-sm ring-1 ring-stone-300/80 transition duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
          data-body-splash-card>
-    <div class="relative overflow-hidden bg-[#e9dfd3]">
-        <img class="aspect-[3/4] w-full object-cover transition duration-700 group-hover:scale-[1.015]"
+    <div class="relative overflow-hidden bg-[#f2ece3]">
+        <img class="aspect-[4/5] w-full object-contain transition duration-700 group-hover:scale-[1.015]"
              src="@thumbnailUrl"
-             srcset="@thumbnailUrl 480w, @largeUrl 1080w"
-             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-             width="1080"
-             height="1440"
-             alt="Body splash @Model.Name da Sallvat & Co. em fotografia de produto"
+             srcset="@thumbnailUrl 480w, @largeUrl 1120w"
+             sizes="(min-width: 1280px) 382px, (min-width: 1024px) calc((100vw - 136px) / 3), (min-width: 640px) calc((100vw - 92px) / 2), calc(100vw - 40px)"
+             width="1120"
+             height="1400"
+             alt="Body splash @Model.Name da Sallvat & Co. sobre fundo claro, em imagem tratada para apresentação"
              loading="lazy"
              decoding="async" />
-        <span class="absolute top-5 left-5 rounded-full bg-ink/85 px-4 py-2 text-[0.62rem] font-semibold tracking-[0.18em] text-white uppercase backdrop-blur-sm">Fotografia real</span>
+        <span class="absolute top-5 left-5 rounded-full bg-paper/90 px-4 py-2 text-[0.62rem] font-semibold tracking-[0.18em] text-ink uppercase backdrop-blur-sm">@BodySplashPresentation.VolumeMl ml</span>
     </div>
     <div class="p-6">
         <p class="text-[0.62rem] font-semibold tracking-[0.17em] text-copper uppercase">Body splash · @BodySplashPresentation.VolumeMl ml</p>

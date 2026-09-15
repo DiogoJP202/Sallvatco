@@ -1,26 +1,32 @@
 @model BodySplashCollectionPageViewModel
 @{
     ViewData["Title"] = "Linha corporal";
-    ViewData["Description"] = "Conheça os body splashes fotografados da linha Sallvat & Co.";
+    ViewData["Description"] = "Conheça a linha de body splashes de 200 ml da Sallvat & Co.";
 }
 
-<section class="relative isolate overflow-hidden bg-ink text-white" aria-labelledby="body-splashes-title">
-    <img class="absolute inset-0 -z-20 h-full w-full object-cover object-[48%_center] opacity-40"
-         src="~/images/showcase/real-products/sea-salt.webp"
-         asp-append-version="true"
-         width="1080"
-         height="1440"
-         alt=""
-         decoding="async"
-         fetchpriority="high" />
-    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/90 to-black/35" aria-hidden="true"></div>
-    <div class="mx-auto flex min-h-[38rem] max-w-7xl items-center px-5 py-20 sm:px-8 lg:px-10">
-        <div class="max-w-3xl">
-            <p class="text-xs font-semibold tracking-[0.22em] text-stone-300 uppercase">Linha corporal fotografada</p>
-            <h1 id="body-splashes-title" class="mt-6 font-serif text-6xl leading-[0.92] tracking-[-0.035em] sm:text-7xl">Produtos reais, agora em primeiro plano.</h1>
-            <p class="mt-8 max-w-2xl text-lg leading-8 text-stone-200">Uma seleção de body splashes de 200 ml apresentada com as fotografias fornecidas pela marca, preservando embalagens e rótulos originais.</p>
-            <p class="mt-5 max-w-2xl text-sm leading-7 text-stone-400">Nomes, valores, disponibilidade e referências olfativas exibidos nas imagens ainda precisam de validação comercial antes do lançamento.</p>
+<section class="overflow-hidden border-b border-stone-300/70 bg-[#eee6da]" aria-labelledby="body-splashes-title">
+    <div class="mx-auto grid max-w-7xl items-center gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-10">
+        <div class="max-w-2xl">
+            <p class="eyebrow">Linha corporal · 200 ml</p>
+            <h1 id="body-splashes-title" class="mt-6 font-serif text-5xl leading-[0.96] tracking-[-0.035em] sm:text-7xl">O cuidado encontra a sua fragrância.</h1>
+            <p class="mt-8 max-w-xl text-lg leading-8 text-stone-700">Uma seleção de body splashes para descobrir de perto. Frascos, cores e universos que fazem parte da coleção Sallvat &amp; Co.</p>
+            <a class="btn-primary mt-8" href="#body-splashes-grid-title">Explorar a linha corporal</a>
         </div>
+        <figure class="mx-auto w-full max-w-md">
+            <div class="overflow-hidden rounded-[2.5rem] bg-[#f2ece3] shadow-xl shadow-stone-900/10">
+                <img class="aspect-[4/5] w-full object-contain"
+                     src="~/images/showcase/packshots/body-sea-salt.webp"
+                     srcset="@Url.Content("~/images/showcase/packshots/body-sea-salt-thumb.webp") 480w, @Url.Content("~/images/showcase/packshots/body-sea-salt.webp") 1120w"
+                     sizes="(min-width: 512px) 448px, calc(100vw - 40px)"
+                     asp-append-version="true"
+                     width="1120"
+                     height="1400"
+                     alt="Body splash Sea Salt sobre fundo claro, em imagem tratada para apresentação"
+                     decoding="async"
+                     fetchpriority="high" />
+            </div>
+            <figcaption class="mt-4 flex items-center justify-between gap-4 px-2 text-xs text-stone-600"><span>Sea Salt · Body splash</span><span>200 ml</span></figcaption>
+        </figure>
     </div>
 </section>
 
@@ -31,7 +37,7 @@
                 <p class="eyebrow">Seleção apresentada</p>
                 <h2 id="body-splashes-grid-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">Nove maneiras de prolongar a presença.</h2>
             </div>
-            <p class="text-sm leading-7 text-stone-600 lg:text-right">As descrições abaixo reproduzem somente informações visíveis nos materiais enviados, sem criar promessas ou características não confirmadas.</p>
+            <p class="text-sm leading-7 text-stone-600 lg:text-right">Explore os nomes, as cores e as propostas da linha. Os detalhes de cada produto serão confirmados antes do lançamento comercial.</p>
         </div>
 
         <div class="mt-12 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
@@ -40,6 +46,7 @@
                 <partial name="_BodySplashCard" model="product" />
             }
         </div>
+        <p class="mt-8 max-w-3xl text-xs leading-6 text-stone-600">Imagens tratadas a partir dos materiais da marca para esta apresentação. Embalagens, valores e disponibilidade estão sujeitos à validação.</p>
     </div>
 </section>
 

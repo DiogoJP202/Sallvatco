@@ -25,7 +25,7 @@ public sealed class HomePageTests
             content,
             StringComparison.Ordinal);
         Assert.Contains(
-            "/images/showcase/brand-manifesto.webp?v=",
+            "/images/showcase/atmosphere-hibernum.webp?v=",
             content,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -34,7 +34,7 @@ public sealed class HomePageTests
             StringComparison.Ordinal);
 
         using var brandImage = await client.GetAsync(
-            "/images/showcase/brand-manifesto.webp");
+            "/images/showcase/atmosphere-hibernum.webp");
         Assert.Equal(HttpStatusCode.OK, brandImage.StatusCode);
         Assert.Equal(
             "image/webp",
@@ -70,7 +70,7 @@ public sealed class HomePageTests
         Assert.Contains("data-menu-button", content, StringComparison.Ordinal);
         Assert.Contains("data-mobile-menu", content, StringComparison.Ordinal);
         Assert.Contains(
-            "Fotografias reais da marca",
+            "O cuidado em cada detalhe",
             content,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -78,7 +78,7 @@ public sealed class HomePageTests
             content,
             StringComparison.Ordinal);
         Assert.Contains(
-            "/images/showcase/real-products/sea-salt-thumb.webp",
+            "/images/showcase/packshots/body-sea-salt-thumb.webp",
             content,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -110,7 +110,7 @@ public sealed class HomePageTests
     }
 
     [Fact]
-    public async Task BodySplashPageUsesTheNineProvidedProductPhotographs()
+    public async Task BodySplashPageUsesTheNinePreparedProductImages()
     {
         await using var application = new AccountWebApplicationFactory();
         await application.InitializeDatabaseAsync();
@@ -126,7 +126,7 @@ public sealed class HomePageTests
                 "data-body-splash-card",
                 StringSplitOptions.None).Length - 1);
         Assert.Contains(
-            "Produtos reais, agora em primeiro plano.",
+            "O cuidado encontra a sua fragrância.",
             content,
             StringComparison.Ordinal);
         Assert.Contains("Aqua Imagination", content, StringComparison.Ordinal);
@@ -141,14 +141,14 @@ public sealed class HomePageTests
             StringComparison.Ordinal);
 
         using var thumbnail = await client.GetAsync(
-            "/images/showcase/real-products/vanilla-cream-thumb.webp");
+            "/images/showcase/packshots/body-vanilla-cream-thumb.webp");
         Assert.Equal(HttpStatusCode.OK, thumbnail.StatusCode);
         Assert.Equal(
             "image/webp",
             thumbnail.Content.Headers.ContentType?.MediaType);
 
         using var largeImage = await client.GetAsync(
-            "/images/showcase/real-products/vanilla-cream.webp");
+            "/images/showcase/packshots/body-vanilla-cream.webp");
         Assert.Equal(HttpStatusCode.OK, largeImage.StatusCode);
         Assert.Equal(
             "image/webp",

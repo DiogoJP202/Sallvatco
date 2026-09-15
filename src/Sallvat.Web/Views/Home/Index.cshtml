@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Início";
     ViewData["Description"] = "Perfumes artesanais Sallvat & Co., apresentados com clareza, cuidado e identidade própria.";
+    ViewData["ProductImageSizes"] = "(min-width: 1280px) 382px, (min-width: 1024px) calc((100vw - 136px) / 3), (min-width: 640px) calc((100vw - 92px) / 2), calc(100vw - 40px)";
 }
 
 <section class="relative isolate min-h-[calc(100svh-7.5rem)] overflow-hidden bg-ink text-white" aria-labelledby="hero-title">
@@ -86,14 +87,14 @@
         <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
             <div class="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
                 <div>
-                    <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Fotografias reais da marca</p>
-                    <h2 id="linha-corporal-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">A linha corporal ganha forma.</h2>
+                    <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">O cuidado em cada detalhe</p>
+                    <h2 id="linha-corporal-title" class="mt-5 max-w-3xl font-serif text-5xl leading-none tracking-tight sm:text-6xl">Um gesto para acompanhar o dia.</h2>
                 </div>
                 <div class="lg:text-right">
-                    <p class="text-sm leading-7 text-stone-300">Body splashes de 200 ml apresentados com as embalagens e os rótulos registrados nas imagens enviadas.</p>
+                    <p class="text-sm leading-7 text-stone-300">Conheça a linha de body splashes de 200 ml e encontre uma nova forma de estar perto das suas fragrâncias.</p>
                     <a class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline"
                        asp-controller="Home"
-                       asp-action="BodySplashes">Ver os produtos fotografados <span aria-hidden="true">↗</span></a>
+                       asp-action="BodySplashes">Descobrir a linha corporal <span aria-hidden="true">↗</span></a>
                 </div>
             </div>
 
@@ -104,7 +105,7 @@
                 }
             </div>
 
-            <p class="mt-8 max-w-3xl text-xs leading-6 text-stone-400">Valores, disponibilidade e referências olfativas ainda serão confirmados pela Sallvat &amp; Co. antes da publicação comercial.</p>
+            <p class="mt-8 max-w-3xl text-xs leading-6 text-stone-400">Imagens tratadas a partir dos materiais da marca para esta apresentação. Valores, disponibilidade e detalhes dos produtos estão sujeitos à validação.</p>
         </div>
     </section>
 }
@@ -193,7 +194,7 @@
                      decoding="async" />
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true"></div>
                 <div class="absolute inset-x-0 bottom-0 p-7 text-white">
-                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Cumiere · Luminoso</p>
+                    <p class="text-[0.68rem] font-semibold tracking-[0.22em] uppercase">Lumiere · Luminoso</p>
                     <h3 class="mt-3 font-serif text-4xl">Cítrico</h3>
                     <p class="mt-3 text-sm leading-6 text-stone-100">Folhas, cascas e luz para começar o dia em movimento.</p>
                 </div>
@@ -205,20 +206,22 @@
 <section class="overflow-hidden bg-ink text-white" aria-labelledby="editorial-title">
     <div class="mx-auto grid max-w-7xl gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-28">
         <div class="grid grid-cols-[1.1fr_0.9fr] items-end gap-4">
-            <img class="w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
-                 src="~/images/showcase/brand-manifesto.webp"
+            <img class="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
+                 src="~/images/showcase/atmosphere-sea-salt.webp"
                  asp-append-version="true"
-                 width="432"
-                 height="462"
-                 alt="Apresentação Sallvat & Co. com sombras botânicas"
+                 width="900"
+                 height="1125"
+                 alt="Luz, pedra e sal em composição sensorial diante do mar"
                  loading="lazy"
                  decoding="async" />
-            <img class="mb-8 w-full rounded-[2rem] object-cover shadow-2xl shadow-black/30"
-                 src="~/images/showcase/brand-presentation.webp"
+            <img class="mb-8 aspect-[4/5] w-full rounded-[2rem] bg-[#f2ece3] object-contain shadow-2xl shadow-black/30"
+                 src="~/images/showcase/packshots/body-golden-freesia.webp"
+                 srcset="@Url.Content("~/images/showcase/packshots/body-golden-freesia-thumb.webp") 480w, @Url.Content("~/images/showcase/packshots/body-golden-freesia.webp") 1120w"
+                 sizes="(min-width: 1280px) 270px, (min-width: 1024px) 23vw, (min-width: 640px) 42vw, 40vw"
                  asp-append-version="true"
-                 width="399"
-                 height="501"
-                 alt="Frasco e apresentação de perfume Sallvat & Co."
+                 width="1120"
+                 height="1400"
+                 alt="Body splash Golden Freesia em imagem tratada para apresentação"
                  loading="lazy"
                  decoding="async" />
         </div>

@@ -50,7 +50,7 @@
 
 @layer components {
   .eyebrow {
-    @apply text-xs font-semibold tracking-[0.2em] text-copper uppercase;
+    @apply text-xs font-semibold tracking-[0.2em] text-[#7b432c] uppercase;
   }
 
   .form-label {
