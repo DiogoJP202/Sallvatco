@@ -55,6 +55,13 @@ internal sealed partial class MelhorEnvioFreightService(
                 "Não foi possível montar a cotação com o CEP e os itens informados.");
         }
 
+        if (FreightPackagingPolicy.RequiresConsolidatedPackage(request.Items))
+        {
+            return Failure(
+                FreightQuoteStatus.PackagingRequired,
+                FreightPackagingPolicy.PendingMessage);
+        }
+
         var cacheKey = CacheKey(options, destination, request.Items);
         if (!forceRefresh
             && cache.TryGetValue(cacheKey, out FreightQuoteResult? cached)

@@ -26,7 +26,7 @@ public sealed class CheckoutFreightTests
             application,
             "checkout-freight-quote");
         var owner = CartOwner.ForGuest(Token('Q'));
-        await AddItemAsync(application, owner, product.AvailableVariantId, 2);
+        await AddItemAsync(application, owner, product.AvailableVariantId, 1);
 
         using var scope = application.Services.CreateScope();
         var result = await scope.ServiceProvider
@@ -34,6 +34,9 @@ public sealed class CheckoutFreightTests
             .QuoteFreightAsync(owner, "30140-071");
 
         Assert.True(result.Succeeded);
+        Assert.Equal(2, result.PreparationBusinessDays);
+        Assert.Equal(2, Assert.Single(result.Options).MinimumBusinessDays);
+        Assert.Equal(4, Assert.Single(result.Options).MaximumBusinessDays);
         var request = Assert.Single(gateway.Requests);
         Assert.Equal("30140071", request.Request.DestinationPostalCode);
         Assert.False(request.ForceRefresh);
@@ -41,7 +44,7 @@ public sealed class CheckoutFreightTests
         Assert.Equal(
             product.AvailableVariantId.ToString(CultureInfo.InvariantCulture),
             item.Reference);
-        Assert.Equal(2, item.Quantity);
+        Assert.Equal(1, item.Quantity);
         Assert.Equal(299.90m, item.UnitPrice);
         Assert.Equal(0.4m, item.WeightKg);
         Assert.Equal(12m, item.HeightCm);
@@ -86,6 +89,72 @@ public sealed class CheckoutFreightTests
         Assert.Equal(21.90m, accepted.Snapshot?.Price);
         Assert.All(gateway.Requests, request => Assert.True(
             request.ForceRefresh));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MultipleUnitsRequirePackagingWithoutCallingProviderOrChangingCart(bool mixedProducts)
+    {
+        var gateway = new FakeFreightService(Quote(18.50m));
+        await using var application = new AccountWebApplicationFactory(freightService: gateway);
+        await application.InitializeDatabaseAsync();
+        var first = await PublishedCatalogFixture.CreateAsync(application, "packaging-first");
+        var owner = CartOwner.ForGuest(Token('P'));
+        await AddItemAsync(application, owner, first.AvailableVariantId, mixedProducts ? 1 : 2);
+        if (mixedProducts)
+        {
+            var second = await PublishedCatalogFixture.CreateAsync(application, "packaging-second");
+            await AddItemAsync(application, owner, second.AvailableVariantId, 1);
+        }
+
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+        var cartService = scope.ServiceProvider.GetRequiredService<ICartService>();
+        var before = await cartService.GetAsync(owner);
+        var quote = await service.QuoteFreightAsync(owner, "30140-071");
+        var selection = await service.RevalidateFreightAsync(owner, "30140-071", "melhor-envio:2", 18.50m);
+        var after = await cartService.GetAsync(owner);
+
+        Assert.Equal(FreightQuoteStatus.PackagingRequired, quote.Status);
+        Assert.Equal(2, quote.PreparationBusinessDays);
+        Assert.Empty(quote.Options);
+        Assert.False(quote.Succeeded);
+        Assert.Contains(FreightPackagingPolicy.PendingMessage, quote.Errors);
+        Assert.Equal(FreightSelectionStatus.PackagingRequired, selection.Status);
+        Assert.Null(selection.Snapshot);
+        Assert.Null(selection.CurrentOption);
+        Assert.Empty(gateway.Requests);
+        Assert.Equal(before.Total, after.Total);
+        Assert.Equal(2, after.TotalQuantity);
+        Assert.Equal(before.Items.Count, after.Items.Count);
+    }
+
+    [Fact]
+    public async Task AddingUnitInvalidatesEarlierQuoteAndReturningToOneUnitAllowsFreshQuote()
+    {
+        var gateway = new FakeFreightService(Quote(18.50m));
+        await using var application = new AccountWebApplicationFactory(freightService: gateway);
+        await application.InitializeDatabaseAsync();
+        var product = await PublishedCatalogFixture.CreateAsync(application, "packaging-changed");
+        var owner = CartOwner.ForGuest(Token('S'));
+        await AddItemAsync(application, owner, product.AvailableVariantId, 1);
+        using var scope = application.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ICheckoutService>();
+        var cartService = scope.ServiceProvider.GetRequiredService<ICartService>();
+        Assert.True((await service.QuoteFreightAsync(owner, "30140-071")).Succeeded);
+        var line = Assert.Single((await cartService.GetAsync(owner)).Items);
+        Assert.True((await cartService.UpdateItemAsync(owner, line.ItemId, 2)).Succeeded);
+
+        var selection = await service.RevalidateFreightAsync(owner, "30140-071", "melhor-envio:2", 18.50m);
+        Assert.Equal(FreightSelectionStatus.PackagingRequired, selection.Status);
+        Assert.Single(gateway.Requests);
+        Assert.Null(selection.Snapshot);
+
+        Assert.True((await cartService.UpdateItemAsync(owner, line.ItemId, 1)).Succeeded);
+        Assert.True((await service.RevalidateFreightAsync(owner, "30140-071", "melhor-envio:2", 18.50m)).Succeeded);
+        Assert.Equal(2, gateway.Requests.Count);
+        Assert.True(gateway.Requests[1].ForceRefresh);
     }
 
     private static FreightQuoteResult Quote(decimal price) =>

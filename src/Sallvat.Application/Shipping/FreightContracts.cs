@@ -33,6 +33,7 @@ public enum FreightQuoteStatus
     AuthenticationFailure,
     RateLimited,
     Unavailable,
+    PackagingRequired,
 }
 
 public sealed record FreightQuoteResult(
@@ -40,6 +41,8 @@ public sealed record FreightQuoteResult(
     IReadOnlyList<FreightQuoteOption> Options,
     IReadOnlyList<string> Errors)
 {
+    public int PreparationBusinessDays { get; init; }
+
     public bool Succeeded =>
         Status == FreightQuoteStatus.Succeeded && Options.Count > 0;
 
@@ -59,6 +62,7 @@ public enum FreightSelectionStatus
     Invalid,
     PriceChanged,
     Unavailable,
+    PackagingRequired,
 }
 
 public sealed record FreightSelectionResult(

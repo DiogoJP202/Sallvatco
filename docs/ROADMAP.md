@@ -143,6 +143,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 6 — Frete e Melhor Envio
 
+**Estado em 21/09/2026:** cotação/revalidação implementadas, origem e contato configurados, preparo separado do transporte e múltiplas unidades protegidas por pendência de embalagem. O usuário autorizou avançar sem a caixa maior; a fase permanece em andamento, sem habilitar integração produtiva, etiquetas ou rastreio. Detalhes em [SHIPPING.md](SHIPPING.md).
+
 **Objetivo:** cotar, selecionar e operar envio com snapshots confiáveis.
 
 **Dependências:** Fases 3 e 5; `PBD-007` e `PBD-008`.

@@ -38,6 +38,10 @@
         <section class="rounded-[2rem] border border-stone-300 bg-white p-7 shadow-sm lg:col-span-2" aria-labelledby="freight-title">
             <p class="eyebrow">Cotação de entrega</p>
             <h2 id="freight-title" class="mt-4 font-serif text-3xl">Opções para o seu pedido</h2>
+            @if (Model.Freight.PreparationBusinessDays > 0)
+            {
+                <p class="mt-4 text-sm leading-6 text-stone-600" data-preparation-days="@Model.Freight.PreparationBusinessDays">Preparação e postagem: em média @Model.Freight.PreparationBusinessDays dias úteis. Esse período é separado do prazo de transporte informado abaixo.</p>
+            }
             @if (Model.Freight.Succeeded)
             {
                 <div class="mt-6 grid gap-4 sm:grid-cols-2">

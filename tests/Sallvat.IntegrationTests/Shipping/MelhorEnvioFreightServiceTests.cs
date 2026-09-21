@@ -72,7 +72,7 @@ public sealed class MelhorEnvioFreightServiceTests
         var product = Assert.Single(
             root.GetProperty("products").EnumerateArray());
         Assert.Equal("42", product.GetProperty("id").GetString());
-        Assert.Equal(2, product.GetProperty("quantity").GetInt32());
+        Assert.Equal(1, product.GetProperty("quantity").GetInt32());
         Assert.Equal(299.90m, product
             .GetProperty("insurance_value")
             .GetDecimal());
@@ -218,6 +218,93 @@ public sealed class MelhorEnvioFreightServiceTests
             client.DefaultRequestHeaders.UserAgent.ToString());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UndefinedConsolidatedPackageNeverCallsProvider(bool mixedProducts)
+    {
+        using var handler = new RecordingHandler(_ => JsonResponse(HttpStatusCode.OK, "[]"));
+        using var client = Client(handler);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var request = Request();
+        var item = Assert.Single(request.Items);
+        request = request with
+        {
+            Items = mixedProducts
+                ? [item, item with { Reference = "43" }]
+                : [item with { Quantity = 2 }],
+        };
+
+        foreach (var refresh in new[] { false, true })
+        {
+            var result = await Service(client, cache).QuoteAsync(request, forceRefresh: refresh);
+            Assert.Equal(FreightQuoteStatus.PackagingRequired, result.Status);
+            Assert.Empty(result.Options);
+        }
+
+        Assert.Equal(0, handler.CallCount);
+        Assert.Empty(handler.Bodies);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    [InlineData(30)]
+    [InlineData(-1)]
+    [InlineData(31)]
+    public void PreparationDaysAreBoundAndValidated(int days)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["Shipping:Fulfillment:PreparationBusinessDays"] = days.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            }).Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<FulfillmentOptions>>();
+        if (days is < 0 or > 30)
+        {
+            Assert.Throws<OptionsValidationException>(() => options.Value);
+        }
+        else
+        {
+            Assert.Equal(days, options.Value.PreparationBusinessDays);
+        }
+    }
+
+    [Theory]
+    [InlineData(130, 5, 16, 11)]
+    [InlineData(300, 7, 20, 16)]
+    public async Task SinglePackagedUnitKeepsGrossWeightAndDimensions(int grams, int height, int width, int length)
+    {
+        using var handler = new RecordingHandler(_ => JsonResponse(HttpStatusCode.OK, "[]"));
+        using var client = Client(handler);
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var request = Request();
+        request = request with
+        {
+            Items = [request.Items[0] with
+            {
+                WeightKg = grams / 1000m,
+                HeightCm = height,
+                WidthCm = width,
+                LengthCm = length,
+            }],
+        };
+
+        await Service(client, cache).QuoteAsync(request);
+
+        using var payload = JsonDocument.Parse(Assert.Single(handler.Bodies));
+        var product = Assert.Single(payload.RootElement.GetProperty("products").EnumerateArray());
+        Assert.Equal(grams / 1000m, product.GetProperty("weight").GetDecimal());
+        Assert.Equal(height, product.GetProperty("height").GetInt32());
+        Assert.Equal(width, product.GetProperty("width").GetInt32());
+        Assert.Equal(length, product.GetProperty("length").GetInt32());
+        Assert.Equal(1, product.GetProperty("quantity").GetInt32());
+    }
+
     private static MelhorEnvioFreightService Service(
         HttpClient client,
         IMemoryCache cache) =>
@@ -256,7 +343,7 @@ public sealed class MelhorEnvioFreightServiceTests
         [
             new FreightQuoteItem(
                 "42",
-                2,
+                1,
                 299.90m,
                 "BRL",
                 0.4m,

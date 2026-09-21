@@ -1,17 +1,20 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Checkout;
 using Sallvat.Application.Orders;
 using Sallvat.Application.Shipping;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.Infrastructure.Shipping;
 
 namespace Sallvat.Infrastructure.Checkout;
 
 internal sealed class CheckoutService(
     SallvatDbContext dbContext,
     ICartService cartService,
-    IFreightService freightService) : ICheckoutService
+    IFreightService freightService,
+    IOptions<FulfillmentOptions> fulfillmentOptions) : ICheckoutService
 {
     public async Task<CheckoutPrefill> GetPrefillAsync(
         Guid? applicationUserId,
@@ -124,13 +127,21 @@ internal sealed class CheckoutService(
             owner,
             destinationPostalCode,
             cancellationToken);
-        return request is null
+        var result = request is null
             ? FreightQuoteResult.Failure(
                 FreightQuoteStatus.Invalid,
                 "A sacola ou o CEP mudou. Revise os dados antes de cotar.")
-            : await freightService.QuoteAsync(
-                request,
-                cancellationToken: cancellationToken);
+            : FreightPackagingPolicy.RequiresConsolidatedPackage(request.Items)
+                ? FreightQuoteResult.Failure(
+                    FreightQuoteStatus.PackagingRequired,
+                    FreightPackagingPolicy.PendingMessage)
+                : await freightService.QuoteAsync(
+                    request,
+                    cancellationToken: cancellationToken);
+        return result with
+        {
+            PreparationBusinessDays = fulfillmentOptions.Value.PreparationBusinessDays,
+        };
     }
 
     public async Task<FreightSelectionResult> RevalidateFreightAsync(
@@ -158,6 +169,14 @@ internal sealed class CheckoutService(
                 FreightSelectionStatus.Invalid,
                 null,
                 "A sacola ou o CEP mudou. Revise os dados antes de continuar.");
+        }
+
+        if (FreightPackagingPolicy.RequiresConsolidatedPackage(request.Items))
+        {
+            return FreightSelectionResult.Failure(
+                FreightSelectionStatus.PackagingRequired,
+                null,
+                FreightPackagingPolicy.PendingMessage);
         }
 
         var current = await freightService.QuoteAsync(

@@ -74,6 +74,13 @@ public static class DependencyInjection
                 MelhorEnvioOptions.IsValid,
                 "Shipping:MelhorEnvio configuration is invalid.")
             .ValidateOnStart();
+        services
+            .AddOptions<FulfillmentOptions>()
+            .Bind(configuration.GetSection(FulfillmentOptions.SectionName))
+            .Validate(
+                options => options.PreparationBusinessDays is >= 0 and <= 30,
+                "Shipping:Fulfillment:PreparationBusinessDays must be between 0 and 30.")
+            .ValidateOnStart();
         services.AddMemoryCache();
         services.AddHttpClient<IFreightService, MelhorEnvioFreightService>(
             (serviceProvider, client) =>

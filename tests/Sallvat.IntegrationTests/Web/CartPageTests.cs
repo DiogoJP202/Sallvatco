@@ -218,8 +218,10 @@ public sealed partial class CartPageTests
         Assert.Equal("/carrinho", response.Headers.Location?.OriginalString);
     }
 
-    [Fact]
-    public async Task GuestCanValidateCheckoutAndOverpostedTotalsAreIgnored()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task GuestCanValidateCheckoutAndOverpostedTotalsAreIgnored(int quantity)
     {
         await using var application = new AccountWebApplicationFactory();
         await application.InitializeDatabaseAsync();
@@ -236,7 +238,7 @@ public sealed partial class CartPageTests
                 productToken,
                 ("VariantId", product.AvailableVariantId.ToString(
                     System.Globalization.CultureInfo.InvariantCulture)),
-                ("Quantity", "1")));
+                ("Quantity", quantity.ToString(System.Globalization.CultureInfo.InvariantCulture))));
         Assert.Equal(HttpStatusCode.Redirect, addResponse.StatusCode);
 
         var checkoutToken = await GetAntiforgeryTokenAsync(
@@ -263,6 +265,7 @@ public sealed partial class CartPageTests
                 ("Form.City", "São Paulo"),
                 ("Form.StateCode", "sp"),
                 ("Form.Cart.Total", "0.01"),
+                ("Form.Freight.PreparationBusinessDays", "0"),
                 ("Form.Cpf", "00000000000")));
         var content = WebUtility.HtmlDecode(
             await response.Content.ReadAsStringAsync());
@@ -271,7 +274,15 @@ public sealed partial class CartPageTests
         Assert.Contains("Dados validados pelo servidor", content, StringComparison.Ordinal);
         Assert.Contains("Cliente Web", content, StringComparison.Ordinal);
         Assert.Contains("cliente@example.com", content, StringComparison.Ordinal);
-        Assert.Contains("299,90", content, StringComparison.Ordinal);
+        Assert.Contains(quantity == 1 ? "299,90" : "599,80", content, StringComparison.Ordinal);
+        Assert.Contains("data-preparation-days=\"2\"", content, StringComparison.Ordinal);
+        Assert.Contains("em média 2 dias úteis", content, StringComparison.Ordinal);
+        Assert.Contains("separado do prazo de transporte", content, StringComparison.Ordinal);
+        if (quantity == 2)
+        {
+            Assert.Contains("definição da caixa de envio", content, StringComparison.Ordinal);
+            Assert.DoesNotContain("Total com entrega:", content, StringComparison.Ordinal);
+        }
         Assert.DoesNotContain("00000000000", content, StringComparison.Ordinal);
     }
 

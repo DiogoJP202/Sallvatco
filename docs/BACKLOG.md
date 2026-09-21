@@ -255,6 +255,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Implementar algoritmo de embalagem validado com `PBD-007`.
 - [x] Implementar cotação e cache curto sem PII excessiva.
 - [x] Revalidar opção no checkout e tratar mudança de preço.
+- [x] Configurar origem/contato confirmados, apresentar preparo médio de 2 dias úteis separado do transporte e validar limites da configuração.
+- [x] Bloquear cotação/revalidação automática de múltiplas unidades sem caixa consolidada validada, preservando a sacola e impedindo fallback para frete zero.
 - [ ] Persistir snapshot no pedido/shipment.
 - [ ] Testar CEP, nenhuma cotação, timeout, 401/429 e sandbox.
 

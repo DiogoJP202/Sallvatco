@@ -146,6 +146,21 @@ O teste integrado inicia duas transações concorrentes tentando reservar a últ
 
 A criação de pedido também cobre repetição da mesma tentativa, snapshots que permanecem iguais após alteração do catálogo, rateio determinístico do cupom, limpeza da sacola somente no sucesso e rollback quando uma linha posterior fica indisponível. O contrato rejeita frete zerado sem regra aprovada, cotação vencida e qualquer total recebido do navegador.
 
+## Frete com embalagem pendente
+
+Cobertura implementada para avançar sem estimar a caixa consolidada:
+
+- uma unidade usa peso bruto e dimensões atuais da variante, sem adicionar novamente a tara; payloads testados para 130 g e 300 g com as dimensões comerciais confirmadas;
+- duas unidades iguais ou produtos distintos retornam `PackagingRequired`, sem HTTP, opções de frete ou snapshot confirmado;
+- a sacola mantém itens, quantidades e total após recusa da cotação;
+- uma cotação anterior é rejeitada se a sacola passar a ter várias unidades; ao voltar a uma unidade, nova revalidação pode consultar o provedor;
+- preparo médio de dois dias úteis é apresentado separadamente, sem alterar o intervalo de transporte do provedor;
+- configuração de preparo aceita 0–30 dias e rejeita valores fora desse intervalo;
+- tentativa de enviar prazo de preparo ou total pelo formulário não altera os valores do servidor;
+- a revisão com várias unidades exibe a pendência de embalagem sem apresentar total com entrega ou frete grátis.
+
+Os testes usam HTTP fake; não representam homologação da conta Melhor Envio, de transportadoras ou de embalagem real.
+
 ## Webhook
 
 - payload com assinatura correta é consultado na API fake;
