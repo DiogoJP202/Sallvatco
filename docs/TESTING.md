@@ -185,6 +185,20 @@ Os cenários de webhook abaixo são critérios planejados; o endpoint ainda não
 
 O teste InMemory não executa índices únicos ou constraints relacionais. Ainda é necessário aplicar a migration em PostgreSQL isolado e testar tentativas concorrentes, colisão de chave/preferência e rollback antes de habilitar o fluxo financeiro. Não houve chamada ao Mercado Pago, alteração de estoque ou confirmação de pedido nestes testes.
 
+## Adapter Checkout Pro — cobertura implementada
+
+- payload com itens líquidos, frete, BRL, referência, chave estável e validade; sem dados pessoais, cartão ou política comercial inventada;
+- validação do total exato, centavos, itens, prazo, ambiente e configuração antes de qualquer HTTP;
+- vendedor/referência divergentes, preferência inválida e resposta após validade não geram redirect;
+- HTTPS, host brasileiro exato, porta padrão, ausência de usuário/fragmento e `pref_id` correspondente;
+- recusa de HTTP, domínio semelhante/malicioso, credenciais na URL e IDs divergentes;
+- normalização de 400/401/403/408/409/422/429/5xx e status inesperado, sem propagar payload;
+- timeout real de dois segundos, transporte interrompido, JSON malformado, formato inesperado e resposta acima de 64 KiB;
+- cancelamento pré-envio sem HTTP e cancelamento pós-envio tratado como incerto;
+- no máximo um envio por chamada, sem retry automático, e DI desabilitada por padrão.
+
+Todos esses testes usam `HttpMessageHandler` fake. Não validam a conta Mercado Pago, antifraude, cobrança, webhook, conciliação, páginas de retorno ou persistência da tentativa pelo orquestrador, que seguem pendentes. O limite de ambiente inclui confirmação operacional de vendedor de teste; o prefixo do token não é uma garantia técnica de sandbox.
+
 ## Segurança automatizada
 
 - análise de dependências e imagem no pipeline;

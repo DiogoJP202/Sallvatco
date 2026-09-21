@@ -8,6 +8,7 @@ using Sallvat.Application.Carts;
 using Sallvat.Application.Catalog;
 using Sallvat.Application.Checkout;
 using Sallvat.Application.Orders;
+using Sallvat.Application.Payments;
 using Sallvat.Application.Promotions;
 using Sallvat.Application.Shipping;
 using Sallvat.Application.Time;
@@ -16,6 +17,7 @@ using Sallvat.Infrastructure.Catalog;
 using Sallvat.Infrastructure.Checkout;
 using Sallvat.Infrastructure.Identity;
 using Sallvat.Infrastructure.Orders;
+using Sallvat.Infrastructure.Payments;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.Infrastructure.Promotions;
 using Sallvat.Infrastructure.Shipping;
@@ -82,6 +84,13 @@ public static class DependencyInjection
                 "Shipping:Fulfillment:PreparationBusinessDays must be between 0 and 30.")
             .ValidateOnStart();
         services.AddMemoryCache();
+        services.AddOptions<MercadoPagoOptions>()
+            .Bind(configuration.GetSection(MercadoPagoOptions.SectionName))
+            .Validate(MercadoPagoOptions.IsValid, "Payments:MercadoPago configuration is invalid; only sandbox is supported.")
+            .ValidateOnStart();
+        services.AddHttpClient<IPaymentGateway, MercadoPagoPaymentGateway>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+            .RemoveAllLoggers();
         services.AddHttpClient<IFreightService, MelhorEnvioFreightService>(
             (serviceProvider, client) =>
             {

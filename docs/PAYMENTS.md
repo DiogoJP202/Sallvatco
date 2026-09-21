@@ -10,11 +10,33 @@ As operações disponíveis são `Created → Pending` ao registrar uma preferê
 
 O banco tem unicidade por `(Provider, Environment, IdempotencyKey)` e por preferência não nula no mesmo provedor/ambiente. Um índice único parcial permite no máximo uma tentativa `Created`, `Pending`, `Approved` ou `RequiresAttention` por pedido, inclusive entre ambientes. Não basta gerar outra chave para repetir uma operação incerta. Motivos de revisão são códigos fechados, sem payload ou mensagem livre do provedor.
 
-Esta entrega não contém orquestrador de checkout financeiro, adapter HTTP, credenciais, endpoints, redirecionamento, webhook ou reembolso. `Approved`, `Rejected`, `Cancelled`, `Expired` e `Refunded` estão reservados no enum; não há método genérico que aplique esses estados. Nenhuma operação de `Payment` altera pedido, reserva ou estoque. IDs de pagamento/merchant order, timestamps canônicos, eventos e valores reembolsados serão acrescentados com a integração correspondente.
+Esta entrega não contém orquestrador de checkout financeiro, credenciais, endpoints públicos de pagamento, redirecionamento pela loja, webhook ou reembolso. O adapter HTTP isolado descrito abaixo está disponível, mas desabilitado e sem consumidor na tela. `Approved`, `Rejected`, `Cancelled`, `Expired` e `Refunded` estão reservados no enum; não há método genérico que aplique esses estados. Nenhuma operação de `Payment` altera pedido, reserva ou estoque. IDs de pagamento/merchant order, timestamps canônicos, eventos e valores reembolsados serão acrescentados com a integração correspondente.
 
 Antes de uma chamada externa, o futuro orquestrador deverá autorizar acesso ao pedido, reler seu estado/reservas em transação, persistir a tentativa e tratar conflito de unicidade/concor­rência sem chamar o provedor novamente. Retry deve recuperar a tentativa existente e verificar pedido, ambiente e intenção; um conflito não autoriza devolver a tentativa de outro pedido. A homologação em PostgreSQL e os testes de disputa entre processos continuam obrigatórios antes de ativar cobranças. A migration foi gerada, não aplicada automaticamente.
 
-## Estratégia
+## Adapter de preferência — testes isolados
+
+`IPaymentGateway.CreatePreferenceAsync` recebe um snapshot interno com chave, ambiente, referência, total BRL, frete, validade e itens líquidos após rateio do desconto. O futuro orquestrador deve obtê-lo do pedido persistido, nunca de valores postados pelo navegador. A soma exata de itens e frete é conferida antes do HTTP; valores negativos, precisão superior a centavos, itens inválidos ou validade vencida são recusados. O rateio de descontos por unidade e a montagem a partir de `OrderItem` ainda serão integrados ao orquestrador; não se deve dividir centavos de modo que a soma deixe de fechar.
+
+`MercadoPagoPaymentGateway` usa `POST https://api.mercadopago.com/checkout/preferences`, sem SDK adicional, com itens, frete separado, referência, validade herdada e URLs HTTPS. Não envia CPF, dados de cartão, contato do comprador, política de parcelamento ou `notification_url` enquanto o webhook não existir. A forma do payload segue a [referência de criação de preferência](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-preferences/create-preference/post). A chave estável é enviada em `X-Idempotency-Key`, também usado no [exemplo oficial do SDK PHP](https://github.com/mercadopago/sdk-php/blob/master/examples/Preference/Create.php); isso não autoriza retry cego nem substitui a deduplicação local.
+
+O cliente tem limite total de 2–30 segundos, incluindo leitura do corpo, e buffer máximo de 64 KiB. Não segue redirects HTTP nem registra corpos, tokens ou mensagens de exceção. A resposta só fornece uma URL quando ID, referência, vendedor esperado e validade passam na validação; aceita apenas HTTPS em `www.mercadopago.com.br`, caminho `/checkout/` e `pref_id` correspondente, sem usuário, fragmento ou porta alternativa. Isso valida o destino do redirect, não confirma pagamento.
+
+Resultados internos são `Created`, `Disabled`, `InvalidRequest`, `ConfigurationInvalid`, `AuthenticationFailure`, `Rejected` e `OutcomeUnknown`. `Created` significa somente preferência recebida, nunca pedido pago. HTTP 400/422 recusa o pedido ao provedor; 401/403 sinaliza autenticação; timeout, falha de transporte, 408/409/429/5xx, resposta inválida ou inesperada e cancelamento após iniciar envio resultam em `OutcomeUnknown`. Cancelamento antes do envio propaga cancelamento sem HTTP. Não há retry automático ou liberação de reserva por esses resultados.
+
+O futuro orquestrador deve persistir `Created` antes do POST e gravar `RequiresAttention` em resultado incerto, inclusive quando o navegador cancelar, usando um prazo interno independente. Se o processo cair após o POST, a tentativa persistida deve impedir novo POST até conciliação. Persistência/transações e consulta posterior ainda não fazem parte do adapter; chamar o método duas vezes não é deduplicado por ele.
+
+### Configuração e limites de homologação
+
+`Payments:MercadoPago` é versionado com `Enabled=false`, `Environment=Sandbox`, token/origem vazios, `TestSellerId=0`, `TestSellerConfirmed=false` e timeout de 10 segundos. Production é recusado nesta etapa. Nenhum segredo foi configurado e os testes usam somente HTTP fake.
+
+Para futura homologação, conferir no painel o vendedor de teste e fornecer por secrets/variáveis `Payments__MercadoPago__AccessToken`, `PublicOrigin`, `TestSellerId` e `TestSellerConfirmed` sob o mesmo prefixo. A confirmação é operacional, não detecção automática da natureza da conta. O `collector_id` deve coincidir com o ID configurado. Não usar o token da conta comercial: [credenciais Checkout Pro de teste também podem começar por `APP_USR`](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-preferences/test-accounts). Os testes com usuário de teste seguem o `init_point`, conforme [orientação oficial](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--); `sandbox_init_point` não é usado como prova de ambiente.
+
+Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retorno/sucesso`, `/pagamentos/retorno/pendente` e `/pagamentos/retorno/falha` são montados a partir de `PublicOrigin`, mas suas páginas ainda não existem. Faltam orquestrador, retorno não autoritativo, webhook, conciliação e homologação PostgreSQL. Este avanço não altera a loja estática no Pages, não cria migration e não conclui `F7-S1`.
+
+## Estratégia de Checkout Pro
+
+Revisão em 21/09/2026: o provedor recomenda [Checkout Pro via Orders para novas integrações](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-orders/overview) e mantém suporte à API de Preferências. Este incremento preserva o plano aprovado de preferências; a adoção de Orders deve ser avaliada antes de homologar o checkout completo, pois altera payload, IDs, retorno e notificações. Nenhuma migração automática de contrato foi presumida.
 
 O MVP usa Mercado Pago Checkout Pro por redirecionamento. O Sallvat não coleta, transmite nem armazena número completo de cartão ou CVV. O gateway é uma fronteira de infraestrutura; estados do domínio não dependem diretamente dos nomes do provedor.
 
@@ -37,7 +59,7 @@ Status de pagamento não substitui `OrderStatus`.
 
 ## Contrato interno
 
-`IPaymentGateway` expõe apenas capacidades necessárias:
+`IPaymentGateway` implementa a criação da preferência. Consulta canônica e reembolso abaixo são capacidades planejadas e serão acrescentadas com seus casos de uso:
 
 - criar preferência a partir de pedido e URLs de retorno;
 - consultar o estado canônico de um pagamento externo;
