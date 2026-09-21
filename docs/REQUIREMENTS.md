@@ -76,10 +76,10 @@
 | PBD-004 | Quais meios de pagamento, parcelas, juros e boleto estarão habilitados? | Planejar cartão e Pix pelo Checkout Pro; não prometer boleto. | Homologação de pagamento |
 | PBD-005 | Qual o tempo de reserva e como tratar aprovação após expiração? | Configurável, recomendado 30 minutos; divergência vai para `RequiresAttention`. | Política de estoque/pagamento |
 | PBD-006 | Regras e prazos de cancelamento, troca, devolução e reembolso parcial. | Suportar reembolso total; não publicar prazos. | Políticas e operação |
-| PBD-007 | CEP/endereço de origem, embalagem, prazo de manuseio, transportadoras e regiões atendidas. | Cotação sandbox com dados de teste explícitos. | Frete produtivo |
-| PBD-008 | Haverá frete grátis, retirada local ou promoção de frete? | Nenhuma dessas opções ativa. | Checkout/prom promoções |
+| PBD-007 | Parcialmente confirmada em 21/09/2026: CEP `02320-040`, preparo/postagem em média de 2 dias úteis e embalagens individuais para perfume (todos os volumes) e body splash de 200 ml. Vários itens usam caixa maior. Faltam medidas/peso/capacidade dessa caixa, endereço completo, serviços, regiões e regras de contagem. Ver [SHIPPING.md](SHIPPING.md#dados-comerciais-confirmados-em-21092026). | Não habilitar frete produtivo antes de configurar e homologar as embalagens e a conexão Melhor Envio. | Frete produtivo |
+| PBD-008 | Frete grátis ainda sem estratégia, conforme confirmação de 21/09/2026. Retirada e outras promoções também não foram definidas. | Nenhuma dessas opções ativa. | Checkout/prom promoções |
 | PBD-009 | Cupons podem acumular? Quais limites, usos, produtos e relação com frete? | Um cupom por pedido, sem acumulação e sem desconto no frete. | Regras finais de cupom |
-| PBD-010 | Qual provedor, domínio remetente e conteúdo dos e-mails transacionais? | Contrato `IEmailSender`, sem provedor selecionado. | Confirmação de conta e comunicação |
+| PBD-010 | Contato informado em 21/09/2026: `sallvatco@gmail.com`. Provedor, domínio remetente e conteúdo dos e-mails transacionais continuam pendentes; o contato não define o serviço de envio. | Contrato `IEmailSender`, sem provedor selecionado. | Confirmação de conta e comunicação |
 | PBD-011 | Como convidado acessará o acompanhamento do pedido? | Link assinado e expirável enviado ao e-mail informado. | UX pós-compra |
 | PBD-012 | Prazos de retenção, anonimização e procedimento de atendimento ao titular. | Preservar dados fiscais/contratuais necessários; revisar juridicamente antes do go-live. | LGPD/go-live |
 | PBD-013 | Serão usados analytics, pixels, cookies não essenciais e newsletter com double opt-in? | Somente cookies essenciais; nenhum pixel ou newsletter ativo. | Marketing e consentimento |

@@ -21,7 +21,28 @@ A fundação de cotação da Fase 6 está disponível, mas permanece desabilitad
 - a revalidação ignora o cache, procura a mesma opção e exige nova confirmação se o preço mudar;
 - a tela de revisão mostra opções apenas quando há resultado válido e não habilita criação de pedido ou pagamento.
 
-O adapter atual recebe um access token por configuração protegida. Renovação OAuth, persistência protegida de tokens e controle de corrida no refresh serão implementados somente após a estratégia de credenciais ser aprovada. O mesmo vale para o empacotamento: os itens físicos atuais já formam a requisição, mas o uso produtivo aguarda origem e dimensões/peso de embalagem definidos em `PBD-007`.
+O adapter atual recebe um access token por configuração protegida. Renovação OAuth, persistência protegida de tokens e controle de corrida no refresh serão implementados somente após a estratégia de credenciais ser aprovada. Os itens físicos atuais já formam a requisição, mas o uso produtivo ainda depende da homologação das embalagens e da configuração real. As confirmações comerciais abaixo não habilitam automaticamente a integração nem alteram o catálogo de produção.
+
+## Dados comerciais confirmados em 21/09/2026
+
+Informações fornecidas pelo usuário, com peso e dimensões lidos nas duas imagens de cadastro e escopo confirmado na conversa:
+
+| Informação | Confirmação |
+|---|---|
+| CEP de origem | `02320-040` (normalizado para `02320040` na integração) |
+| E-mail de contato informado | `sallvatco@gmail.com` |
+| Melhor Envio | Conta já cadastrada; autorização da aplicação e credenciais ainda pendentes |
+| Preparação e postagem | Prazo médio informado de **2 dias úteis**, separado do transporte |
+| Body splash de 200 ml, produto com caixa | **300 g (0,300 kg)**; comprimento **16 cm**, largura **20 cm**, altura **7 cm** |
+| Perfume, produto com caixa | **130 g (0,130 kg)**; comprimento **11 cm**, largura **16 cm**, altura **5 cm**; usuário confirmou aplicação a todos os volumes informados (30, 50 e 100 ml) |
+| Pedidos com vários produtos | Acondicionamento em **caixa maior**, não remessas individuais como regra |
+| Frete grátis | Estratégia ainda não definida; permanece desativado |
+
+Os pesos informados já incluem a caixa individual: não adicionar novamente sua tara na cotação de uma unidade. Para a caixa maior, ainda faltam dimensões externas, peso total real dos conjuntos e capacidade/composição suportada. Não somar dimensões individuais nem assumir que a soma dos pesos embalados representa o peso do volume consolidado. Validar com caixas reais antes de habilitar essa operação.
+
+O prazo da transportadora não inclui os dois dias úteis de preparação. A apresentação futura deve separar essas parcelas; um total estimado só deve ser calculado com uma regra explícita, sem duplicar o manuseio e sem transformar a média informada em garantia de entrega. O marco inicial da contagem, horário de corte e calendário de feriados ainda precisam ser definidos.
+
+O Gmail informado é contato comercial, não confirmação de provedor de e-mails transacionais ou autorização para envio automático. O estado de estoque ilimitado visível nas capturas de outra plataforma não foi solicitado como regra para esta aplicação; o controle de estoque existente permanece.
 
 ## Contrato interno
 
@@ -62,7 +83,7 @@ Guardar transportadora, serviço, preço cobrado, prazo informado, CEP de origem
 
 ## Peso e dimensões
 
-Cada variante publicada exige peso e dimensões do item embalado ou regra de embalagem definida. Não somar dimensões ingenuamente. Até `PBD-007`, o algoritmo de empacotamento será conservador e validado com caixas reais antes da produção. Peso total inclui produtos e embalagem.
+Cada variante publicada exige peso e dimensões do item embalado ou regra de embalagem definida. As embalagens individuais estão confirmadas acima; a caixa consolidada continua pendente em `PBD-007`. Não somar dimensões ingenuamente. O algoritmo de empacotamento deverá ser validado com caixas reais antes da produção. Peso total inclui produtos, proteção e embalagem de envio.
 
 ## Melhor Envio
 
@@ -100,4 +121,4 @@ Mudanças relevantes geram histórico e podem disparar e-mail idempotente. `Deli
 
 ## Decisões pendentes
 
-`PBD-007` e `PBD-008` definem origem, embalagem, serviços, prazo de manuseio, abrangência, frete grátis e retirada.
+`PBD-007` está parcialmente respondida: CEP, embalagens individuais, preparação de dois dias úteis e uso de caixa maior foram confirmados. Faltam endereço completo de postagem, caixas consolidadas e suas capacidades/pesos, transportadoras, regiões atendidas e regras de contagem do preparo. A conexão da conta Melhor Envio continua pendente. `PBD-008` permanece aberta para estratégia de frete grátis, promoções e retirada, sem ativação dessas modalidades.

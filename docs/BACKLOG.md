@@ -241,6 +241,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 ## EPIC F6 — Frete e Melhor Envio
 
+**Atualização comercial — 21/09/2026:** CEP, preparo de dois dias úteis e embalagens individuais confirmados em [SHIPPING.md](SHIPPING.md#dados-comerciais-confirmados-em-21092026). Pedidos com vários itens usam caixa maior, cujas medidas/peso/capacidade ainda precisam ser informados. Cadastro no Melhor Envio existente, integração ainda não autorizada/configurada. Estas confirmações não concluem as tarefas técnicas abaixo.
+
 ### STORY F6-S1 — Cliente recebe cotações válidas por CEP
 
 **Aceite:** opções refletem itens físicos e falha nunca resulta em frete gratuito acidental.
