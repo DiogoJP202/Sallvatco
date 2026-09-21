@@ -136,6 +136,12 @@ O carrinho referencia no máximo um `Coupon` e exibe apenas uma prévia recalcul
 
 Percentuais e valores fixos são limitados ao subtotal. O desconto total usa arredondamento monetário `AwayFromZero` e é rateado proporcionalmente entre itens em centavos. Restos são distribuídos por maior fração e depois pelo ID da linha, produzindo o mesmo resultado em repetição e nunca tornando uma linha negativa.
 
+## Fundação de pagamentos disponível
+
+A migration `AddPaymentFoundation` cria somente `payment`: FK restritiva para pedido, snapshot em `numeric(18,2)`/BRL, ambiente explícito, UUID idempotente, preferência opcional, expiração UTC e `ConcurrencyVersion`. Constraints verificam valor, estados, ambiente, timestamps, chave não vazia e motivo obrigatório/exclusivo de `RequiresAttention`. Índices únicos protegem chave e preferência por provedor/ambiente; um índice parcial por pedido bloqueia outra tentativa enquanto houver `Created`, `Pending`, `Approved` ou `RequiresAttention`.
+
+Não há migração de dados existentes ou cobrança automática. Os campos de captura/reembolso e `WebhookEvent` ainda são planejamento. A autorização e a verificação do estado atual do pedido/reservas deverão acontecer no futuro orquestrador transacional; constraints desta tabela não substituem essas verificações. Veja [PAYMENTS.md](PAYMENTS.md).
+
 ## Soft delete e retenção
 
 - produto, variante, cupom e endereço usam inativação/arquivamento quando há histórico;

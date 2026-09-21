@@ -7,6 +7,7 @@ using Sallvat.Domain.Catalog;
 using Sallvat.Domain.Customers;
 using Sallvat.Domain.Inventory;
 using Sallvat.Domain.Orders;
+using Sallvat.Domain.Payments;
 using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Identity;
 
@@ -42,6 +43,8 @@ public sealed class SallvatDbContext(
         Set<InventoryMovement>();
 
     public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
 
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 

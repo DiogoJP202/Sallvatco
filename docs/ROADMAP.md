@@ -168,6 +168,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
+**Progresso parcial:** fundação local de `Payment`, estados separados do pedido, snapshot comercial, preferência idempotente, tratamento de resultado incerto e migration com unicidade/concor­rência implementados. Testes cobrem domínio, persistência InMemory e modelo/SQL PostgreSQL, não a execução das constraints em um servidor PostgreSQL. Nenhuma cobrança ou conexão com Mercado Pago está habilitada. Orquestração transacional, homologação relacional, contrato/adapter, webhook e reembolso seguem pendentes em `F7-S1`–`F7-S3`.
+
 **Objetivo:** cobrar pelo Checkout Pro e confirmar pedidos de forma idempotente.
 
 **Dependências:** Fases 5–6; `PBD-004` e `PBD-005`.
@@ -175,6 +177,7 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 **Tarefas:**
 
 - implementar `IPaymentGateway` e preferência Checkout Pro;
+- persistir tentativas com chave idempotente e homologar unicidade sob concorrência em PostgreSQL;
 - criar retorno seguro e estados de tentativa;
 - implementar webhook assinado, consulta canônica e deduplicação;
 - consumir/liberar estoque conforme confirmação/expiração;

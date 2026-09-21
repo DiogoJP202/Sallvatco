@@ -2,6 +2,18 @@
 
 # Pagamentos
 
+## Implementação atual — fundação local
+
+`Payment` e a migration `AddPaymentFoundation` implementam o registro local de uma tentativa, com snapshot do total/moeda/referência do pedido, ambiente explícito, chave idempotente, preferência opcional, expiração e token de concorrência. A criação exige pedido `PendingPayment` não expirado; a validade é herdada do pedido, sem estabelecer uma nova política comercial.
+
+As operações disponíveis são `Created → Pending` ao registrar uma preferência e `Created/Pending → RequiresAttention` quando o resultado é incerto. Resposta de preferência recebida na expiração ou depois dela também exige revisão. Repetir o mesmo ID não altera versão nem timestamps; trocar uma preferência já registrada é recusado. Receber uma preferência depois de um resultado incerto preserva a revisão, sem reabrir a tentativa.
+
+O banco tem unicidade por `(Provider, Environment, IdempotencyKey)` e por preferência não nula no mesmo provedor/ambiente. Um índice único parcial permite no máximo uma tentativa `Created`, `Pending`, `Approved` ou `RequiresAttention` por pedido, inclusive entre ambientes. Não basta gerar outra chave para repetir uma operação incerta. Motivos de revisão são códigos fechados, sem payload ou mensagem livre do provedor.
+
+Esta entrega não contém orquestrador de checkout financeiro, adapter HTTP, credenciais, endpoints, redirecionamento, webhook ou reembolso. `Approved`, `Rejected`, `Cancelled`, `Expired` e `Refunded` estão reservados no enum; não há método genérico que aplique esses estados. Nenhuma operação de `Payment` altera pedido, reserva ou estoque. IDs de pagamento/merchant order, timestamps canônicos, eventos e valores reembolsados serão acrescentados com a integração correspondente.
+
+Antes de uma chamada externa, o futuro orquestrador deverá autorizar acesso ao pedido, reler seu estado/reservas em transação, persistir a tentativa e tratar conflito de unicidade/concor­rência sem chamar o provedor novamente. Retry deve recuperar a tentativa existente e verificar pedido, ambiente e intenção; um conflito não autoriza devolver a tentativa de outro pedido. A homologação em PostgreSQL e os testes de disputa entre processos continuam obrigatórios antes de ativar cobranças. A migration foi gerada, não aplicada automaticamente.
+
 ## Estratégia
 
 O MVP usa Mercado Pago Checkout Pro por redirecionamento. O Sallvat não coleta, transmite nem armazena número completo de cartão ou CVV. O gateway é uma fronteira de infraestrutura; estados do domínio não dependem diretamente dos nomes do provedor.
@@ -90,7 +102,7 @@ Assinatura válida não elimina a consulta ao provedor. Evento inválido recebe 
 ## Idempotência e duplicatas
 
 - unique constraint em `(Provider, ExternalEventId)` para eventos;
-- unique constraint em `(Provider, IdempotencyKey)` para comandos externos;
+- unique constraint em `(Provider, Environment, IdempotencyKey)` para comandos externos;
 - transição usa estado de origem e ID externo como condição;
 - webhook repetido não consome estoque, cupom ou envia comunicação duas vezes;
 - refund retry usa a mesma chave para a mesma intenção;

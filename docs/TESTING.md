@@ -163,12 +163,27 @@ Os testes usam HTTP fake; não representam homologação da conta Melhor Envio, 
 
 ## Webhook
 
+Os cenários de webhook abaixo são critérios planejados; o endpoint ainda não foi implementado.
+
 - payload com assinatura correta é consultado na API fake;
 - payload sozinho nunca confirma pedido;
 - dez entregas concorrentes do mesmo evento produzem um `WebhookEvent`, um movimento de estoque e uma transição;
 - evento aprovado seguido de pendente não regride estado;
 - evento desconhecido/valor divergente não altera pedido e gera revisão;
 - resposta e logs não contêm segredo.
+
+## Fundação local de pagamento — cobertura implementada
+
+- snapshot de total, moeda, número do pedido, ambiente, chave e expiração;
+- recusa de pedido pago, cancelado, em revisão ou expirado, ambiente inválido, chave vazia e timestamps inválidos;
+- preferência repetida não altera estado/versão e uma preferência diferente não substitui a anterior;
+- preferência recebida após a expiração ou após resultado incerto permanece em revisão;
+- IDs inválidos/longos são recusados sem mutação; motivos são códigos fechados;
+- persistência/releitura e rejeição de atualização com versão obsoleta usando EF InMemory;
+- verificação de precisão, FK restritiva, índices únicos/parciais e constraints no modelo/SQL Npgsql;
+- modelo EF sem alterações pendentes em relação à migration.
+
+O teste InMemory não executa índices únicos ou constraints relacionais. Ainda é necessário aplicar a migration em PostgreSQL isolado e testar tentativas concorrentes, colisão de chave/preferência e rollback antes de habilitar o fluxo financeiro. Não houve chamada ao Mercado Pago, alteração de estoque ou confirmação de pedido nestes testes.
 
 ## Segurança automatizada
 

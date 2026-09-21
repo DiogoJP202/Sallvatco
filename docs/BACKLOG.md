@@ -282,10 +282,12 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [ ] Definir `IPaymentGateway` e resultados internos.
-- [ ] Criar `Payment`, mappings, índices e migration.
+- [x] Criar a fundação de `Payment`, mappings, índices e migration, sem chamada externa.
+- [x] Testar snapshots, preferência repetida/tardia, resultado incerto e token de concorrência da tentativa.
+- [ ] Homologar unicidade e disputa entre processos em PostgreSQL real antes de ativar cobranças.
 - [ ] Implementar cliente Checkout Pro com options por ambiente.
 - [ ] Criar preferência com referência, valores e URLs HTTPS.
-- [ ] Persistir idempotency key, preferência e falhas sanitizadas.
+- [ ] Integrar ao checkout a persistência da chave idempotente, preferência e falhas sanitizadas (modelo local disponível).
 - [ ] Implementar retry seguro e consulta após timeout ambíguo.
 - [ ] Criar páginas de retorno não autoritativas.
 - [ ] Testar payload, ambiente, timeout, retry e URL.

@@ -128,6 +128,8 @@ dotnet run --project src/Sallvat.Web
 
 ## Migrations
 
+`AddPaymentFoundation` acrescenta a fundação local de tentativas de pagamento: snapshot comercial, chave idempotente, preferência opcional, revisão de resultado incerto e índices de proteção contra duplicatas. A Fase 7 está apenas iniciada: não há cobrança, adapter Mercado Pago ou webhook ativo. Consulte [Pagamentos](docs/PAYMENTS.md) para os limites desta entrega e a homologação pendente em PostgreSQL.
+
 As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory`, `AddShoppingCarts`, `AddCoupons`, `AddOrdersAndReservations` e `AddOrderLifecycle` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria, carrinhos, promoções, pedidos, snapshots, reservas e controle de ocorrências. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
 
 ```powershell
