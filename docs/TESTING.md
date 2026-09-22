@@ -205,6 +205,10 @@ O job CI inicia `postgres:18.6-alpine3.24`, igual à versão do Compose, com cre
 
 Todos esses testes usam `HttpMessageHandler` fake. Não validam a conta Mercado Pago, antifraude, cobrança, webhook, conciliação, páginas de retorno ou persistência da tentativa pelo orquestrador, que seguem pendentes. O limite de ambiente inclui confirmação operacional de vendedor de teste; o prefixo do token não é uma garantia técnica de sandbox.
 
+## Contrato Orders isolado
+
+`MercadoPagoOrderGatewayTests` usa somente HTTP simulado. Cobre payload separado de Preferences; valores invariantes sob cultura `pt-BR`; exemplo de desconto de um centavo distribuído em linhas distintas e frete explícito; chave estável; URLs de retorno; flags independentes/exclusivas; bloqueio de produção; soma inválida, duplicidade de linhas, expiração e entrada inválida sem HTTP; vendedor/referência/moeda/país/valor/status divergentes; URLs maliciosas; JSON inválido e limite de resposta; timeout/cancelamento/transporte; ausência de retry, fallback e exposição de `client_token`. Não comprova homologação do provedor, envio persistido ou webhook.
+
 ## Segurança automatizada
 
 - análise de dependências e imagem no pipeline;

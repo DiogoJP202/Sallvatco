@@ -51,6 +51,20 @@ Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retor
 
 ## Estratégia de Checkout Pro
 
+### Adapter Orders — incremento isolado de 22/09/2026
+
+`IPaymentGateway.CreateOrderAsync` usa `PaymentOrderRequest` e `PaymentOrderResult`, sem confundir `ExternalOrderId` com `PreferenceId`. O POST vai apenas para `/v1/orders`. Valores usam strings decimais invariantes, e o total deve fechar exatamente a soma das linhas. A validade enviada é uma duração ISO 8601 arredondada para baixo; o limite local desta etapa é de 1 segundo a 24 horas. O vencimento local continua autoritativo para liberar reservas e exigir revisão de aprovação tardia.
+
+O futuro montador deve partir dos snapshots, ratear descontos em centavos (dividindo uma linha em dois preços quando necessário) e incluir frete como linha explícita uma única vez. O adapter valida a soma, mas não monta ou persiste snapshots. Não são enviados CPF, e-mail, endereço, parcelas, juros ou restrições de meios de pagamento; essas decisões não foram presumidas. O campo `client_token` da resposta é descartado.
+
+`Payments:MercadoPago:OrdersEnabled` é independente de `Enabled` (Preferences), ambos `false` por padrão. Habilitar os dois é configuração inválida. Só Sandbox é aceito, com vendedor de teste confirmado e origem HTTPS; isso não detecta automaticamente se uma credencial pertence a conta de teste. Uma resposta 201 só produz `Created` após conferir vendedor, referência, moeda, país, total, ausência de valor pago, estado `created`, tipo/mode e URL HTTPS brasileira com o mesmo `order_id`. `Created` significa recurso externo criado, nunca pedido pago.
+
+Timeout, cancelamento após envio, HTTP 409/423/429/5xx, JSON inválido, resposta maior que 64 KiB ou divergência produzem `OutcomeUnknown`, sem retorno de URL/ID, retry ou fallback. Erros 400/422 são rejeições e 401/403 falhas de autenticação; nenhum corpo do provedor é exposto. O cliente registrado mantém redirects HTTP desativados e não registra logs HTTP. Referências: [contrato Orders](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro/create-order/post) e [guia de criação](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-orders/create-order).
+
+**Limites:** somente testes HTTP simulados, sem credenciais ou chamadas reais. Nenhuma migration, endpoint público, página de retorno ou alteração visual. O banco ainda não armazena ID Orders. Posse exclusiva do envio, persistência do resultado independente do navegador, recuperação de queda, consulta e webhook continuam pendentes. Não habilitar esta flag na loja; homologar esses fluxos primeiro.
+
+### Decisão registrada
+
 Revisão em 21/09/2026: o provedor recomenda [Checkout Pro via Orders para novas integrações](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-orders/overview) e mantém suporte à API de Preferências. Este incremento preserva o plano aprovado de preferências; a adoção de Orders deve ser avaliada antes de homologar o checkout completo, pois altera payload, IDs, retorno e notificações. Nenhuma migração automática de contrato foi presumida.
 
 A revisão foi registrada no [ADR-015](DECISIONS.md#adr-015--preparação-local-independente-da-api-de-checkout): preparar a tentativa local de forma independente e validar Orders no próximo incremento externo. Orders usa total monetário em string, duração de validade, `checkout_url` e identificador próprio; o frete/desconto precisa fechar a soma dos itens e as notificações/consultas precisam seguir o recurso correto. Não haverá fallback automático entre as APIs, pois poderia abrir duas intenções externas para o mesmo pedido.

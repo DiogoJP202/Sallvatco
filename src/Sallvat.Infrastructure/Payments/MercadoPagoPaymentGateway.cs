@@ -10,7 +10,7 @@ using Sallvat.Domain.Payments;
 
 namespace Sallvat.Infrastructure.Payments;
 
-internal sealed class MercadoPagoPaymentGateway(
+internal sealed partial class MercadoPagoPaymentGateway(
     HttpClient httpClient,
     IOptions<MercadoPagoOptions> configuredOptions,
     IClock clock) : IPaymentGateway

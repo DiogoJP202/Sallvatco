@@ -290,7 +290,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Montar criação de preferência com referência, valores, chave estável, validade e URLs HTTPS, testada com HTTP fake.
 - [ ] Homologar conta de teste e posteriormente habilitar configuração de produção com validação de ambiente.
 - [x] Revisar Preferences versus Orders API e registrar a preparação independente no ADR-015.
-- [ ] Validar e implementar contrato Orders, IDs externos e notificações correspondentes antes de conectar a tela (sem fallback entre APIs).
+- [x] Implementar contrato de criação Orders isolado, com tipos separados, flags exclusivas, validação e HTTP simulado, sem fallback entre APIs.
+- [ ] Persistir ID externo Orders e posse exclusiva do envio, revalidar reservas antes do HTTP e implementar reconciliação e notificações antes de conectar a tela.
 - [x] Persistir uma tentativa Sandbox por pedido com autorização, snapshots, reservas e concorrência, sem acionar gateway.
 - [ ] Integrar ao checkout a persistência da chave idempotente, preferência e falhas sanitizadas (modelo local disponível).
 - [ ] Implementar retry seguro e consulta após timeout ambíguo.

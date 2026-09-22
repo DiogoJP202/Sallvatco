@@ -176,6 +176,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 **Dependências:** Fases 5–6; `PBD-004` e `PBD-005`.
 
+**Incremento Orders:** contrato e adapter de criação isolados disponíveis com testes HTTP simulados e flags exclusivas. Nenhuma chamada real ou alteração de banco. Persistência do ID Orders, posse do envio, recuperação e webhook ainda bloqueiam a integração à tela.
+
 **Tarefas:**
 
 - implementar `IPaymentGateway` e preferência Checkout Pro;

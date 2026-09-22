@@ -8,6 +8,8 @@ public sealed class MercadoPagoOptions
 
     public bool Enabled { get; set; }
 
+    public bool OrdersEnabled { get; set; }
+
     public PaymentEnvironment Environment { get; set; } = PaymentEnvironment.Sandbox;
 
     public string AccessToken { get; set; } = string.Empty;
@@ -23,12 +25,13 @@ public sealed class MercadoPagoOptions
     internal static bool IsValid(MercadoPagoOptions options)
     {
         if (options.TimeoutSeconds is < 2 or > 30
-            || options.Environment != PaymentEnvironment.Sandbox)
+            || options.Environment != PaymentEnvironment.Sandbox
+            || (options.Enabled && options.OrdersEnabled))
         {
             return false;
         }
 
-        if (!options.Enabled)
+        if (!options.Enabled && !options.OrdersEnabled)
         {
             return true;
         }

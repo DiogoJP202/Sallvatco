@@ -155,3 +155,5 @@ ADRs 001–014 têm status **Aceita** em 2026-08-27. Registros posteriores infor
 **Alternativas consideradas:** conectar o adapter existente imediatamente; migrar apenas nomes/endpoint sem validar notificações; bloquear toda a evolução pela falta de credenciais.
 
 **Consequências:** a preparação é reaproveitável e não cria cobrança. `AlreadyPrepared` nunca autoriza reenvio; ainda é necessário um dispatcher durável, revalidação imediatamente antes do HTTP, reconciliação e identificação explícita do tipo de recurso externo. IDs Orders não serão armazenados em `PreferenceId`. O CI passa a executar migration, disputa concorrente, unicidade e token de concorrência em PostgreSQL efêmero.
+
+**Evolução em 22/09/2026:** o contrato Orders e seu adapter isolado estão implementados com HTTP simulado. Retornam `ExternalOrderId` separado, sem gravá-lo no banco; não há fallback e as flags de Orders/Preferences são mutuamente exclusivas. A integração persistida, notificações e homologação externa continuam pendentes.
