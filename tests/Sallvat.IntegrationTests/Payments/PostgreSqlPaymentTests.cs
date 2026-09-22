@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Payments;
@@ -7,11 +8,22 @@ using Sallvat.Domain.Orders;
 using Sallvat.Domain.Payments;
 using Sallvat.Infrastructure.Payments;
 using Sallvat.Infrastructure.Persistence;
+using Sallvat.IntegrationTests.Web;
 
 namespace Sallvat.IntegrationTests.Payments;
 
 public sealed class PostgreSqlPaymentTests
 {
+    [Fact]
+    public async Task IsolatedDatabaseOptionsPreserveTheApplicationModel()
+    {
+        await using var application = new SallvatWebApplicationFactory();
+        using var scope = application.Services.CreateScope();
+        await using var db = new SallvatDbContext(CreateOptions(scope.ServiceProvider,
+            "Host=127.0.0.1;Port=1;Database=sallvat_model_test;Username=test;Password=test"));
+        Assert.False(db.Database.HasPendingModelChanges());
+    }
+
     [PostgreSqlFact]
     public async Task RealDatabaseEnforcesPreparationUniquenessAndOptimisticConcurrency()
     {
@@ -21,7 +33,9 @@ public sealed class PostgreSqlPaymentTests
             Pooling = false,
         };
         var databaseName = builder.Database;
-        var options = new DbContextOptionsBuilder<SallvatDbContext>().UseNpgsql(builder.ConnectionString).Options;
+        await using var application = new SallvatWebApplicationFactory();
+        using var scope = application.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
         await using var setup = new SallvatDbContext(options);
         try
         {
@@ -87,6 +101,11 @@ public sealed class PostgreSqlPaymentTests
             }
         }
     }
+
+    private static DbContextOptions<SallvatDbContext> CreateOptions(IServiceProvider services, string connectionString) =>
+        // Preserve Identity schema options and migration history from the actual application.
+        new DbContextOptionsBuilder<SallvatDbContext>(services.GetRequiredService<DbContextOptions<SallvatDbContext>>())
+            .UseNpgsql(connectionString).Options;
 
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
