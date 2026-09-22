@@ -183,7 +183,13 @@ Os cenários de webhook abaixo são critérios planejados; o endpoint ainda não
 - verificação de precisão, FK restritiva, índices únicos/parciais e constraints no modelo/SQL Npgsql;
 - modelo EF sem alterações pendentes em relação à migration.
 
-O teste InMemory não executa índices únicos ou constraints relacionais. Ainda é necessário aplicar a migration em PostgreSQL isolado e testar tentativas concorrentes, colisão de chave/preferência e rollback antes de habilitar o fluxo financeiro. Não houve chamada ao Mercado Pago, alteração de estoque ou confirmação de pedido nestes testes.
+O teste InMemory não executa índices únicos ou constraints relacionais. `PostgreSqlPaymentTests` cobre essa parte no CI: aplica migrations em banco exclusivo com sufixo aleatório e valida oito preparações concorrentes em contextos/conexões distintos, uma única tentativa, colisão de chave/preferência/pedido, rejeição de valor negativo e atualização com versão obsoleta. Nenhum HTTP Mercado Pago é executado. Quedas entre persistência/HTTP, disputas com cancelamento e fluxo financeiro ponta a ponta ainda precisam de homologação.
+
+### Preparação e PostgreSQL no CI
+
+Os testes locais cobrem preparação/replay, snapshots imutáveis, estoque preservado, guest alheio ou expirado, conta vinculada, pedido inexistente/pago/cancelado/em revisão, reservas ausentes/liberadas/divergentes, resultado incerto e ambiente diferente. Verificam também recarga de pedido já rastreado e preservação de mudanças não salvas no contexto.
+
+O job CI inicia `postgres:18.6-alpine3.24`, igual à versão do Compose, com credenciais descartáveis e `SALLVAT_TEST_POSTGRES`. O teste cria e remove somente um banco `sallvat_payment_tests_<uuid>`, sem usar o nome de banco fornecido na conexão. Não há volume persistente ou conexão à VPS. Para executar localmente, use exclusivamente uma instância de testes com permissão de criar bancos e forneça essa variável; sem ela, o teste aparece explicitamente como ignorado, nunca como aprovação relacional. O semáforo InMemory não substitui esse teste real.
 
 ## Adapter Checkout Pro — cobertura implementada
 

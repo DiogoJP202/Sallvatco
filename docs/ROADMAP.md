@@ -168,9 +168,11 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
-**Progresso parcial:** fundação local de `Payment`, estados separados do pedido, snapshot comercial, preferência idempotente, tratamento de resultado incerto e migration com unicidade/concorrência implementados. O contrato de criação de preferência e adapter HTTP isolado também estão implementados, limitados a Sandbox e desabilitados por padrão. Testes cobrem domínio, persistência InMemory, modelo/SQL PostgreSQL e HTTP fake, não a execução das constraints em PostgreSQL ou homologação com o provedor. Nenhuma cobrança ou conexão com Mercado Pago está habilitada. Orquestração transacional, retorno pela loja, homologação relacional, consulta canônica, webhook e reembolso seguem pendentes em `F7-S1`–`F7-S3`.
+**Progresso parcial:** fundação local de `Payment`, estados separados do pedido, snapshot comercial, preferência idempotente, tratamento de resultado incerto e migration com unicidade/concorrência implementados. O contrato de criação de preferência e adapter HTTP isolado também estão implementados, limitados a Sandbox e desabilitados por padrão. Testes cobrem domínio, persistência InMemory, PostgreSQL efêmero no CI e HTTP fake, não homologação com o provedor. Nenhuma cobrança ou conexão com Mercado Pago está habilitada. Envio transacional completo, retorno pela loja, homologação ponta a ponta, consulta canônica, webhook e reembolso seguem pendentes em `F7-S1`–`F7-S3`.
 
 **Objetivo:** cobrar pelo Checkout Pro e confirmar pedidos de forma idempotente.
+
+**Incremento de preparação:** `IPaymentPreparationService` salva uma tentativa autorizada, com snapshots e reservas conferidos, em transação serializável sem chamada externa. O CI inclui PostgreSQL efêmero para migration, índices únicos, disputa e token de concorrência. A preparação não conclui o envio persistido nem a homologação do checkout. O ADR-015 registra Orders como caminho a validar no próximo incremento externo, mantendo o adapter Preferences desabilitado.
 
 **Dependências:** Fases 5–6; `PBD-004` e `PBD-005`.
 

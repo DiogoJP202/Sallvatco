@@ -12,7 +12,22 @@ O banco tem unicidade por `(Provider, Environment, IdempotencyKey)` e por prefer
 
 Esta entrega não contém orquestrador de checkout financeiro, credenciais, endpoints públicos de pagamento, redirecionamento pela loja, webhook ou reembolso. O adapter HTTP isolado descrito abaixo está disponível, mas desabilitado e sem consumidor na tela. `Approved`, `Rejected`, `Cancelled`, `Expired` e `Refunded` estão reservados no enum; não há método genérico que aplique esses estados. Nenhuma operação de `Payment` altera pedido, reserva ou estoque. IDs de pagamento/merchant order, timestamps canônicos, eventos e valores reembolsados serão acrescentados com a integração correspondente.
 
-Antes de uma chamada externa, o futuro orquestrador deverá autorizar acesso ao pedido, reler seu estado/reservas em transação, persistir a tentativa e tratar conflito de unicidade/concor­rência sem chamar o provedor novamente. Retry deve recuperar a tentativa existente e verificar pedido, ambiente e intenção; um conflito não autoriza devolver a tentativa de outro pedido. A homologação em PostgreSQL e os testes de disputa entre processos continuam obrigatórios antes de ativar cobranças. A migration foi gerada, não aplicada automaticamente.
+`IPaymentPreparationService` implementa a primeira metade do fluxo interno: autoriza o pedido, relê seu estado e reservas e persiste a tentativa sem chamar o provedor. A migration é aplicada somente em banco efêmero pelo teste relacional do CI; não foi aplicada à loja ou automaticamente no startup.
+
+### Preparação persistida sem chamada externa
+
+`PrepareAsync` recebe ID do pedido, identidade interna (`CartOwner`) e ambiente Sandbox. Não recebe preço, desconto, moeda, preferência ou chave idempotente do navegador. O chamador futuro deve construir a identidade a partir de sessão/claims, nunca aceitar um user ID arbitrário do formulário.
+
+- conta autenticada: exige associação explícita `Order.CustomerId → Customer.ApplicationUserId`, sem associação por e-mail;
+- guest: exige token válido da sacola de origem ainda não expirada, sem dono autenticado, e pedido não vinculado a uma conta; não implementa consulta histórica guest;
+- pedido alheio e inexistente retornam `NotFound`, sem ID de pagamento ou dados pessoais;
+- snapshots de itens, desconto e frete precisam fechar o total; reservas precisam corresponder às variantes/quantidades, continuar `Reserved` e ter a mesma validade do pedido;
+- tentativa nova recebe UUID no servidor; pedido e pagamento são salvos juntos em transação serializável, com alteração do token de concorrência do pedido para disputar com cancelamento/expiração;
+- tentativa em aberto é reutilizada com `AlreadyPrepared`; divergência de ambiente/snapshot, `RequiresAttention` ou captura já registrada impedem nova tentativa;
+- unicidade, concorrência e serialização resultam em `Conflict`, sem HTTP ou retry automático;
+- mudanças não salvas no contexto são preservadas e retornam `Conflict`, evitando sobrescrever outra unidade de trabalho.
+
+O serviço não entrega URL ou chave idempotente ao cliente, não altera estoque/cupom/status do pedido e não chama o gateway. `Created` persistido e `AlreadyPrepared` não provam que uma operação externa nunca ocorreu; após eventual queda do processo, não reenviar automaticamente. Ainda faltam dispatcher com posse exclusiva do envio, revalidação antes do POST, persistência independente do cancelamento do navegador, consulta/conciliação e retorno não autoritativo. O semáforo InMemory serve somente aos testes locais; no PostgreSQL, transação, índices e versões fazem a proteção.
 
 ## Adapter de preferência — testes isolados
 
@@ -32,11 +47,13 @@ O futuro orquestrador deve persistir `Created` antes do POST e gravar `RequiresA
 
 Para futura homologação, conferir no painel o vendedor de teste e fornecer por secrets/variáveis `Payments__MercadoPago__AccessToken`, `PublicOrigin`, `TestSellerId` e `TestSellerConfirmed` sob o mesmo prefixo. A confirmação é operacional, não detecção automática da natureza da conta. O `collector_id` deve coincidir com o ID configurado. Não usar o token da conta comercial: [credenciais Checkout Pro de teste também podem começar por `APP_USR`](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-preferences/test-accounts). Os testes com usuário de teste seguem o `init_point`, conforme [orientação oficial](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--); `sandbox_init_point` não é usado como prova de ambiente.
 
-Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retorno/sucesso`, `/pagamentos/retorno/pendente` e `/pagamentos/retorno/falha` são montados a partir de `PublicOrigin`, mas suas páginas ainda não existem. Faltam orquestrador, retorno não autoritativo, webhook, conciliação e homologação PostgreSQL. Este avanço não altera a loja estática no Pages, não cria migration e não conclui `F7-S1`.
+Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retorno/sucesso`, `/pagamentos/retorno/pendente` e `/pagamentos/retorno/falha` são montados a partir de `PublicOrigin`, mas suas páginas ainda não existem. Faltam envio persistido, retorno não autoritativo, webhook, conciliação e homologação ponta a ponta. Este avanço não altera a loja estática no Pages, não cria migration e não conclui `F7-S1`.
 
 ## Estratégia de Checkout Pro
 
 Revisão em 21/09/2026: o provedor recomenda [Checkout Pro via Orders para novas integrações](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-orders/overview) e mantém suporte à API de Preferências. Este incremento preserva o plano aprovado de preferências; a adoção de Orders deve ser avaliada antes de homologar o checkout completo, pois altera payload, IDs, retorno e notificações. Nenhuma migração automática de contrato foi presumida.
+
+A revisão foi registrada no [ADR-015](DECISIONS.md#adr-015--preparação-local-independente-da-api-de-checkout): preparar a tentativa local de forma independente e validar Orders no próximo incremento externo. Orders usa total monetário em string, duração de validade, `checkout_url` e identificador próprio; o frete/desconto precisa fechar a soma dos itens e as notificações/consultas precisam seguir o recurso correto. Não haverá fallback automático entre as APIs, pois poderia abrir duas intenções externas para o mesmo pedido.
 
 O MVP usa Mercado Pago Checkout Pro por redirecionamento. O Sallvat não coleta, transmite nem armazena número completo de cartão ou CVV. O gateway é uma fronteira de infraestrutura; estados do domínio não dependem diretamente dos nomes do provedor.
 

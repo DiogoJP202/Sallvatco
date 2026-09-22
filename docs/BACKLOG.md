@@ -284,11 +284,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Definir `IPaymentGateway` e resultados internos para criar preferência (consulta/reembolso seguem em F7-S2/F7-S3).
 - [x] Criar a fundação de `Payment`, mappings, índices e migration, sem chamada externa.
 - [x] Testar snapshots, preferência repetida/tardia, resultado incerto e token de concorrência da tentativa.
-- [ ] Homologar unicidade e disputa entre processos em PostgreSQL real antes de ativar cobranças.
+- [x] Automatizar migration, unicidade e disputa entre contextos/conexões em PostgreSQL efêmero no CI.
+- [ ] Homologar fluxo financeiro completo, quedas entre persistência/HTTP e disputa com cancelamento em Staging antes de ativar cobranças.
 - [x] Implementar cliente Checkout Pro isolado com options, desabilitado por padrão e limitado a Sandbox.
 - [x] Montar criação de preferência com referência, valores, chave estável, validade e URLs HTTPS, testada com HTTP fake.
 - [ ] Homologar conta de teste e posteriormente habilitar configuração de produção com validação de ambiente.
-- [ ] Revisar Preferences versus Orders API antes da homologação, considerando a recomendação atual do provedor registrada em PAYMENTS.md.
+- [x] Revisar Preferences versus Orders API e registrar a preparação independente no ADR-015.
+- [ ] Validar e implementar contrato Orders, IDs externos e notificações correspondentes antes de conectar a tela (sem fallback entre APIs).
+- [x] Persistir uma tentativa Sandbox por pedido com autorização, snapshots, reservas e concorrência, sem acionar gateway.
 - [ ] Integrar ao checkout a persistência da chave idempotente, preferência e falhas sanitizadas (modelo local disponível).
 - [ ] Implementar retry seguro e consulta após timeout ambíguo.
 - [ ] Criar páginas de retorno não autoritativas.

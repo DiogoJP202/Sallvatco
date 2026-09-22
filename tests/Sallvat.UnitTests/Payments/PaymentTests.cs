@@ -141,6 +141,21 @@ public sealed class PaymentTests
 
     private static Payment Create() => new(CreateOrder(), PaymentEnvironment.Sandbox, Guid.NewGuid(), Now);
 
+    [Fact]
+    public void PreparingAttemptVersionsTheOrderWithoutChangingStatus()
+    {
+        var order = CreateOrder();
+        var version = order.ConcurrencyVersion;
+        order.RegisterPaymentAttempt(Now.AddSeconds(1));
+        Assert.NotEqual(version, order.ConcurrencyVersion);
+        Assert.Equal(OrderStatus.PendingPayment, order.Status);
+        Assert.Throws<ArgumentOutOfRangeException>(() => order.RegisterPaymentAttempt(Now));
+        Assert.Throws<ArgumentException>(() => order.RegisterPaymentAttempt(Now.ToOffset(TimeSpan.FromHours(1))));
+        Assert.Throws<InvalidOperationException>(() => order.RegisterPaymentAttempt(order.ExpiresAtUtc));
+        order.TransitionTo(OrderStatus.Cancelled, Now.AddSeconds(2));
+        Assert.Throws<InvalidOperationException>(() => order.RegisterPaymentAttempt(Now.AddSeconds(3)));
+    }
+
     private static Order CreateOrder() => new(
         1_000, "SVT-20260921-00001000", Guid.NewGuid(), Guid.NewGuid(), null,
         "Cliente Teste", "cliente@example.com", "11999998888",

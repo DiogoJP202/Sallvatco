@@ -2,7 +2,7 @@
 
 # Architecture Decision Records
 
-Registros abaixo têm status **Aceita** em 2026-08-27. Mudança relevante cria novo ADR que substitui o anterior; histórico não é apagado.
+ADRs 001–014 têm status **Aceita** em 2026-08-27. Registros posteriores informam sua data e status. Mudança relevante cria novo ADR que substitui o anterior; histórico não é apagado.
 
 ## ADR-001 — ASP.NET Core MVC com Razor Views
 
@@ -143,3 +143,15 @@ Registros abaixo têm status **Aceita** em 2026-08-27. Mudança relevante cria n
 **Alternativas consideradas:** build na VPS; migration no startup; snapshot da VPS como único backup.
 
 **Consequências:** releases mais previsíveis e recuperáveis, com pipeline/runbook adicional e necessidade de migrations backward-compatible.
+
+## ADR-015 — Preparação local independente da API de checkout
+
+**Status:** aceita em 2026-09-21; complementa ADR-008 sem ativar ou migrar a integração externa.
+
+**Contexto:** a [Orders API](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-orders/create-order?scope=prod) usa `/v1/orders`, `checkout_url` e ID de order; a integração construída usa preferência e `init_point`. Trocar apenas a URL não é uma migração válida. O modelo local de pedido, reserva, titularidade e tentativa é necessário nos dois caminhos.
+
+**Decisão:** implementar agora `IPaymentPreparationService`, que verifica titularidade, snapshots e reservas e persiste uma tentativa `Created` em transação serializável, sem dependência de `IPaymentGateway` ou HTTP. Manter Preferences desabilitada durante essa preparação. Orders será o caminho a validar no próximo incremento externo, antes de conectar a tela, por ser a recomendação atual do provedor; a substituição do contrato e dos campos externos ainda não está implementada.
+
+**Alternativas consideradas:** conectar o adapter existente imediatamente; migrar apenas nomes/endpoint sem validar notificações; bloquear toda a evolução pela falta de credenciais.
+
+**Consequências:** a preparação é reaproveitável e não cria cobrança. `AlreadyPrepared` nunca autoriza reenvio; ainda é necessário um dispatcher durável, revalidação imediatamente antes do HTTP, reconciliação e identificação explícita do tipo de recurso externo. IDs Orders não serão armazenados em `PreferenceId`. O CI passa a executar migration, disputa concorrente, unicidade e token de concorrência em PostgreSQL efêmero.

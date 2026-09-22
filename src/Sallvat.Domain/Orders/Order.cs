@@ -287,6 +287,23 @@ public sealed class Order
         return true;
     }
 
+    public void RegisterPaymentAttempt(DateTimeOffset preparedAtUtc)
+    {
+        var timestamp = RequireUtc(preparedAtUtc, nameof(preparedAtUtc));
+        if (timestamp < UpdatedAtUtc)
+        {
+            throw new ArgumentOutOfRangeException(nameof(preparedAtUtc));
+        }
+
+        if (Status != OrderStatus.PendingPayment || timestamp >= ExpiresAtUtc)
+        {
+            throw new InvalidOperationException("Only a pending, unexpired order can prepare a payment.");
+        }
+
+        UpdatedAtUtc = timestamp;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
     public static bool CanTransition(
         OrderStatus sourceStatus,
         OrderStatus targetStatus) =>
