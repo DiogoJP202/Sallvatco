@@ -4,4 +4,6 @@ public enum PaymentAttentionReason
 {
     PreferenceOutcomeUnknown,
     LatePreferenceResponse,
+    OrderOutcomeUnknown,
+    LateOrderResponse,
 }

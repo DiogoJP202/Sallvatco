@@ -9,6 +9,7 @@ public enum PaymentOrderStatus
     AuthenticationFailure,
     Rejected,
     OutcomeUnknown,
+    CreatedAfterExpiry,
 }
 
 // An external order is not a preference and Created is not payment confirmation.

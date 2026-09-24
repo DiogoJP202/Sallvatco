@@ -116,13 +116,14 @@ internal sealed partial class MercadoPagoPaymentGateway
             || checkout.Scheme != Uri.UriSchemeHttps || !checkout.IsDefaultPort
             || checkout.Host != "www.mercadopago.com.br" || checkout.AbsolutePath != "/checkout/v1/redirect"
             || checkout.Query != "?order_id=" + Uri.EscapeDataString(id)
-            || !string.IsNullOrEmpty(checkout.UserInfo) || !string.IsNullOrEmpty(checkout.Fragment)
-            || clock.UtcNow >= request.ExpiresAtUtc)
+            || !string.IsNullOrEmpty(checkout.UserInfo) || !string.IsNullOrEmpty(checkout.Fragment))
         {
             return new(PaymentOrderStatus.OutcomeUnknown);
         }
 
-        return new(PaymentOrderStatus.Created, id, checkout);
+        return clock.UtcNow >= request.ExpiresAtUtc
+            ? new(PaymentOrderStatus.CreatedAfterExpiry, id)
+            : new(PaymentOrderStatus.Created, id, checkout);
     }
 
     private static bool IsValidOrder(PaymentOrderRequest request, DateTimeOffset now)

@@ -5,6 +5,7 @@ namespace Sallvat.Domain.Payments;
 public sealed class Payment
 {
     public const int PreferenceIdMaxLength = 160;
+    public const int ExternalOrderIdMaxLength = 64;
 
     private Payment()
     {
@@ -63,6 +64,14 @@ public sealed class Payment
 
     public string? PreferenceId { get; private set; }
 
+    public string? ExternalOrderId { get; private set; }
+
+    public PaymentDispatchState DispatchState { get; private set; }
+
+    public Guid? DispatchToken { get; private set; }
+
+    public DateTimeOffset? DispatchStartedAtUtc { get; private set; }
+
     public decimal Amount { get; private set; }
 
     public string Currency { get; private set; } = "BRL";
@@ -81,6 +90,11 @@ public sealed class Payment
 
     public bool RegisterPreference(string preferenceId, DateTimeOffset receivedAtUtc)
     {
+        if (DispatchState != PaymentDispatchState.NotStarted || ExternalOrderId is not null)
+        {
+            throw new InvalidOperationException("An Orders attempt cannot receive a preference.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(preferenceId);
         if (preferenceId.Length > PreferenceIdMaxLength
             || preferenceId.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '-' and not '_'))
@@ -124,6 +138,11 @@ public sealed class Payment
 
     public bool MarkOutcomeUnknown(DateTimeOffset occurredAtUtc)
     {
+        if (DispatchState != PaymentDispatchState.NotStarted)
+        {
+            throw new InvalidOperationException("Use the Orders dispatch result for this attempt.");
+        }
+
         ValidateTimestamp(occurredAtUtc, UpdatedAtUtc);
         if (Status == PaymentStatus.RequiresAttention)
         {
@@ -139,6 +158,58 @@ public sealed class Payment
         AttentionReason = PaymentAttentionReason.PreferenceOutcomeUnknown;
         Touch(occurredAtUtc);
         return true;
+    }
+
+    public bool TryBeginOrderDispatch(Guid token, DateTimeOffset timestamp)
+    {
+        ValidateTimestamp(timestamp, UpdatedAtUtc);
+        if (token == Guid.Empty)
+        {
+            throw new ArgumentException("A dispatch token is required.", nameof(token));
+        }
+
+        if (DispatchState != PaymentDispatchState.NotStarted || Status != PaymentStatus.Created
+            || PreferenceId is not null || Environment != PaymentEnvironment.Sandbox || timestamp >= ExpiresAtUtc)
+        {
+            return false;
+        }
+
+        DispatchToken = token;
+        DispatchStartedAtUtc = timestamp;
+        DispatchState = PaymentDispatchState.Sending;
+        Touch(timestamp);
+        return true;
+    }
+
+    public void CompleteOrderDispatch(Guid token, string? externalOrderId, bool orderStillPayable, DateTimeOffset timestamp)
+    {
+        ValidateTimestamp(timestamp, UpdatedAtUtc);
+        if (token == Guid.Empty || DispatchToken != token || DispatchState != PaymentDispatchState.Sending)
+        {
+            throw new InvalidOperationException("Only the owner of an unresolved dispatch can complete it.");
+        }
+
+        if (externalOrderId is not null && (externalOrderId.Length > ExternalOrderIdMaxLength
+            || !externalOrderId.StartsWith("ORD", StringComparison.Ordinal)
+            || !externalOrderId.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_')))
+        {
+            throw new ArgumentException("Invalid external order identifier.", nameof(externalOrderId));
+        }
+
+        ExternalOrderId = externalOrderId;
+        if (externalOrderId is not null && orderStillPayable && timestamp < ExpiresAtUtc)
+        {
+            DispatchState = PaymentDispatchState.Completed;
+            Status = PaymentStatus.Pending;
+        }
+        else
+        {
+            DispatchState = PaymentDispatchState.RequiresAttention;
+            Status = PaymentStatus.RequiresAttention;
+            AttentionReason = externalOrderId is null ? PaymentAttentionReason.OrderOutcomeUnknown : PaymentAttentionReason.LateOrderResponse;
+        }
+
+        Touch(timestamp);
     }
 
     private static void ValidateTimestamp(DateTimeOffset timestamp, DateTimeOffset minimum)

@@ -142,6 +142,44 @@ public sealed class PaymentTests
     private static Payment Create() => new(CreateOrder(), PaymentEnvironment.Sandbox, Guid.NewGuid(), Now);
 
     [Fact]
+    public void OrdersClaimIsExclusiveAndCannotBecomePreference()
+    {
+        var payment = Create();
+        var token = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => payment.TryBeginOrderDispatch(Guid.Empty, Now));
+        Assert.True(payment.TryBeginOrderDispatch(token, Now));
+        Assert.False(payment.TryBeginOrderDispatch(Guid.NewGuid(), Now));
+        Assert.Equal(PaymentDispatchState.Sending, payment.DispatchState);
+        Assert.Throws<InvalidOperationException>(() => payment.RegisterPreference("pref", Now));
+        Assert.Throws<InvalidOperationException>(() => payment.MarkOutcomeUnknown(Now));
+        Assert.Throws<InvalidOperationException>(() => payment.CompleteOrderDispatch(Guid.NewGuid(), "ORD-test", true, Now));
+        Assert.Throws<ArgumentException>(() => payment.CompleteOrderDispatch(token, "invalid", true, Now));
+        payment.CompleteOrderDispatch(token, "ORD-test", true, Now);
+        Assert.Equal(PaymentDispatchState.Completed, payment.DispatchState);
+        Assert.Equal(PaymentStatus.Pending, payment.Status);
+        Assert.Equal("ORD-test", payment.ExternalOrderId);
+        Assert.Null(payment.PreferenceId);
+        Assert.Throws<InvalidOperationException>(() => payment.CompleteOrderDispatch(token, "ORD-other", true, Now));
+    }
+
+    [Theory]
+    [InlineData(null, true, false, PaymentAttentionReason.OrderOutcomeUnknown)]
+    [InlineData("ORD-late", false, false, PaymentAttentionReason.LateOrderResponse)]
+    [InlineData("ORD-late", true, true, PaymentAttentionReason.LateOrderResponse)]
+    public void AmbiguousOrLateOrderResultsBlockResending(string? id, bool payable, bool expired, PaymentAttentionReason reason)
+    {
+        var payment = Create();
+        var token = Guid.NewGuid();
+        Assert.True(payment.TryBeginOrderDispatch(token, Now));
+        payment.CompleteOrderDispatch(token, id, payable, expired ? payment.ExpiresAtUtc : Now);
+        Assert.Equal(PaymentStatus.RequiresAttention, payment.Status);
+        Assert.Equal(PaymentDispatchState.RequiresAttention, payment.DispatchState);
+        Assert.Equal(reason, payment.AttentionReason);
+        Assert.Equal(id, payment.ExternalOrderId);
+        Assert.False(payment.TryBeginOrderDispatch(Guid.NewGuid(), payment.UpdatedAtUtc));
+    }
+
+    [Fact]
     public void PreparingAttemptVersionsTheOrderWithoutChangingStatus()
     {
         var order = CreateOrder();

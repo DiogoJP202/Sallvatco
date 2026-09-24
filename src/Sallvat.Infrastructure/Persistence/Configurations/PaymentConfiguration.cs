@@ -22,10 +22,20 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
                 "idempotency_key <> '00000000-0000-0000-0000-000000000000'::uuid");
             table.HasCheckConstraint("ck_payment_reference", "length(btrim(external_reference)) > 0");
             table.HasCheckConstraint("ck_payment_preference", "preference_id IS NULL OR preference_id ~ '^[A-Za-z0-9_-]+$'");
-            table.HasCheckConstraint("ck_payment_pending_preference", "status <> 'Pending' OR preference_id IS NOT NULL");
+            table.HasCheckConstraint("ck_payment_pending_resource", "status <> 'Pending' OR preference_id IS NOT NULL OR external_order_id IS NOT NULL");
+            table.HasCheckConstraint("ck_payment_external_order", "external_order_id IS NULL OR external_order_id ~ '^ORD[A-Za-z0-9_-]*$'");
+            table.HasCheckConstraint("ck_payment_resource_exclusive", "preference_id IS NULL OR external_order_id IS NULL");
+            table.HasCheckConstraint("ck_payment_dispatch",
+                "(dispatch_state = 'NotStarted' AND dispatch_token IS NULL AND dispatch_started_at_utc IS NULL AND external_order_id IS NULL) OR " +
+                "(dispatch_state IN ('Sending', 'Completed', 'RequiresAttention') AND preference_id IS NULL AND " +
+                "dispatch_token IS NOT NULL AND dispatch_token <> '00000000-0000-0000-0000-000000000000'::uuid AND " +
+                "dispatch_started_at_utc IS NOT NULL AND dispatch_started_at_utc >= created_at_utc AND dispatch_started_at_utc <= updated_at_utc AND " +
+                "((dispatch_state = 'Sending' AND status = 'Created' AND external_order_id IS NULL) OR " +
+                "(dispatch_state = 'Completed' AND external_order_id IS NOT NULL AND status = 'Pending') OR " +
+                "(dispatch_state = 'RequiresAttention' AND status = 'RequiresAttention')))");
             table.HasCheckConstraint("ck_payment_attention",
                 "(status = 'RequiresAttention' AND attention_reason IS NOT NULL AND " +
-                "attention_reason IN ('PreferenceOutcomeUnknown', 'LatePreferenceResponse')) OR " +
+                "attention_reason IN ('PreferenceOutcomeUnknown', 'LatePreferenceResponse', 'OrderOutcomeUnknown', 'LateOrderResponse')) OR " +
                 "(status <> 'RequiresAttention' AND attention_reason IS NULL)");
         });
         builder.HasKey(payment => payment.Id).HasName("pk_payment");
@@ -36,6 +46,10 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(payment => payment.IdempotencyKey).HasColumnName("idempotency_key");
         builder.Property(payment => payment.ExternalReference).HasColumnName("external_reference").HasMaxLength(Order.OrderNumberMaxLength);
         builder.Property(payment => payment.PreferenceId).HasColumnName("preference_id").HasMaxLength(Payment.PreferenceIdMaxLength);
+        builder.Property(payment => payment.ExternalOrderId).HasColumnName("external_order_id").HasMaxLength(Payment.ExternalOrderIdMaxLength);
+        builder.Property(payment => payment.DispatchState).HasColumnName("dispatch_state").HasConversion<string>().HasMaxLength(32).HasDefaultValue(PaymentDispatchState.NotStarted);
+        builder.Property(payment => payment.DispatchToken).HasColumnName("dispatch_token");
+        builder.Property(payment => payment.DispatchStartedAtUtc).HasColumnName("dispatch_started_at_utc").HasColumnType("timestamptz");
         builder.Property(payment => payment.Amount).HasColumnName("amount").HasPrecision(18, 2);
         builder.Property(payment => payment.Currency).HasColumnName("currency").HasColumnType("char(3)");
         builder.Property(payment => payment.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(32);
@@ -49,6 +63,8 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsUnique().HasDatabaseName("ux_payment_idempotency");
         builder.HasIndex(payment => new { payment.Provider, payment.Environment, payment.PreferenceId })
             .IsUnique().HasFilter("preference_id IS NOT NULL").HasDatabaseName("ux_payment_preference");
+        builder.HasIndex(payment => new { payment.Provider, payment.Environment, payment.ExternalOrderId })
+            .IsUnique().HasFilter("external_order_id IS NOT NULL").HasDatabaseName("ux_payment_external_order");
         builder.HasIndex(payment => payment.OrderId)
             .IsUnique().HasFilter("status IN ('Created', 'Pending', 'Approved', 'RequiresAttention')")
             .HasDatabaseName("ux_payment_unresolved_order");

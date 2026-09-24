@@ -4,6 +4,22 @@
 
 ## Implementação atual — fundação local
 
+### Envio persistido Orders — 24/09/2026
+
+`IPaymentDispatchService.DispatchAsync` recebe o ID da tentativa e identidade interna de sessão/claims. Exige Orders habilitado em Sandbox, contexto sem alterações pendentes, titularidade, pedido válido, snapshots coerentes e reservas ativas. Não possui endpoint público nem consumidor na tela.
+
+A migration `AddPaymentOrderDispatch` adiciona `ExternalOrderId`, `DispatchToken`, `DispatchStartedAtUtc` e `DispatchState` (`NotStarted`, `Sending`, `Completed`, `RequiresAttention`). O claim `Sending` é salvo em transação serializável junto da versão do pedido **antes do HTTP**, e não pode ser retomado automaticamente. IDs Orders têm índice único por provedor/ambiente e nunca ocupam `PreferenceId`. Constraints impedem mistura de recursos e estados inconsistentes. Não executar rollback dessa migration depois de iniciar envios: o método `Down` recusa apagar claims existentes.
+
+O montador divide o subtotal líquido de cada item em centavos e, se necessário, cria duas linhas com preços unitários distintos. O frete entra uma única vez. Linhas gratuitas, quantidades acima de 1.000 ou mais de 100 linhas são recusadas nesta etapa, sem HTTP; sua representação ainda precisa de homologação. O total permanece exatamente igual ao snapshot, sem preço do navegador.
+
+Depois do commit, pedido/reservas/titularidade são relidos antes da chamada. O envio tem prazo interno independente do navegador e a gravação final tem limite de 15 segundos. A resposta é persistida em nova transação que disputa a versão do pedido com cancelamento/expiração. Sucesso retorna a URL somente se o pedido ainda puder ser pago; não confirma pagamento nem consome estoque. Repetição autorizada de uma tentativa concluída reutiliza o ID, sem novo POST.
+
+Resultado incerto, rejeição ou falha de autenticação exige revisão, sem nova chave automática. Uma resposta válida recebida após expiração é `CreatedAfterExpiry`: preserva ID para conciliação, sem URL. Se o processo cair ou falhar ao salvar a resposta, `Sending` continua durável e bloqueia reenvio. A consulta de recuperação e a fila administrativa de pagamentos ainda não existem; não alterar esse estado manualmente para liberar outra cobrança. Cancelamento durante o HTTP não é atomicamente evitável: ID recebido é preservado para revisão e o pedido não é reaberto.
+
+**Limites atuais:** não há chamada real, credenciais, webhook, consulta canônica, reembolso ou integração ao checkout. Flags continuam desligadas. A migration só é aplicada em banco descartável no CI; startup não migra a loja. As seções a seguir registram também os incrementos anteriores e contratos planejados.
+
+### Fundação e preparação
+
 `Payment` e a migration `AddPaymentFoundation` implementam o registro local de uma tentativa, com snapshot do total/moeda/referência do pedido, ambiente explícito, chave idempotente, preferência opcional, expiração e token de concorrência. A criação exige pedido `PendingPayment` não expirado; a validade é herdada do pedido, sem estabelecer uma nova política comercial.
 
 As operações disponíveis são `Created → Pending` ao registrar uma preferência e `Created/Pending → RequiresAttention` quando o resultado é incerto. Resposta de preferência recebida na expiração ou depois dela também exige revisão. Repetir o mesmo ID não altera versão nem timestamps; trocar uma preferência já registrada é recusado. Receber uma preferência depois de um resultado incerto preserva a revisão, sem reabrir a tentativa.
@@ -27,7 +43,7 @@ Esta entrega não contém orquestrador de checkout financeiro, credenciais, endp
 - unicidade, concorrência e serialização resultam em `Conflict`, sem HTTP ou retry automático;
 - mudanças não salvas no contexto são preservadas e retornam `Conflict`, evitando sobrescrever outra unidade de trabalho.
 
-O serviço não entrega URL ou chave idempotente ao cliente, não altera estoque/cupom/status do pedido e não chama o gateway. `Created` persistido e `AlreadyPrepared` não provam que uma operação externa nunca ocorreu; após eventual queda do processo, não reenviar automaticamente. Ainda faltam dispatcher com posse exclusiva do envio, revalidação antes do POST, persistência independente do cancelamento do navegador, consulta/conciliação e retorno não autoritativo. O semáforo InMemory serve somente aos testes locais; no PostgreSQL, transação, índices e versões fazem a proteção.
+O serviço de preparação não entrega URL ou chave idempotente ao cliente, não altera estoque/cupom/status do pedido e não chama o gateway. `Created` persistido e `AlreadyPrepared` não autorizam reenvio: o envio deve passar pelo dispatcher descrito acima. Consulta/conciliação e retorno não autoritativo continuam pendentes. O semáforo InMemory serve somente aos testes locais; no PostgreSQL, transação, índices e versões fazem a proteção.
 
 ## Adapter de preferência — testes isolados
 
@@ -47,7 +63,7 @@ O futuro orquestrador deve persistir `Created` antes do POST e gravar `RequiresA
 
 Para futura homologação, conferir no painel o vendedor de teste e fornecer por secrets/variáveis `Payments__MercadoPago__AccessToken`, `PublicOrigin`, `TestSellerId` e `TestSellerConfirmed` sob o mesmo prefixo. A confirmação é operacional, não detecção automática da natureza da conta. O `collector_id` deve coincidir com o ID configurado. Não usar o token da conta comercial: [credenciais Checkout Pro de teste também podem começar por `APP_USR`](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-preferences/test-accounts). Os testes com usuário de teste seguem o `init_point`, conforme [orientação oficial](https://www.mercadopago.com.br/developers/pt/news/2023/11/16/Questions-on-how-to-test-your-integration--); `sandbox_init_point` não é usado como prova de ambiente.
 
-Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retorno/sucesso`, `/pagamentos/retorno/pendente` e `/pagamentos/retorno/falha` são montados a partir de `PublicOrigin`, mas suas páginas ainda não existem. Faltam envio persistido, retorno não autoritativo, webhook, conciliação e homologação ponta a ponta. Este avanço não altera a loja estática no Pages, não cria migration e não conclui `F7-S1`.
+Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retorno/sucesso`, `/pagamentos/retorno/pendente` e `/pagamentos/retorno/falha` são montados a partir de `PublicOrigin`, mas suas páginas ainda não existem. Retorno não autoritativo, webhook, conciliação e homologação ponta a ponta continuam pendentes. O envio persistido implementado usa somente Orders, não Preferences. `F7-S1` ainda não está concluída.
 
 ## Estratégia de Checkout Pro
 
@@ -55,13 +71,13 @@ Não habilitar o fluxo completo ainda: os caminhos planejados `/pagamentos/retor
 
 `IPaymentGateway.CreateOrderAsync` usa `PaymentOrderRequest` e `PaymentOrderResult`, sem confundir `ExternalOrderId` com `PreferenceId`. O POST vai apenas para `/v1/orders`. Valores usam strings decimais invariantes, e o total deve fechar exatamente a soma das linhas. A validade enviada é uma duração ISO 8601 arredondada para baixo; o limite local desta etapa é de 1 segundo a 24 horas. O vencimento local continua autoritativo para liberar reservas e exigir revisão de aprovação tardia.
 
-O futuro montador deve partir dos snapshots, ratear descontos em centavos (dividindo uma linha em dois preços quando necessário) e incluir frete como linha explícita uma única vez. O adapter valida a soma, mas não monta ou persiste snapshots. Não são enviados CPF, e-mail, endereço, parcelas, juros ou restrições de meios de pagamento; essas decisões não foram presumidas. O campo `client_token` da resposta é descartado.
+O montador do dispatcher parte dos snapshots, rateia descontos em centavos (dividindo uma linha em dois preços quando necessário) e inclui frete como linha explícita uma única vez. O adapter isolado valida a soma, mas não monta ou persiste snapshots. Não são enviados CPF, e-mail, endereço, parcelas, juros ou restrições de meios de pagamento; essas decisões não foram presumidas. O campo `client_token` da resposta é descartado.
 
 `Payments:MercadoPago:OrdersEnabled` é independente de `Enabled` (Preferences), ambos `false` por padrão. Habilitar os dois é configuração inválida. Só Sandbox é aceito, com vendedor de teste confirmado e origem HTTPS; isso não detecta automaticamente se uma credencial pertence a conta de teste. Uma resposta 201 só produz `Created` após conferir vendedor, referência, moeda, país, total, ausência de valor pago, estado `created`, tipo/mode e URL HTTPS brasileira com o mesmo `order_id`. `Created` significa recurso externo criado, nunca pedido pago.
 
 Timeout, cancelamento após envio, HTTP 409/423/429/5xx, JSON inválido, resposta maior que 64 KiB ou divergência produzem `OutcomeUnknown`, sem retorno de URL/ID, retry ou fallback. Erros 400/422 são rejeições e 401/403 falhas de autenticação; nenhum corpo do provedor é exposto. O cliente registrado mantém redirects HTTP desativados e não registra logs HTTP. Referências: [contrato Orders](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro/create-order/post) e [guia de criação](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-orders/create-order).
 
-**Limites:** somente testes HTTP simulados, sem credenciais ou chamadas reais. Nenhuma migration, endpoint público, página de retorno ou alteração visual. O banco ainda não armazena ID Orders. Posse exclusiva do envio, persistência do resultado independente do navegador, recuperação de queda, consulta e webhook continuam pendentes. Não habilitar esta flag na loja; homologar esses fluxos primeiro.
+**Limites:** somente testes HTTP simulados, sem credenciais ou chamadas reais. A evolução persistida está descrita no início deste documento. Endpoint público, páginas de retorno, consulta de recuperação e webhook continuam pendentes. Não habilitar esta flag na loja; homologar esses fluxos primeiro.
 
 ### Decisão registrada
 

@@ -178,6 +178,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 **Incremento Orders:** contrato e adapter de criação isolados disponíveis com testes HTTP simulados e flags exclusivas. Nenhuma chamada real ou alteração de banco. Persistência do ID Orders, posse do envio, recuperação e webhook ainda bloqueiam a integração à tela.
 
+**Evolução em 24/09/2026:** envio persistido implementado com claim exclusivo, montagem de linhas, ID Orders separado e falhas sem retry. Migration validada no CI com PostgreSQL e gateway simulado; rollback bloqueado se apagaria claims. Consulta/reconciliação, retorno, webhook e homologação externa ainda impedem habilitar compras.
+
 **Tarefas:**
 
 - implementar `IPaymentGateway` e preferência Checkout Pro;

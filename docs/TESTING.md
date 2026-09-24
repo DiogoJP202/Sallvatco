@@ -207,6 +207,14 @@ Todos esses testes usam `HttpMessageHandler` fake. Não validam a conta Mercado 
 
 ## Contrato Orders isolado
 
+### Envio persistido
+
+`PaymentDispatchTests` cobre envio concorrente e replay sem segundo POST, falhas persistidas, cancelamento/expiração durante HTTP, preservação do ID tardio sem URL, cancelamento do navegador independente da gravação final, claim abandonado, falha de banco após HTTP, titularidade, flag desligada e rateio exato de centavos. O domínio impede troca de proprietário do claim e mistura de Orders com Preferences.
+
+`PostgreSqlPaymentTests` aplica a nova migration no banco isolado e executa oito dispatchers em contextos independentes com gateway simulado, verificando um único envio, unicidade do ID externo, constraints do claim e recusa de rollback que apagaria registros de envio. Sem PostgreSQL local, esses dois testes relacionais são explicitamente ignorados; ambos são obrigatórios no CI. Não há comprovação de webhook ou conciliação externa ainda.
+
+### Adapter HTTP
+
 `MercadoPagoOrderGatewayTests` usa somente HTTP simulado. Cobre payload separado de Preferences; valores invariantes sob cultura `pt-BR`; exemplo de desconto de um centavo distribuído em linhas distintas e frete explícito; chave estável; URLs de retorno; flags independentes/exclusivas; bloqueio de produção; soma inválida, duplicidade de linhas, expiração e entrada inválida sem HTTP; vendedor/referência/moeda/país/valor/status divergentes; URLs maliciosas; JSON inválido e limite de resposta; timeout/cancelamento/transporte; ausência de retry, fallback e exposição de `client_token`. Não comprova homologação do provedor, envio persistido ou webhook.
 
 ## Segurança automatizada

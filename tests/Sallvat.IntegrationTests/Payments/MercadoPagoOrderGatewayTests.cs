@@ -205,7 +205,10 @@ public sealed class MercadoPagoOrderGatewayTests
             return Task.FromResult(Response());
         });
         using var lateClient = new HttpClient(lateHandler);
-        Assert.Equal(PaymentOrderStatus.OutcomeUnknown, (await Service(lateClient, clock: clock).CreateOrderAsync(Request())).Status);
+        var late = await Service(lateClient, clock: clock).CreateOrderAsync(Request());
+        Assert.Equal(PaymentOrderStatus.CreatedAfterExpiry, late.Status);
+        Assert.Equal(OrderId, late.ExternalOrderId);
+        Assert.Null(late.CheckoutUrl);
     }
 
     [Fact]

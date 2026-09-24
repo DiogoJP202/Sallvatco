@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Sallvat.Application.Carts;
@@ -106,6 +108,69 @@ public sealed class PostgreSqlPaymentTests
         // Preserve Identity schema options and migration history from the actual application.
         new DbContextOptionsBuilder<SallvatDbContext>(services.GetRequiredService<DbContextOptions<SallvatDbContext>>())
             .UseNpgsql(connectionString).Options;
+
+    [PostgreSqlFact]
+    public async Task RealDatabaseAllowsOnlyOneExternalDispatchAndEnforcesOrderIdUniqueness()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            await PaymentPreparationTests.SeedAsync(db);
+            var prepared = await new PaymentPreparationService(db, new FixedClock()).PrepareAsync(1_000, PaymentDispatchTests.Owner, PaymentEnvironment.Sandbox);
+            var id = prepared.PaymentId!.Value;
+            var gateway = new PaymentDispatchTests.Gateway();
+            var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(async _ =>
+            {
+                await using var context = new SallvatDbContext(options);
+                return await new PaymentDispatchService(context, gateway,
+                    Microsoft.Extensions.Options.Options.Create(PaymentDispatchTests.Configuration()), new FixedClock())
+                    .DispatchAsync(id, PaymentDispatchTests.Owner);
+            }));
+            Assert.Equal(1, gateway.Calls);
+            Assert.Contains(results, r => r.Status == PaymentDispatchStatus.Ready);
+            Assert.All(results, r => Assert.Contains(r.Status,
+                new[] { PaymentDispatchStatus.Ready, PaymentDispatchStatus.Conflict, PaymentDispatchStatus.RequiresAttention }));
+            db.ChangeTracker.Clear();
+            var payment = await db.Payments.SingleAsync();
+            Assert.Equal(PaymentDispatchState.Completed, payment.DispatchState);
+            Assert.Equal("ORD-dispatch", payment.ExternalOrderId);
+            var order = await db.Orders.SingleAsync();
+            var second = new Order(1_001, "SVT-20260921-00001001", Guid.NewGuid(), order.SourceCartId, order.CustomerId,
+                "Cliente", "cliente@example.com", "11999998888", 140m, 0m, 18.50m, "BRL", null, null,
+                "Melhor Envio", "Transportadora", "Expresso", "quote-124", 2, 4, FixedClock.Now, FixedClock.Now, FixedClock.Now.AddMinutes(30));
+            db.Orders.Add(second);
+            await db.SaveChangesAsync();
+            var duplicate = new Payment(second, PaymentEnvironment.Sandbox, Guid.NewGuid(), FixedClock.Now);
+            var token = Guid.NewGuid();
+            duplicate.TryBeginOrderDispatch(token, FixedClock.Now);
+            duplicate.CompleteOrderDispatch(token, "ORD-dispatch", true, FixedClock.Now);
+            await AssertUniqueAsync(options, duplicate, "ux_payment_external_order");
+            var invalid = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("UPDATE payment SET dispatch_started_at_utc = NULL"));
+            Assert.Equal(PostgresErrorCodes.CheckViolation, invalid.SqlState);
+            Assert.Equal("ck_payment_dispatch", invalid.ConstraintName);
+            var rollback = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>()
+                .MigrateAsync("20260921131953_AddPaymentFoundation"));
+            Assert.Equal(PostgresErrorCodes.RaiseException, rollback.SqlState);
+            Assert.Equal(PaymentDispatchState.Completed, await db.Payments.AsNoTracking().Select(p => p.DispatchState).SingleAsync());
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
 
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
