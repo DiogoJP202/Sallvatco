@@ -239,6 +239,9 @@ public sealed class PaymentDispatchTests
 
     internal sealed class Gateway : IPaymentGateway
     {
+        public Task<PaymentOrderQueryResult> GetOrderAsync(PaymentOrderQuery request, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Queries must never be called by Orders dispatch.");
+
         private int calls;
         public int Calls => calls;
         public PaymentOrderRequest? Request { get; private set; }

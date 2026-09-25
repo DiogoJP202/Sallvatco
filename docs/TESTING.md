@@ -217,6 +217,12 @@ Todos esses testes usam `HttpMessageHandler` fake. Não validam a conta Mercado 
 
 `MercadoPagoOrderGatewayTests` usa somente HTTP simulado. Cobre payload separado de Preferences; valores invariantes sob cultura `pt-BR`; exemplo de desconto de um centavo distribuído em linhas distintas e frete explícito; chave estável; URLs de retorno; flags independentes/exclusivas; bloqueio de produção; soma inválida, duplicidade de linhas, expiração e entrada inválida sem HTTP; vendedor/referência/moeda/país/valor/status divergentes; URLs maliciosas; JSON inválido e limite de resposta; timeout/cancelamento/transporte; ausência de retry, fallback e exposição de `client_token`. Não comprova homologação do provedor, envio persistido ou webhook.
 
+## Consulta Orders e diagnóstico de conciliação
+
+`MercadoPagoOrderQueryTests` verifica GET em host fixo, Bearer sem chave de criação, corpo ausente, ID/vendedor/referência/país/moeda/valor divergentes, timestamps explícitos (offset e nanossegundos), propriedades duplicadas, estado desconhecido, transações e ausência de dados pessoais/tokens no resultado. Testa 401/403/404/302/429/500, resposta malformada/grande, transporte, timeout e cancelamento. Configuração desligada e produção não fazem HTTP; consulta nunca executa POST ou retry.
+
+`PaymentReconciliationTests` verifica snapshots persistidos, replay somente leitura, dono alheio, registro inexistente, contexto alterado, claim sem ID (incerto ou abandonado), erros do gateway, atividade financeira, pedido expirado e resposta tardia. Cancelamento durante HTTP é detectado por releitura de versão; nenhuma consulta altera tentativa, pedido ou estoque. São testes simulados, não homologação financeira. Diagnóstico não implementa confirmação transacional, recuperação de ID ou webhook.
+
 ## Segurança automatizada
 
 - análise de dependências e imagem no pipeline;

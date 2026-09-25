@@ -4,6 +4,18 @@
 
 ## Implementação atual — fundação local
 
+### Consulta canônica e diagnóstico — 25/09/2026
+
+`IPaymentGateway.GetOrderAsync` consulta exclusivamente `GET /v1/orders/{order_id}`, conforme a [referência oficial de consulta Orders](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro/get-order/get). Recebe ID e valores esperados da tentativa persistida. Confere ID, vendedor de teste, tipo/mode, referência, país, moeda, total, valor pago e timestamps com fuso explícito. Rejeita propriedades JSON duplicadas, estruturas inválidas e atualização anterior à criação ou mais de cinco minutos no futuro. Timestamps são normalizados para UTC, inclusive quando o provedor usa precisão de nanossegundos.
+
+A observação retornada contém somente ID, estado tipado, valor pago, datas e presença de transações. `processed` **não** é convertido em `Approved`. Estados novos, qualquer transação (inclusive estorno/contestação) ou valor pago exigem revisão no diagnóstico. Dados do comprador, tokens, URLs, corpo bruto e mensagens do provedor não são retornados nem gravados. O cliente mantém host fixo, redirects desligados, timeout e buffer de 64 KiB; 404 não significa autorização para repetir um POST. Cancelamento do chamador interrompe a leitura; não há retry automático.
+
+`IPaymentReconciliationService.InspectAsync` é um **diagnóstico somente leitura**, sem endpoint ou tarefa agendada. Autoriza a identidade interna da sessão, monta a consulta com os snapshots e relê titularidade/versões após o HTTP. Mudança concorrente retorna `Conflict`; contexto com alterações pendentes é preservado. `AwaitingPayment` exige observação `created` sem atividade financeira, tentativa local `Pending/Completed`, pedido não expirado e reservas/snapshots coerentes. Os demais resultados são revisão, indisponibilidade ou acesso não encontrado, sem dados financeiros no retorno. A leitura não é uma autorização transacional: nenhum chamador pode usá-la para confirmar pagamento, liberar estoque ou gerar outra cobrança.
+
+ID ausente retorna `MissingExternalOrderId`, sem busca, associação automática ou POST. A [busca oficial de Orders](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro/search-orders/get) aceita referência e intervalo de criação, mas isso não prova, isoladamente, qual tentativa local criou o recurso. Recuperação de claims sem ID ainda precisa de procedimento auditado e homologação. O acesso guest continua limitado à sessão de sacola válida; não é acompanhamento histórico.
+
+**Ainda pendente:** aplicação financeira atômica, auditoria da resolução, recuperação sem ID, job, tela administrativa, webhook assinado/deduplicado e homologação real. `RequiresAttention` neste diagnóstico é uma recomendação retornada, não uma mudança persistida. Não há nova migration nem alterações de pedido, cupom ou estoque. Flags e credenciais permanecem inalteradas/desabilitadas.
+
 ### Envio persistido Orders — 24/09/2026
 
 `IPaymentDispatchService.DispatchAsync` recebe o ID da tentativa e identidade interna de sessão/claims. Exige Orders habilitado em Sandbox, contexto sem alterações pendentes, titularidade, pedido válido, snapshots coerentes e reservas ativas. Não possui endpoint público nem consumidor na tela.
@@ -16,7 +28,7 @@ Depois do commit, pedido/reservas/titularidade são relidos antes da chamada. O 
 
 Resultado incerto, rejeição ou falha de autenticação exige revisão, sem nova chave automática. Uma resposta válida recebida após expiração é `CreatedAfterExpiry`: preserva ID para conciliação, sem URL. Se o processo cair ou falhar ao salvar a resposta, `Sending` continua durável e bloqueia reenvio. A consulta de recuperação e a fila administrativa de pagamentos ainda não existem; não alterar esse estado manualmente para liberar outra cobrança. Cancelamento durante o HTTP não é atomicamente evitável: ID recebido é preservado para revisão e o pedido não é reaberto.
 
-**Limites atuais:** não há chamada real, credenciais, webhook, consulta canônica, reembolso ou integração ao checkout. Flags continuam desligadas. A migration só é aplicada em banco descartável no CI; startup não migra a loja. As seções a seguir registram também os incrementos anteriores e contratos planejados.
+**Limites atuais:** não há chamada real, credenciais, webhook, reembolso ou integração ao checkout. Consulta canônica e diagnóstico somente leitura estão descritos acima; recuperação de claims sem ID segue pendente. Flags continuam desligadas. A migration só é aplicada em banco descartável no CI; startup não migra a loja. As seções a seguir registram também os incrementos anteriores e contratos planejados.
 
 ### Fundação e preparação
 

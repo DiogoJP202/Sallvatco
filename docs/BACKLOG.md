@@ -312,6 +312,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Validar `x-signature` e segredo por ambiente.
 - [ ] Deduplicar evento antes de efeitos.
 - [ ] Consultar pagamento e validar referência, valor, moeda e ambiente.
+- [x] Implementar GET canônico Orders com validação de identidade/snapshots, resposta sanitizada, limites e HTTP fake.
+- [ ] Conectar a consulta ao webhook e validar transações financeiras antes de confirmar captura.
 - [ ] Aplicar `PaymentStatus`, `OrderStatus` e estoque na mesma transação.
 - [ ] Responder corretamente a duplicata, falha transitória e payload inválido.
 - [ ] Testar concorrência, ordem de eventos e ausência de segredo nos logs.
@@ -323,6 +325,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [ ] Implementar job de conciliação de pendentes/eventos falhos.
+- [x] Implementar diagnóstico interno somente leitura de tentativas com ID, titularidade e releitura após HTTP, sem efeitos financeiros.
+- [ ] Recuperar claims sem ID com evidência de associação e auditoria, sem busca por referência seguida de vínculo automático.
 - [ ] Implementar solicitação de reembolso total idempotente.
 - [ ] Implementar confirmação do reembolso e transição.
 - [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
