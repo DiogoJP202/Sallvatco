@@ -1,11 +1,14 @@
+using System.Globalization;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Sallvat.Application.Payments;
 using Sallvat.Domain.Payments;
 using Sallvat.Infrastructure.Persistence;
 
 namespace Sallvat.Infrastructure.Payments;
 
-internal sealed class AdminPaymentQuery(SallvatDbContext db) : IAdminPaymentQuery
+internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPagoOptions> options) : IAdminPaymentQuery
 {
     public async Task<AdminPaymentPage> ListAsync(AdminPaymentFilter filter, long? beforeId = null, CancellationToken cancellationToken = default)
     {
@@ -54,6 +57,9 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db) : IAdminPaymentQuer
                                 p.ExpiresAtUtc,
                                 p.ConfirmedAtUtc,
                                 p.ProviderUpdatedAtUtc,
+                                p.ConcurrencyVersion,
+                                p.Provider,
+                                p.PreferenceId,
                             }).SingleOrDefaultAsync(cancellationToken);
         if (detail is null)
         {
@@ -63,7 +69,45 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db) : IAdminPaymentQuer
         var receipts = await db.WebhookEvents.AsNoTracking().Where(e => e.PaymentId == id)
             .OrderByDescending(e => e.ReceivedAtUtc).ThenByDescending(e => e.Id)
             .Select(e => new AdminPaymentReceipt(e.ReceivedAtUtc, e.Outcome)).Take(51).ToListAsync(cancellationToken);
+        var entityId = id.ToString(CultureInfo.InvariantCulture);
+        var history = await db.AuditLogs.AsNoTracking().Where(a => a.EntityType == nameof(Payment) && a.EntityId == entityId
+                && (a.Action == "payment.recovery.requested" || a.Action == "payment.recovery.completed"))
+            .OrderByDescending(a => a.CreatedAtUtc).ThenByDescending(a => a.Id)
+            .Select(a => new { a.CreatedAtUtc, a.Action, a.ChangesJson }).Take(51).ToListAsync(cancellationToken);
+        var enabled = options.Value.RecoveryEnabled && MercadoPagoOptions.IsValid(options.Value);
+        var eligible = detail.Provider == "MercadoPago" && detail.Summary.Environment == PaymentEnvironment.Sandbox
+            && detail.Summary.Status == PaymentStatus.Pending && detail.Summary.DispatchState == PaymentDispatchState.Completed
+            && detail.ExternalOrderId is not null && detail.PreferenceId is null && detail.ExternalPaymentId is null;
         return new(detail.Summary, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
-            detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50);
+            detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50,
+            detail.ConcurrencyVersion, enabled, enabled && eligible,
+            history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50);
     }
+
+    private static AdminRecoveryEntry ReadEntry(DateTimeOffset timestamp, string action, string json)
+    {
+        var completion = action == "payment.recovery.completed";
+        if (json.Length <= 4096)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 4 });
+                var root = document.RootElement;
+                if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("RequestId", out var id)
+                    && id.ValueKind == JsonValueKind.String && id.TryGetGuid(out var requestId) && requestId != Guid.Empty)
+                {
+                    return new(timestamp, requestId, completion, ReadEnum<PaymentRecoveryReason>(root, "Reason"),
+                        completion ? ReadEnum<PaymentRecoveryResult>(root, "Result") : null);
+                }
+            }
+            catch (JsonException) { }
+        }
+
+        // Never return arbitrary audit JSON or unknown strings to the page.
+        return new(timestamp, null, completion, null, null);
+    }
+
+    private static T? ReadEnum<T>(JsonElement root, string property) where T : struct, Enum =>
+        root.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+        && Enum.TryParse<T>(value.GetString(), out var parsed) && Enum.GetName(parsed) == value.GetString() ? parsed : null;
 }

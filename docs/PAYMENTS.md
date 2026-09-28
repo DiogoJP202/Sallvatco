@@ -4,6 +4,16 @@
 
 ## Implementação atual — fundação local
 
+### Recuperação no painel administrativo — 28/09/2026
+
+O detalhe `/Admin/Pagamentos/{id}` agora oferece formulário de recuperação **apenas quando** `RecoveryEnabled` está habilitado com configuração Sandbox válida e a tentativa é elegível. Exige motivo tipado, versão esperada e checkbox de confirmação explícita: a consulta pode confirmar pagamento/estoque ou registrar revisão, mas não cria, reenvia ou reembolsa cobrança. O GET do detalhe continua exclusivamente local; não executa recuperação automaticamente.
+
+`POST /Admin/Pagamentos/{id}/Recuperar` exige policy Admin, antiforgery, formulário válido e confirmação. Obtém ator dos claims e correlação do middleware, não do formulário. O serviço revalida a role Admin no banco e a versão durante a operação. Limites: cinco requisições por minuto por usuário/processo, sem fila, corpo de até 8 KiB no servidor e limites adicionais de campos. Middleware de rate limiting executa após autenticação/autorização para particionar por identidade autenticada; políticas de conta continuam por IP. Rejeição por limite retorna 429, falta de autorização retorna challenge/403, formulário inválido retorna 400 e tentativa ausente retorna 404. Demais resultados redirecionam ao detalhe com mensagem sanitizada, sem repetir POST no refresh.
+
+O histórico exibe até 50 registros de auditoria de recuperação, ordenados por data/ID, com identificador da solicitação, motivo tipado e resultado conhecido. Intenção e conclusão são entradas distintas: correlacioná-las pelo identificador, sem inferir falha/captura pela ausência de conclusão. Valores desconhecidos ou inválidos têm apresentação neutra; JSON, ator, correlation ID, dados do comprador e segredos não são enviados à view. Registros anteriores continuam preservados no banco. Recibos de webhook ficam em seção separada.
+
+`RecoveryEnabled=false` permanece versionado; não houve chamada real, nova migration, credencial ou habilitação de compra. A área não é exportada para o Pages. Continuam pendentes job/backoff, recuperação de claims sem ID, resolução auditada das divergências, reembolsos e homologação real. As seções abaixo registram os incrementos anteriores, com seus limites à época.
+
 ### Recuperação administrativa interna com ID conhecido — 28/09/2026
 
 `IPaymentRecoveryService.RecoverAsync` implementa o caso de uso interno de recuperação de notificação perdida: recebe tentativa, versão esperada e contexto administrativo (ator, motivo tipado e correlation ID). `RecoveryEnabled=false` por padrão; habilitação exige Orders e configuração Sandbox válida. **Não possui endpoint, botão ou job neste incremento**, não habilita checkout nem altera credenciais. A fila Admin continua somente leitura.

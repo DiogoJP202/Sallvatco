@@ -20,9 +20,9 @@ O incremento de 25/09 acrescenta consulta canônica Orders e diagnóstico intern
 
 O incremento de 28/09 implementa webhook Orders assinado e confirmação atômica de pagamento, pedido, reservas e movimento de estoque, com recibo deduplicado. Aprovação tardia/divergência exige revisão, sem reabrir pedido ou gerar nova cobrança. `WebhookEnabled=false`; testes usam provedor simulado. Homologação, recuperação operacional, reembolso e integração à tela ainda bloqueiam compras reais. A vitrine estática não recebe webhooks.
 
-A consulta interna `/Admin/Pagamentos` permite ao Admin filtrar tentativas, ver divergências mesmo em pedidos cancelados e consultar detalhes/recibos, sem chamar o provedor ou alterar pagamentos. Dados pessoais e segredos não são exibidos. Retry, recuperação e reembolso continuam pendentes. Essa área requer o servidor ASP.NET e não está disponível no GitHub Pages.
+A consulta interna `/Admin/Pagamentos` permite ao Admin filtrar tentativas, ver divergências mesmo em pedidos cancelados e consultar detalhes/recibos. A abertura das páginas só lê dados locais; a recuperação exige ação explícita e configuração habilitada, conforme descrito abaixo. Dados pessoais e segredos não são exibidos. Essa área requer o servidor ASP.NET e não está disponível no GitHub Pages.
 
-O caso de uso interno de recuperação com ID conhecido também está implementado: consulta canônica, autorização Admin atual, revalidação de versões e auditoria atômica junto de pagamento/estoque. `RecoveryEnabled=false`; ainda não há botão, endpoint ou job para acioná-lo. Claims sem ID, resolução de revisão, reembolso e homologação real seguem pendentes. A recuperação não cria outra cobrança nem fabrica webhooks.
+O caso de uso de recuperação com ID conhecido está conectado ao painel: exige Admin atual, antiforgery, versão, motivo e confirmação explícita; consulta o provedor e registra auditoria junto de pagamento/estoque. Há limite de requisições e histórico sanitizado. `RecoveryEnabled=false` mantém a ação oculta e bloqueada por padrão. Job, claims sem ID, resolução de revisão, reembolso e homologação real seguem pendentes. A recuperação não cria outra cobrança nem fabrica webhooks.
 
 ## Demonstração visual
 

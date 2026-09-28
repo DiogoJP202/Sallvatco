@@ -13,6 +13,39 @@ namespace Sallvat.IntegrationTests.Payments;
 public sealed class AdminPaymentQueryTests
 {
     [Fact]
+    public async Task RecoveryHistoryIsBoundedAndNeverExposesRawAuditContent()
+    {
+        await using var app = await CreateAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        var payment = await db.Payments.SingleAsync();
+        await PaymentRecoveryTests.SeedAdminAsync(db);
+        for (var index = 0; index < 51; index++)
+        {
+            db.AuditLogs.Add(new Sallvat.Domain.Auditing.AuditLog(PaymentRecoveryTests.AdminId,
+                "payment.recovery.completed", nameof(Payment), payment.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                System.Text.Json.JsonSerializer.Serialize(new { RequestId = Guid.NewGuid(), Reason = "secret-raw", Result = "<script>secret-raw</script>", Payload = "cliente@example.com" }),
+                "test", PaymentDispatchTests.Now.AddSeconds(index)));
+        }
+
+        await db.SaveChangesAsync();
+        var detail = Assert.IsType<AdminPaymentDetails>(await scope.ServiceProvider.GetRequiredService<IAdminPaymentQuery>().FindAsync(payment.Id));
+        Assert.False(detail.CanRecover);
+        Assert.False(detail.RecoveryEnabled);
+        Assert.True(detail.HasOlderRecoveryEntries);
+        Assert.Equal(50, detail.RecoveryEntries.Count);
+        Assert.Equal(PaymentDispatchTests.Now.AddSeconds(50), detail.RecoveryEntries[0].CreatedAtUtc);
+        Assert.All(detail.RecoveryEntries, entry => { Assert.Null(entry.Reason); Assert.Null(entry.Result); });
+        await using var authenticated = AdminAuthorizationTests.CreateAuthenticatedApplication(RoleNames.Admin, app);
+        using var client = authenticated.CreateClient();
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Admin/Pagamentos/{payment.Id}"));
+        Assert.DoesNotContain("secret-raw", html);
+        Assert.DoesNotContain("cliente@example.com", html);
+        Assert.Contains("Resultado indisponível", html);
+        Assert.Contains("somente os 50 mais recentes", html);
+    }
+
+    [Fact]
     public async Task ReviewOnCancelledOrderRemainsVisibleWithoutExposingSecretsOrChangingState()
     {
         await using var app = await CreateAsync();

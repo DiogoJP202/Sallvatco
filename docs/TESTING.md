@@ -14,6 +14,8 @@ Os testes PostgreSQL existentes também exercitam as projeções da consulta, fi
 
 ## Recuperação interna de pagamentos — 28/09/2026
 
+`PaymentRecoveryWebTests` cobre o fluxo HTTP Admin → formulário com antiforgery/versão → GET simulado do provedor → confirmação/auditoria → redirect/detalhe, sem segunda venda após repetição. Verifica confirmação/motivo/versão obrigatórios, antiforgery inválido, ação desabilitada, anônimo/Customer, role revogada, limite de cinco requisições por minuto, GET sem efeitos e tentativa ausente. `AdminPaymentQueryTests` verifica limite/ordenação do histórico e ausência de JSON arbitrário/PII no HTML; a consulta também é executada no PostgreSQL efêmero. A homologação visual com conta autorizada e a integração real permanecem pendentes.
+
 `PaymentRecoveryTests` cobre captura recuperada sem recibo falso, auditoria antes/depois do GET, repetição sem segunda venda, webhook chegando durante/depois da consulta, Admin revogado durante HTTP, pedido alterado, aprovação tardia/cancelada, 404/indisponibilidade, resposta inválida, observação sem captura, ausência de ID, revisão não liberada, contexto dirty preservado e cancelamento com intenção aberta. Os gateways de teste recusam métodos de criação: recuperação só pode consultar.
 
 `RecoveryAuditFailureRollsBackCaptureAndRecoveryCompetesSafelyWithWebhook` usa PostgreSQL efêmero no CI: provoca falha na auditoria de conclusão e exige rollback dos efeitos financeiros, preservando apenas a intenção; depois disputa recuperação e webhook em contextos/conexões independentes e exige exatamente uma venda e uma evidência de confirmação. O teste não usa credenciais reais e só remove seu próprio banco temporário.

@@ -327,14 +327,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 - [ ] Implementar job de conciliação de pendentes/eventos falhos.
 - [x] Implementar caso de uso interno de recuperação com ID conhecido, Admin atual, versão, GET canônico e auditoria atômica compartilhada com webhook; desabilitado por padrão e sem endpoint.
-- [ ] Conectar recuperação à interface administrativa com antiforgery, limite de requisições e histórico de resultados, sem permitir reenvio de cobrança.
+- [x] Conectar recuperação à interface administrativa com antiforgery, limite de requisições e histórico de resultados, sem permitir reenvio de cobrança; desabilitada por padrão.
 - [x] Implementar diagnóstico interno somente leitura de tentativas com ID, titularidade e releitura após HTTP, sem efeitos financeiros.
 - [ ] Recuperar claims sem ID com evidência de associação e auditoria, sem busca por referência seguida de vínculo automático.
 - [ ] Implementar solicitação de reembolso total idempotente.
 - [ ] Implementar confirmação do reembolso e transição.
 - [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
 - [x] Criar consulta Admin local de tentativas/divergências, filtros, detalhe e recibos, sem dados pessoais ou efeitos financeiros.
-- [ ] Acrescentar retry/recuperação seguros e resolução auditada à tela Admin após homologação.
+- [ ] Homologar recuperação no painel e acrescentar resolução auditada de divergências, sem retry de POST financeiro.
 - [ ] Auditar reembolso e resolução manual.
 - [ ] Testar falha/retry, valor divergente e estoque indisponível.
 

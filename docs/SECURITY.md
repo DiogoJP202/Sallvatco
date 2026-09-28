@@ -2,6 +2,12 @@
 
 # Segurança
 
+## Recuperação administrativa de pagamentos
+
+`POST /Admin/Pagamentos/{id}/Recuperar` exige policy Admin e antiforgery, versão esperada, motivo tipado e confirmação explícita. Ator vem dos claims; o serviço confere a role atual no banco antes/depois do HTTP. A ação permanece bloqueada com `RecoveryEnabled=false`. Rate limiting nativo após autenticação/autorização: cinco requisições/minuto por usuário/processo, sem fila, 429 na rejeição. Limites de corpo de 8 KiB e de campos do formulário complementam a validação. Não confiar em ID externo, ator, valores ou status enviados pelo navegador.
+
+GET de lista/detalhe não aciona provedor. Histórico administrativo permite apenas enums/identificador de solicitação/data, sem JSON bruto, PII, segredos ou IDs de ator/correlação. Respostas usam no-store e páginas noindex; a área não integra o exportador estático. Revalidação de acesso, auditoria e transação financeira continuam no serviço, independentemente da visibilidade do botão.
+
 ## Objetivo e responsabilidade
 
 Segurança é requisito de todas as fases. Controles deste documento devem ser testados antes do go-live e revisados após mudança em autenticação, checkout, upload, integração ou infraestrutura. Não existe confiança implícita em navegador, cookie editável, header do cliente ou payload externo.

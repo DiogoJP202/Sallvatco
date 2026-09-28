@@ -91,7 +91,7 @@ public sealed class PostgreSqlPaymentTests
             Assert.Equal(PostgresErrorCodes.CheckViolation, invalidAmount.SqlState);
             Assert.Equal("ck_payment_amount", invalidAmount.ConstraintName);
             Assert.Equal(158.50m, await setup.Payments.AsNoTracking().Select(payment => payment.Amount).SingleAsync());
-            var adminQuery = new AdminPaymentQuery(setup);
+            var adminQuery = new AdminPaymentQuery(setup, Microsoft.Extensions.Options.Options.Create(new MercadoPagoOptions()));
             Assert.Single((await adminQuery.ListAsync(AdminPaymentFilter.Attention)).Items);
             Assert.Empty((await adminQuery.ListAsync(AdminPaymentFilter.Pending)).Items);
             Assert.Empty((await adminQuery.ListAsync(AdminPaymentFilter.Approved)).Items);
@@ -219,7 +219,7 @@ public sealed class PostgreSqlPaymentTests
             Assert.All(results, result => Assert.True(result is PaymentWebhookResult.Accepted or PaymentWebhookResult.Retry));
             await PaymentWebhookTests.AssertConfirmedAsync(db);
             Assert.Equal(1, await db.WebhookEvents.CountAsync());
-            var capturedDetail = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db).FindAsync((await db.Payments.SingleAsync()).Id));
+            var capturedDetail = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db, Microsoft.Extensions.Options.Options.Create(new MercadoPagoOptions())).FindAsync((await db.Payments.SingleAsync()).Id));
             Assert.Equal(PaymentStatus.Approved, capturedDetail.Payment.Status);
             Assert.Equal(WebhookOutcome.Confirmed, Assert.Single(capturedDetail.Receipts).Outcome);
             Assert.Equal("PAY-webhook", capturedDetail.ExternalPaymentId);
@@ -305,6 +305,11 @@ public sealed class PostgreSqlPaymentTests
             var captures = confirmedAudits.Count(a => a.ChangesJson.Contains("\"Confirmed\"", StringComparison.Ordinal))
                 + await db.WebhookEvents.CountAsync(e => e.Outcome == WebhookOutcome.Confirmed);
             Assert.Equal(1, captures);
+            var history = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db,
+                Microsoft.Extensions.Options.Options.Create(new MercadoPagoOptions())).FindAsync(payment.Id));
+            Assert.NotEmpty(history.RecoveryEntries);
+            Assert.All(history.RecoveryEntries, entry => Assert.Equal(PaymentRecoveryReason.MissingNotification, entry.Reason));
+            Assert.False(history.CanRecover);
             // Subsequent webhook and recovery cannot repeat the financial transition.
             Assert.Equal(PaymentWebhookResult.Accepted, await PaymentWebhookTests.Service(db, new()).HandleAsync(PaymentWebhookTests.Request("after-recovery")));
             var latest = await db.Payments.SingleAsync();

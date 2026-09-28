@@ -11,7 +11,11 @@
     <a class="text-sm underline" asp-action="Index">Voltar aos pagamentos</a>
     <h1 class="mt-4 text-3xl font-semibold">Tentativa @payment.Id</h1>
     <p class="mt-3 break-words text-lg">@payment.OrderNumber</p>
-    <p class="mt-4 max-w-3xl text-sm leading-6 text-stone-600">Somente leitura dos registros locais. Recarregue para consultar atualizações. A ausência de recibos ou de ID externo não prova ausência de cobrança; não recrie a tentativa nem libere estoque a partir desta tela.</p>
+    <p class="mt-4 max-w-3xl text-sm leading-6 text-stone-600">Esta página exibe registros locais. A ausência de recibos ou de ID externo não prova ausência de cobrança; não recrie a tentativa nem libere estoque a partir desta tela.</p>
+    @if (TempData["RecoveryMessage"] is string message)
+    {
+        <p class="mt-6 rounded-xl border border-stone-300 bg-white p-4 text-sm" role="status">@message</p>
+    }
     <dl class="mt-8 grid gap-5 rounded-3xl border border-stone-200 bg-white p-6 sm:grid-cols-2">
         <div><dt class="text-sm text-stone-600">Ambiente</dt><dd class="mt-1 font-semibold">@(payment.Environment == Sallvat.Domain.Payments.PaymentEnvironment.Sandbox ? "Sandbox (teste)" : "Produção")</dd></div>
         <div><dt class="text-sm text-stone-600">Valor esperado</dt><dd class="mt-1 font-semibold">@payment.Amount.ToString("C") @payment.Currency</dd></div>
@@ -28,6 +32,57 @@
         <div><dt class="text-sm text-stone-600">Confirmação local</dt><dd class="mt-1">@Date(Model.ConfirmedAtUtc)</dd></div>
         <div><dt class="text-sm text-stone-600">Atualização do provedor na captura</dt><dd class="mt-1">@Date(Model.ProviderUpdatedAtUtc)</dd></div>
     </dl>
+    <section class="mt-8 rounded-3xl border border-stone-200 bg-white p-6" aria-labelledby="recovery-title">
+        <h2 id="recovery-title" class="text-xl font-semibold">Recuperar confirmação</h2>
+        @if (Model.CanRecover)
+        {
+            <p id="recovery-help" class="mt-3 text-sm leading-6 text-stone-600">Consulta o ID já registrado no provedor. Uma captura válida pode confirmar o pagamento e consumir a reserva de estoque; divergências serão encaminhadas para revisão. Não cria, reenvia ou reembolsa cobranças. Limite de cinco solicitações por minuto por administrador.</p>
+            <form method="post" asp-action="Recover" asp-route-id="@payment.Id" class="mt-5 grid gap-4" aria-describedby="recovery-help">
+                <input type="hidden" name="ExpectedVersion" value="@Model.ConcurrencyVersion" />
+                <div>
+                    <label class="block text-sm font-semibold" for="recovery-reason">Motivo da consulta</label>
+                    <select id="recovery-reason" name="Reason" required class="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3">
+                        <option value="">Selecione o motivo</option>
+                        <option value="MissingNotification">Notificação não recebida</option>
+                        <option value="StatusCheck">Conferência de situação</option>
+                    </select>
+                </div>
+                <label class="flex items-start gap-3 text-sm leading-6" for="recovery-confirm">
+                    <input id="recovery-confirm" class="mt-1 size-5 shrink-0" type="checkbox" name="Confirm" value="true" required />
+                    Entendo que esta consulta pode atualizar o pagamento e o estoque após validação do provedor.
+                </label>
+                <button type="submit" class="btn-primary">Consultar provedor e recuperar confirmação</button>
+            </form>
+        }
+        else
+        {
+            <p class="mt-3 text-sm leading-6 text-stone-600">@(Model.RecoveryEnabled ? "Tentativa não elegível. Pagamentos já confirmados, em revisão ou sem ID externo não podem ser recuperados por esta ação." : "Recuperação desativada neste ambiente. Nenhuma consulta será enviada ao provedor.")</p>
+        }
+    </section>
+    <h2 class="mt-10 text-xl font-semibold">Histórico de recuperação</h2>
+    <p class="mt-3 text-sm leading-6 text-stone-600">Até 50 registros recentes. Solicitação não significa conclusão: relacione os registros pelo identificador. Uma operação pode estar em andamento ou ter sido interrompida; a ausência de conclusão não autoriza outra cobrança. Confirmações por recuperação usam esta auditoria e não geram recibo de webhook.</p>
+    <ol class="mt-5 grid gap-3">
+        @foreach (var entry in Model.RecoveryEntries)
+        {
+            <li class="rounded-xl border border-stone-200 bg-white p-4 text-sm">
+                <p class="font-semibold">@(entry.IsCompletion ? "Resultado registrado" : "Solicitação registrada") — @Date(entry.CreatedAtUtc)</p>
+                <p class="mt-2">@PaymentLabels.RecoveryReason(entry.Reason)</p>
+                <p class="mt-2 break-all">Identificador: @(entry.RequestId?.ToString() ?? "Indisponível")</p>
+                @if (entry.IsCompletion)
+                {
+                    <p class="mt-2">@PaymentLabels.RecoveryResult(entry.Result)</p>
+                }
+            </li>
+        }
+    </ol>
+    @if (Model.RecoveryEntries.Count == 0)
+    {
+        <p class="mt-4">Nenhuma recuperação registrada.</p>
+    }
+    @if (Model.HasOlderRecoveryEntries)
+    {
+        <p class="mt-4">Existem registros anteriores preservados na auditoria; somente os 50 mais recentes aparecem aqui.</p>
+    }
     <h2 class="mt-10 text-xl font-semibold">Recibos de webhook processados</h2>
     <p class="mt-3 text-sm text-stone-600">Até 50 recibos recentes. Falhas sem commit não aparecem aqui. Observações posteriores não apagam evidências de confirmação.</p>
     <ol class="mt-5 grid gap-3">

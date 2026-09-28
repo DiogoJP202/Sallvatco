@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
@@ -199,6 +200,15 @@ builder.Services.AddSingleton<IRecoveryRequestLimiter, RecoveryRequestLimiter>()
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy<string>(RateLimitPolicyNames.PaymentRecovery, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
     options.AddFixedWindowLimiter("PaymentWebhook", policy =>
     {
         policy.PermitLimit = 120;
@@ -338,10 +348,10 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseRequestLocalization();
 app.UseRouting();
-app.UseRateLimiter();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllerRoute(
     name: "areas",

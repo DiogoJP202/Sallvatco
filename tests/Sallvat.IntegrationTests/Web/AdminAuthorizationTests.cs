@@ -92,7 +92,8 @@ public sealed class AdminAuthorizationTests
     internal static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>
         CreateAuthenticatedApplication(
             string role,
-            SallvatWebApplicationFactory? rootApplication = null) =>
+            SallvatWebApplicationFactory? rootApplication = null,
+            Guid? actorId = null) =>
         (rootApplication ?? new SallvatWebApplicationFactory())
             .WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
@@ -106,12 +107,13 @@ public sealed class AdminAuthorizationTests
                     })
                     .AddScheme<TestAuthenticationOptions, TestAuthenticationHandler>(
                         TestScheme,
-                        options => options.Role = role);
+                        options => { options.Role = role; options.ActorId = actorId ?? Guid.NewGuid(); });
             }));
 
     private sealed class TestAuthenticationOptions : AuthenticationSchemeOptions
     {
         public string Role { get; set; } = string.Empty;
+        public Guid ActorId { get; set; }
     }
 
     private sealed class TestAuthenticationHandler(
@@ -127,7 +129,7 @@ public sealed class AdminAuthorizationTests
         {
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, Options.ActorId.ToString()),
                 new Claim(ClaimTypes.Name, "admin-test@example.invalid"),
                 new Claim(ClaimTypes.Role, Options.Role),
             };
