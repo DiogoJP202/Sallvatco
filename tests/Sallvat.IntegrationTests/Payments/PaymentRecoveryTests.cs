@@ -19,6 +19,19 @@ public sealed class PaymentRecoveryTests
     internal static PaymentRecoveryOperation Operation => new(AdminId, PaymentRecoveryReason.MissingNotification, "recovery-test");
 
     [Fact]
+    public async Task TestAdminReusesRoleAlreadyCreatedByMigrations()
+    {
+        await using var app = new AccountWebApplicationFactory();
+        await app.InitializeDatabaseAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        var role = await db.Roles.SingleAsync(r => r.NormalizedName == "ADMIN");
+        await SeedAdminAsync(db);
+        Assert.Equal(role.Id, (await db.UserRoles.SingleAsync()).RoleId);
+        Assert.Single(await db.Roles.Where(r => r.NormalizedName == "ADMIN").ToListAsync());
+    }
+
+    [Fact]
     public async Task RecoversLostNotificationWithIntentAndAtomicAuditWithoutInventingWebhookReceipt()
     {
         await using var app = await CreateAsync();
@@ -268,8 +281,13 @@ public sealed class PaymentRecoveryTests
 
     internal static async Task SeedAdminAsync(SallvatDbContext db)
     {
-        var role = new IdentityRole<Guid>("Admin") { Id = Guid.NewGuid(), NormalizedName = "ADMIN" };
-        db.Roles.Add(role);
+        var role = await db.Roles.SingleOrDefaultAsync(r => r.NormalizedName == "ADMIN");
+        if (role is null)
+        {
+            role = new IdentityRole<Guid>("Admin") { Id = Guid.NewGuid(), NormalizedName = "ADMIN" };
+            db.Roles.Add(role);
+        }
+
         db.Users.Add(new ApplicationUser
         {
             Id = AdminId,
