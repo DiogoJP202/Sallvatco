@@ -174,7 +174,9 @@ internal sealed class OrderLifecycleService(
                 .AsNoTracking()
                 .Where(order =>
                     order.Status == OrderStatus.PendingPayment
-                    && order.ExpiresAtUtc <= now)
+                    && order.ExpiresAtUtc <= now
+                    && !dbContext.Payments.Any(payment => payment.OrderId == order.Id
+                        && (payment.ExternalPaymentId != null || payment.Status == PaymentStatus.RequiresAttention)))
                 .OrderBy(order => order.ExpiresAtUtc)
                 .Select(order => order.Id)
                 .Take(maximumItems)

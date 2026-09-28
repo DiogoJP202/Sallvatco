@@ -25,6 +25,27 @@ public sealed class PaymentWebhookTests
 {
     internal const string Secret = "sandbox-webhook-secret-for-tests-only";
 
+    [Fact]
+    public async Task ReviewHoldsAreExcludedBeforeExpirationBatchLimit()
+    {
+        await using var app = await CreateAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        var first = await db.Orders.SingleAsync();
+        (await db.Payments.SingleAsync()).RequireCanonicalReview(PaymentAttentionReason.FinancialReview, PaymentDispatchTests.Now);
+        var second = new Order(1_001, "SVT-20260921-00001001", Guid.NewGuid(), first.SourceCartId, first.CustomerId,
+            "Cliente", "cliente@example.com", "11999998888", 140m, 0m, 18.50m, "BRL", null, null,
+            "Melhor Envio", "Transportadora", "Expresso", "quote-124", 2, 4,
+            PaymentDispatchTests.Now, PaymentDispatchTests.Now, PaymentDispatchTests.Now.AddMinutes(31));
+        db.Orders.Add(second);
+        await db.SaveChangesAsync();
+        var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddHours(1) };
+        Assert.Equal(1, await new OrderLifecycleService(db, clock).ExpirePendingAsync(1));
+        Assert.Equal(OrderStatus.PendingPayment, (await db.Orders.SingleAsync(o => o.Id == first.Id)).Status);
+        Assert.Equal(OrderStatus.Cancelled, (await db.Orders.SingleAsync(o => o.Id == second.Id)).Status);
+        Assert.Equal(2, (await db.ProductVariants.SingleAsync()).Reserved);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
