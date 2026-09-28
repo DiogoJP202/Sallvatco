@@ -163,7 +163,11 @@ Os testes usam HTTP fake; não representam homologação da conta Melhor Envio, 
 
 ## Webhook
 
-Os cenários de webhook abaixo são critérios planejados; o endpoint ainda não foi implementado.
+O endpoint Sandbox está implementado e desabilitado. `PaymentWebhookTests` cobre assinatura incorreta, troca de ID/request ID, timestamp antigo/futuro em segundos/milissegundos, duplicatas de campos, JSON inválido, corpo divergente, dados não assinados sem autoridade, dez entregas concorrentes, replay, resposta transitória e aprovação tardia. O fluxo HTTPS em TestServer usa controller/serviço reais com gateway simulado e verifica uma captura e uma venda. O endpoint tem testes de antiforgery dispensado, HTTPS obrigatório e limite de corpo. Testes de logs completos e homologação do provedor ainda são pendências.
+
+`PostgreSqlPaymentTests.WebhookRollsBackOnFailureAndConcurrentDeliveriesConfirmExactlyOnce` aplica migrations em banco descartável, injeta falha SQL ao inserir venda e verifica rollback de captura/pedido/recibo; em seguida disputa dez conexões, verifica efeito único, constraints e bloqueio do downgrade destrutivo. São três testes PostgreSQL obrigatórios no CI e explicitamente ignorados sem banco local. Nenhuma cobrança real é feita.
+
+Os critérios completos de homologação permanecem:
 
 - payload com assinatura correta é consultado na API fake;
 - payload sozinho nunca confirma pedido;

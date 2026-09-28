@@ -8,6 +8,8 @@ Segurança é requisito de todas as fases. Controles deste documento devem ser t
 
 ## Transporte e proxy
 
+O webhook Orders implementado em 28/09 permanece desligado: HTTPS, JSON até 16 KiB, HMAC em tempo constante, janela de cinco minutos, headers/query únicos, 120 chamadas/minuto por processo e timeout de 18 segundos. Status do corpo não autoriza captura; consulta canônica e commit financeiro são obrigatórios. Segredo e corpo não são registrados. A proteção por processo precisa ser complementada no proxy e homologada antes do uso externo; detalhes em [Pagamentos](PAYMENTS.md).
+
 - Cloudflare usa SSL/TLS `Full (strict)` até o Nginx;
 - Nginx expõe apenas 80/443 e redireciona HTTP para HTTPS;
 - HSTS é enviado em Production após validação do domínio, com rollout antes de `includeSubDomains`;

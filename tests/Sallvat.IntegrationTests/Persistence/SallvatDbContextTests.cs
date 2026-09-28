@@ -48,6 +48,7 @@ public sealed class SallvatDbContextTests
                 "order_address",
                 "order_item",
                 "payment",
+                "payment_webhook_event",
                 "product",
                 "product_image",
                 "product_slug_history",

@@ -66,6 +66,12 @@ public sealed class Payment
 
     public string? ExternalOrderId { get; private set; }
 
+    public string? ExternalPaymentId { get; private set; }
+
+    public DateTimeOffset? ConfirmedAtUtc { get; private set; }
+
+    public DateTimeOffset? ProviderUpdatedAtUtc { get; private set; }
+
     public PaymentDispatchState DispatchState { get; private set; }
 
     public Guid? DispatchToken { get; private set; }
@@ -210,6 +216,44 @@ public sealed class Payment
         }
 
         Touch(timestamp);
+    }
+
+    public void ConfirmOrderPayment(string paymentId, DateTimeOffset providerUpdatedAtUtc, DateTimeOffset now)
+    {
+        ValidateTimestamp(now, UpdatedAtUtc);
+        if (Status != PaymentStatus.Pending || DispatchState != PaymentDispatchState.Completed || ExternalOrderId is null
+            || ExternalPaymentId is not null || now >= ExpiresAtUtc || providerUpdatedAtUtc.Offset != TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Only a pending, unexpired Orders attempt can be confirmed.");
+        }
+
+        if (string.IsNullOrEmpty(paymentId) || paymentId.Length is < 4 or > 64 || !paymentId.StartsWith("PAY", StringComparison.Ordinal)
+            || !paymentId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))
+        {
+            throw new ArgumentException("Invalid payment identifier.", nameof(paymentId));
+        }
+
+        ExternalPaymentId = paymentId;
+        ConfirmedAtUtc = now;
+        ProviderUpdatedAtUtc = providerUpdatedAtUtc;
+        Status = PaymentStatus.Approved;
+        Touch(now);
+    }
+
+    public void RequireCanonicalReview(PaymentAttentionReason reason, DateTimeOffset now)
+    {
+        ValidateTimestamp(now, UpdatedAtUtc);
+        if (ExternalOrderId is null || reason is not (PaymentAttentionReason.CanonicalMismatch
+            or PaymentAttentionReason.FinancialReview or PaymentAttentionReason.LateApproval))
+        {
+            throw new InvalidOperationException("A canonical Orders result is required.");
+        }
+
+        // Preserve captured payment evidence even when a later refund/chargeback needs review.
+        Status = PaymentStatus.RequiresAttention;
+        DispatchState = PaymentDispatchState.RequiresAttention;
+        AttentionReason = reason;
+        Touch(now);
     }
 
     private static void ValidateTimestamp(DateTimeOffset timestamp, DateTimeOffset minimum)

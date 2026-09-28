@@ -172,6 +172,69 @@ public sealed class PostgreSqlPaymentTests
         }
     }
 
+    [PostgreSqlFact]
+    public async Task WebhookRollsBackOnFailureAndConcurrentDeliveriesConfirmExactlyOnce()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            await PaymentWebhookTests.SeedAsync(db);
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE FUNCTION fail_test_sale() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'simulated sale failure' USING ERRCODE = '23514'; END $$;
+                CREATE TRIGGER fail_sale BEFORE INSERT ON inventory_movement FOR EACH ROW EXECUTE FUNCTION fail_test_sale();
+                """);
+            var gateway = new PaymentWebhookTests.Gateway();
+            Assert.Equal(PaymentWebhookResult.Retry, await PaymentWebhookTests.Service(db, gateway).HandleAsync(PaymentWebhookTests.Request()));
+            db.ChangeTracker.Clear();
+            Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
+            Assert.Equal(OrderStatus.PendingPayment, (await db.Orders.SingleAsync()).Status);
+            Assert.Equal(4, (await db.ProductVariants.SingleAsync()).OnHand);
+            Assert.Empty(await db.WebhookEvents.ToListAsync());
+            await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_sale ON inventory_movement; DROP FUNCTION fail_test_sale();");
+
+            var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(async _ =>
+            {
+                await using var context = new SallvatDbContext(options);
+                return await PaymentWebhookTests.Service(context, gateway).HandleAsync(PaymentWebhookTests.Request());
+            }));
+            Assert.Contains(PaymentWebhookResult.Accepted, results);
+            Assert.All(results, result => Assert.True(result is PaymentWebhookResult.Accepted or PaymentWebhookResult.Retry));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            Assert.Equal(1, await db.WebhookEvents.CountAsync());
+            Assert.Equal(PaymentWebhookResult.Accepted, await PaymentWebhookTests.Service(db, gateway).HandleAsync(PaymentWebhookTests.Request("new-receipt")));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            var duplicate = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("""
+                INSERT INTO payment_webhook_event (delivery_key, payment_id, external_order_id, outcome, received_at_utc)
+                SELECT delivery_key, payment_id, external_order_id, outcome, received_at_utc FROM payment_webhook_event LIMIT 1
+                """));
+            Assert.Equal("23505", duplicate.SqlState);
+            var invalid = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("UPDATE payment SET confirmed_at_utc = NULL"));
+            Assert.Equal("23514", invalid.SqlState);
+            var downgrade = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>()
+                .MigrateAsync("20260922130251_AddPaymentOrderDispatch"));
+            Assert.Equal("P0001", downgrade.SqlState);
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
         await using var db = new SallvatDbContext(options);

@@ -307,15 +307,16 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Criar `WebhookEvent`, unique constraints e migration.
-- [ ] Implementar endpoint com limite de corpo e sem antiforgery.
-- [ ] Validar `x-signature` e segredo por ambiente.
-- [ ] Deduplicar evento antes de efeitos.
+- [x] Criar `WebhookEvent`, unique constraints e migration.
+- [x] Implementar endpoint com limite de corpo e sem antiforgery.
+- [x] Validar `x-signature` e segredo no ambiente Sandbox; produção permanece recusada.
+- [x] Deduplicar entrega assinada antes de efeitos, sem confiar no ID não assinado do corpo.
 - [ ] Consultar pagamento e validar referência, valor, moeda e ambiente.
 - [x] Implementar GET canônico Orders com validação de identidade/snapshots, resposta sanitizada, limites e HTTP fake.
-- [ ] Conectar a consulta ao webhook e validar transações financeiras antes de confirmar captura.
-- [ ] Aplicar `PaymentStatus`, `OrderStatus` e estoque na mesma transação.
-- [ ] Responder corretamente a duplicata, falha transitória e payload inválido.
+- [x] Conectar a consulta ao webhook e validar captura integral de transação única; outros cenários exigem revisão.
+- [x] Aplicar `PaymentStatus`, `OrderStatus` e estoque na mesma transação.
+- [x] Responder corretamente a duplicata, falha transitória e payload inválido em testes simulados.
+- [ ] Homologar assinatura, timestamps/reenvios, proxy HTTPS e captura real em conta de teste antes de ativar.
 - [ ] Testar concorrência, ordem de eventos e ausência de segredo nos logs.
 
 ### STORY F7-S3 — Operação concilia e reembolsa pagamento

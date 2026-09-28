@@ -194,6 +194,26 @@ public sealed class PaymentTests
         Assert.Throws<InvalidOperationException>(() => order.RegisterPaymentAttempt(Now.AddSeconds(3)));
     }
 
+    [Fact]
+    public void ConfirmationCannotBeReplacedAndReviewPreservesCaptureEvidence()
+    {
+        var payment = new Payment(CreateOrder(), PaymentEnvironment.Sandbox, Guid.NewGuid(), Now);
+        Assert.Throws<InvalidOperationException>(() => payment.ConfirmOrderPayment("PAY-test", Now, Now));
+        var token = Guid.NewGuid();
+        payment.TryBeginOrderDispatch(token, Now);
+        payment.CompleteOrderDispatch(token, "ORD-test", true, Now);
+        Assert.Throws<ArgumentException>(() => payment.ConfirmOrderPayment("PAY", Now, Now));
+        Assert.Throws<InvalidOperationException>(() => payment.ConfirmOrderPayment("PAY-test", Now, Now.AddMinutes(30)));
+        payment.ConfirmOrderPayment("PAY-test", Now, Now);
+        Assert.Equal(PaymentStatus.Approved, payment.Status);
+        Assert.Equal(Now, payment.ConfirmedAtUtc);
+        Assert.Throws<InvalidOperationException>(() => payment.ConfirmOrderPayment("PAY-other", Now, Now));
+        payment.RequireCanonicalReview(PaymentAttentionReason.FinancialReview, Now);
+        Assert.Equal(PaymentStatus.RequiresAttention, payment.Status);
+        Assert.Equal("PAY-test", payment.ExternalPaymentId);
+        Assert.Equal(Now, payment.ProviderUpdatedAtUtc);
+    }
+
     private static Order CreateOrder() => new(
         1_000, "SVT-20260921-00001000", Guid.NewGuid(), Guid.NewGuid(), null,
         "Cliente Teste", "cliente@example.com", "11999998888",

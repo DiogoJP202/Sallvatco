@@ -7,6 +7,7 @@ using Sallvat.Application.Time;
 using Sallvat.Domain.Auditing;
 using Sallvat.Domain.Inventory;
 using Sallvat.Domain.Orders;
+using Sallvat.Domain.Payments;
 using Sallvat.Domain.Promotions;
 using Sallvat.Infrastructure.Persistence;
 
@@ -214,7 +215,8 @@ internal sealed class OrderLifecycleService(
                     && candidate.Status == OrderStatus.PendingPayment
                     && candidate.ExpiresAtUtc <= now,
                 cancellationToken);
-            if (order is null)
+            if (order is null || await dbContext.Payments.AnyAsync(p => p.OrderId == orderId
+                && (p.ExternalPaymentId != null || p.Status == PaymentStatus.RequiresAttention), cancellationToken))
             {
                 return false;
             }
@@ -242,6 +244,12 @@ internal sealed class OrderLifecycleService(
         string reason,
         CancellationToken cancellationToken)
     {
+        if (await dbContext.Payments.AnyAsync(p => p.OrderId == order.Id
+            && (p.ExternalPaymentId != null || p.Status == PaymentStatus.RequiresAttention), cancellationToken))
+        {
+            throw new InvalidOperationException("Pagamento capturado ou em revisão exige conciliação, não cancelamento manual.");
+        }
+
         var reservations = await dbContext.StockReservations
             .Where(reservation =>
                 reservation.OrderId == order.Id

@@ -182,6 +182,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 **Evolução em 25/09/2026:** consulta canônica Orders e diagnóstico interno somente leitura (`F7-S2/F7-S3`) validam snapshots e detectam mudanças durante HTTP. Não alteram estados financeiros nem recuperam claims sem ID. Recuperação auditada, transação de confirmação, retorno, webhook e homologação externa ainda impedem habilitar compras.
 
+**Evolução em 28/09/2026:** webhook Sandbox assinado, recibo único e confirmação integral de transação única estão implementados. Pedido, captura, estoque e recibo são persistidos atomicamente; divergências e aprovação tardia exigem revisão. Rollback, concorrência, envelope, assinatura e endpoint são cobertos por testes simulados/CI PostgreSQL. Homologação real, job, recuperação de claims, estorno e checkout ainda pendentes; flags continuam desligadas.
+
 **Tarefas:**
 
 - implementar `IPaymentGateway` e preferência Checkout Pro;

@@ -33,6 +33,7 @@ public sealed record PaymentOrderObservation(
     decimal PaidAmount,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
-    bool HasTransactions);
+    bool HasTransactions,
+    string? SettledPaymentId = null);
 
 public sealed record PaymentOrderQueryResult(PaymentOrderQueryStatus Status, PaymentOrderObservation? Observation = null);

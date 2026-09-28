@@ -101,7 +101,27 @@ internal sealed partial class MercadoPagoPaymentGateway
             "action_required" => ObservedOrderState.ActionRequired,
             _ => ObservedOrderState.Other,
         };
-        return new(PaymentOrderQueryStatus.Found, new(request.ExternalOrderId, observedState, paid, created, updated, hasTransactions));
+        return new(PaymentOrderQueryStatus.Found, new(request.ExternalOrderId, observedState, paid, created, updated, hasTransactions,
+            SettledPaymentId(root, amount, paid)));
+    }
+
+    private static string? SettledPaymentId(JsonElement root, decimal amount, decimal paid)
+    {
+        if (Text(root, "status") != "processed" || Text(root, "status_detail") != "accredited" || paid != amount
+            || !root.TryGetProperty("transactions", out var transactions) || transactions.ValueKind != JsonValueKind.Object
+            || !transactions.TryGetProperty("payments", out var payments) || payments.ValueKind != JsonValueKind.Array
+            || payments.GetArrayLength() != 1
+            || transactions.EnumerateObject().Any(p => p.Name != "payments" && p.Value.GetArrayLength() != 0))
+        {
+            return null;
+        }
+
+        var payment = payments[0];
+        return Text(payment, "status") == "processed" && Text(payment, "status_detail") == "accredited"
+            && TryMoney(Text(payment, "amount"), out var transactionAmount) && transactionAmount == amount
+            && TryMoney(Text(payment, "paid_amount"), out var transactionPaid) && transactionPaid == amount
+            && Text(payment, "id") is { Length: >= 4 } id && IsIdentifier(id, 64) && id.StartsWith("PAY", StringComparison.Ordinal)
+                ? id : null;
     }
 
     private static bool TryTransactions(JsonElement root, out bool hasTransactions)

@@ -6,4 +6,7 @@ public enum PaymentAttentionReason
     LatePreferenceResponse,
     OrderOutcomeUnknown,
     LateOrderResponse,
+    CanonicalMismatch,
+    FinancialReview,
+    LateApproval,
 }

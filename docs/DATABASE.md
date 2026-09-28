@@ -140,7 +140,7 @@ Percentuais e valores fixos são limitados ao subtotal. O desconto total usa arr
 
 A migration `AddPaymentFoundation` cria somente `payment`: FK restritiva para pedido, snapshot em `numeric(18,2)`/BRL, ambiente explícito, UUID idempotente, preferência opcional, expiração UTC e `ConcurrencyVersion`. Constraints verificam valor, estados, ambiente, timestamps, chave não vazia e motivo obrigatório/exclusivo de `RequiresAttention`. Índices únicos protegem chave e preferência por provedor/ambiente; um índice parcial por pedido bloqueia outra tentativa enquanto houver `Created`, `Pending`, `Approved` ou `RequiresAttention`.
 
-Não há migração de dados existentes ou cobrança automática. Os campos de captura/reembolso e `WebhookEvent` ainda são planejamento. A autorização e a verificação do estado atual do pedido/reservas deverão acontecer no futuro orquestrador transacional; constraints desta tabela não substituem essas verificações. Veja [PAYMENTS.md](PAYMENTS.md).
+`AddPaymentOrderDispatch` acrescenta posse exclusiva de envio e ID Orders. `AddPaymentWebhookConfirmation` acrescenta ID de pagamento único por provedor/ambiente, data de confirmação, data canônica e constraints de captura. Cria `payment_webhook_event` com chave única de entrega assinada, FK restritiva à tentativa, recurso, resultado fechado e timestamp UTC. Não guarda JSON bruto ou assinatura. Captura, pedido, consumo de reservas, movimentos e recibo são gravados numa transação serializável; reenvios não repetem venda. Downgrade com recibos/evidência financeira é recusado. Reembolsos, retenção final e recuperação de claims ainda estão pendentes. Veja [PAYMENTS.md](PAYMENTS.md).
 
 ## Soft delete e retenção
 

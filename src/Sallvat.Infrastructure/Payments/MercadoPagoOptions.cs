@@ -10,6 +10,10 @@ public sealed class MercadoPagoOptions
 
     public bool OrdersEnabled { get; set; }
 
+    public bool WebhookEnabled { get; set; }
+
+    public string WebhookSecret { get; set; } = string.Empty;
+
     public PaymentEnvironment Environment { get; set; } = PaymentEnvironment.Sandbox;
 
     public string AccessToken { get; set; } = string.Empty;
@@ -26,7 +30,9 @@ public sealed class MercadoPagoOptions
     {
         if (options.TimeoutSeconds is < 2 or > 30
             || options.Environment != PaymentEnvironment.Sandbox
-            || (options.Enabled && options.OrdersEnabled))
+            || (options.Enabled && options.OrdersEnabled)
+            || (options.WebhookEnabled && (!options.OrdersEnabled || string.IsNullOrWhiteSpace(options.WebhookSecret) || options.WebhookSecret.Length is < 32 or > 256
+                || options.WebhookSecret.Any(char.IsWhiteSpace) || options.WebhookSecret.Any(char.IsControl))))
         {
             return false;
         }

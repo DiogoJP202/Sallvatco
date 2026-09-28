@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Http;
@@ -198,6 +199,12 @@ builder.Services.AddSingleton<IRecoveryRequestLimiter, RecoveryRequestLimiter>()
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("PaymentWebhook", policy =>
+    {
+        policy.PermitLimit = 120;
+        policy.Window = TimeSpan.FromMinutes(1);
+        policy.QueueLimit = 0;
+    });
     options.AddPolicy<string>(
         RateLimitPolicyNames.Login,
         context => CreateIpFixedWindowLimiter(

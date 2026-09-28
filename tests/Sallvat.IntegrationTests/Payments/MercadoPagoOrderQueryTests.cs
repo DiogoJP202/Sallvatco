@@ -208,6 +208,44 @@ public sealed class MercadoPagoOrderQueryTests
         Assert.Equal(1, handler.Calls);
     }
 
+    [Theory]
+    [InlineData("valid", true)]
+    [InlineData("partial", false)]
+    [InlineData("authorized", false)]
+    [InlineData("amount", false)]
+    [InlineData("id", false)]
+    [InlineData("refund", false)]
+    [InlineData("chargeback", false)]
+    [InlineData("multiple", false)]
+    [InlineData("root-detail", false)]
+    public async Task SettlementRequiresSingleAccreditedPaymentAndNoRefundOrChargeback(string variation, bool settled)
+    {
+        var body = Body();
+        body["status"] = "processed";
+        body["status_detail"] = variation == "root-detail" ? "pending" : "accredited";
+        body["total_paid_amount"] = "70.00";
+        var payment = new Dictionary<string, object?>
+        {
+            ["id"] = variation == "id" ? "123" : "PAY-query",
+            ["status"] = variation == "authorized" ? "action_required" : "processed",
+            ["status_detail"] = "accredited",
+            ["amount"] = variation == "amount" ? "69.00" : "70.00",
+            ["paid_amount"] = variation == "partial" ? "69.00" : "70.00",
+        };
+        var transactions = new Dictionary<string, object?> { ["payments"] = variation == "multiple" ? new[] { payment, payment } : new[] { payment } };
+        if (variation is "refund" or "chargeback")
+        {
+            transactions[variation == "refund" ? "refunds" : "chargebacks"] = new[] { new { id = "financial-activity" } };
+        }
+
+        body["transactions"] = transactions;
+        using var handler = new Handler((_, _) => Task.FromResult(JsonResponse(body)));
+        using var client = new HttpClient(handler);
+        var result = await Service(client).GetOrderAsync(Request());
+        Assert.Equal(PaymentOrderQueryStatus.Found, result.Status);
+        Assert.Equal(settled ? "PAY-query" : null, result.Observation!.SettledPaymentId);
+    }
+
     private static PaymentOrderQuery Request() => new("ORD-query", PaymentEnvironment.Sandbox, "SVT-query", 70m, "BRL");
     private static MercadoPagoPaymentGateway Service(HttpClient client, MercadoPagoOptions? options = null) =>
         new(client, Options.Create(options ?? PaymentDispatchTests.Configuration()), new PaymentDispatchTests.Clock());

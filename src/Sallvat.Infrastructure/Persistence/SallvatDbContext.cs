@@ -46,6 +46,8 @@ public sealed class SallvatDbContext(
 
     public DbSet<Payment> Payments => Set<Payment>();
 
+    public DbSet<WebhookEvent> WebhookEvents => Set<WebhookEvent>();
+
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     public DbSet<OrderAddress> OrderAddresses => Set<OrderAddress>();

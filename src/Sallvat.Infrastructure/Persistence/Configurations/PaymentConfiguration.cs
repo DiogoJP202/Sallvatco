@@ -31,12 +31,17 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
                 "dispatch_token IS NOT NULL AND dispatch_token <> '00000000-0000-0000-0000-000000000000'::uuid AND " +
                 "dispatch_started_at_utc IS NOT NULL AND dispatch_started_at_utc >= created_at_utc AND dispatch_started_at_utc <= updated_at_utc AND " +
                 "((dispatch_state = 'Sending' AND status = 'Created' AND external_order_id IS NULL) OR " +
-                "(dispatch_state = 'Completed' AND external_order_id IS NOT NULL AND status = 'Pending') OR " +
+                "(dispatch_state = 'Completed' AND external_order_id IS NOT NULL AND status IN ('Pending', 'Approved')) OR " +
                 "(dispatch_state = 'RequiresAttention' AND status = 'RequiresAttention')))");
             table.HasCheckConstraint("ck_payment_attention",
                 "(status = 'RequiresAttention' AND attention_reason IS NOT NULL AND " +
-                "attention_reason IN ('PreferenceOutcomeUnknown', 'LatePreferenceResponse', 'OrderOutcomeUnknown', 'LateOrderResponse')) OR " +
+                "attention_reason IN ('PreferenceOutcomeUnknown', 'LatePreferenceResponse', 'OrderOutcomeUnknown', 'LateOrderResponse', 'CanonicalMismatch', 'FinancialReview', 'LateApproval')) OR " +
                 "(status <> 'RequiresAttention' AND attention_reason IS NULL)");
+            table.HasCheckConstraint("ck_payment_confirmation",
+                "(external_payment_id IS NULL AND confirmed_at_utc IS NULL AND provider_updated_at_utc IS NULL AND status <> 'Approved') OR " +
+                "(external_payment_id IS NOT NULL AND external_payment_id ~ '^PAY[A-Za-z0-9_-]+$' AND confirmed_at_utc IS NOT NULL AND " +
+                "provider_updated_at_utc IS NOT NULL AND confirmed_at_utc >= created_at_utc AND confirmed_at_utc <= updated_at_utc AND " +
+                "external_order_id IS NOT NULL AND status IN ('Approved', 'RequiresAttention'))");
         });
         builder.HasKey(payment => payment.Id).HasName("pk_payment");
         builder.Property(payment => payment.Id).HasColumnName("id");
@@ -47,6 +52,9 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(payment => payment.ExternalReference).HasColumnName("external_reference").HasMaxLength(Order.OrderNumberMaxLength);
         builder.Property(payment => payment.PreferenceId).HasColumnName("preference_id").HasMaxLength(Payment.PreferenceIdMaxLength);
         builder.Property(payment => payment.ExternalOrderId).HasColumnName("external_order_id").HasMaxLength(Payment.ExternalOrderIdMaxLength);
+        builder.Property(payment => payment.ExternalPaymentId).HasColumnName("external_payment_id").HasMaxLength(64);
+        builder.Property(payment => payment.ConfirmedAtUtc).HasColumnName("confirmed_at_utc").HasColumnType("timestamptz");
+        builder.Property(payment => payment.ProviderUpdatedAtUtc).HasColumnName("provider_updated_at_utc").HasColumnType("timestamptz");
         builder.Property(payment => payment.DispatchState).HasColumnName("dispatch_state").HasConversion<string>().HasMaxLength(32).HasDefaultValue(PaymentDispatchState.NotStarted);
         builder.Property(payment => payment.DispatchToken).HasColumnName("dispatch_token");
         builder.Property(payment => payment.DispatchStartedAtUtc).HasColumnName("dispatch_started_at_utc").HasColumnType("timestamptz");
@@ -65,6 +73,8 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsUnique().HasFilter("preference_id IS NOT NULL").HasDatabaseName("ux_payment_preference");
         builder.HasIndex(payment => new { payment.Provider, payment.Environment, payment.ExternalOrderId })
             .IsUnique().HasFilter("external_order_id IS NOT NULL").HasDatabaseName("ux_payment_external_order");
+        builder.HasIndex(payment => new { payment.Provider, payment.Environment, payment.ExternalPaymentId })
+            .IsUnique().HasFilter("external_payment_id IS NOT NULL").HasDatabaseName("ux_payment_external_payment");
         builder.HasIndex(payment => payment.OrderId)
             .IsUnique().HasFilter("status IN ('Created', 'Pending', 'Approved', 'RequiresAttention')")
             .HasDatabaseName("ux_payment_unresolved_order");
