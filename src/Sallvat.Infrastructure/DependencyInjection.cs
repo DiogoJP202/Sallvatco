@@ -122,6 +122,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentDispatchService, PaymentDispatchService>();
         services.AddScoped<IPaymentReconciliationService, PaymentReconciliationService>();
         services.AddScoped<IPaymentWebhookService, PaymentWebhookService>();
+        services.AddScoped<IAdminPaymentQuery, AdminPaymentQuery>();
         services.AddScoped<ICouponService, CouponService>();
         services.AddSingleton<IImageStorage, LocalImageStorage>();
         services.AddSingleton<IImageProcessor, SkiaImageProcessor>();

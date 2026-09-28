@@ -1,0 +1,47 @@
+@using Sallvat.Application.Payments
+@using Sallvat.Web.Models.Payments
+@model AdminPaymentDetails
+@{
+    ViewData["Title"] = "Detalhe do pagamento";
+    ViewData["ForceNoIndex"] = true;
+    var payment = Model.Payment;
+    string Date(DateTimeOffset? value) => value?.ToString("dd/MM/yyyy HH:mm:ss 'UTC'") ?? "Não registrado";
+}
+<section class="mx-auto max-w-6xl px-6 py-12 lg:px-8">
+    <a class="text-sm underline" asp-action="Index">Voltar aos pagamentos</a>
+    <h1 class="mt-4 text-3xl font-semibold">Tentativa @payment.Id</h1>
+    <p class="mt-3 break-words text-lg">@payment.OrderNumber</p>
+    <p class="mt-4 max-w-3xl text-sm leading-6 text-stone-600">Somente leitura dos registros locais. Recarregue para consultar atualizações. A ausência de recibos ou de ID externo não prova ausência de cobrança; não recrie a tentativa nem libere estoque a partir desta tela.</p>
+    <dl class="mt-8 grid gap-5 rounded-3xl border border-stone-200 bg-white p-6 sm:grid-cols-2">
+        <div><dt class="text-sm text-stone-600">Ambiente</dt><dd class="mt-1 font-semibold">@(payment.Environment == Sallvat.Domain.Payments.PaymentEnvironment.Sandbox ? "Sandbox (teste)" : "Produção")</dd></div>
+        <div><dt class="text-sm text-stone-600">Valor esperado</dt><dd class="mt-1 font-semibold">@payment.Amount.ToString("C") @payment.Currency</dd></div>
+        <div><dt class="text-sm text-stone-600">Pagamento</dt><dd class="mt-1 font-semibold">@PaymentLabels.Status(payment.Status)</dd></div>
+        <div><dt class="text-sm text-stone-600">Pedido</dt><dd class="mt-1 font-semibold">@PaymentLabels.Order(payment.OrderStatus)</dd></div>
+        <div><dt class="text-sm text-stone-600">Envio ao provedor</dt><dd class="mt-1">@PaymentLabels.Dispatch(payment.DispatchState)</dd></div>
+        <div><dt class="text-sm text-stone-600">Revisão</dt><dd class="mt-1">@PaymentLabels.Reason(payment.AttentionReason)</dd></div>
+        <div class="min-w-0"><dt class="text-sm text-stone-600">ID Orders externo</dt><dd class="mt-1 break-all">@(Model.ExternalOrderId ?? "Não registrado — não reenviar automaticamente")</dd></div>
+        <div class="min-w-0"><dt class="text-sm text-stone-600">ID da captura confirmada localmente</dt><dd class="mt-1 break-all">@(Model.ExternalPaymentId ?? "Não registrado")</dd></div>
+        <div><dt class="text-sm text-stone-600">Criação</dt><dd class="mt-1">@Date(payment.CreatedAtUtc)</dd></div>
+        <div><dt class="text-sm text-stone-600">Atualização local</dt><dd class="mt-1">@Date(payment.UpdatedAtUtc)</dd></div>
+        <div><dt class="text-sm text-stone-600">Início do envio</dt><dd class="mt-1">@Date(Model.DispatchStartedAtUtc)</dd></div>
+        <div><dt class="text-sm text-stone-600">Limite para pagamento local</dt><dd class="mt-1">@Date(Model.ExpiresAtUtc)</dd></div>
+        <div><dt class="text-sm text-stone-600">Confirmação local</dt><dd class="mt-1">@Date(Model.ConfirmedAtUtc)</dd></div>
+        <div><dt class="text-sm text-stone-600">Atualização do provedor na captura</dt><dd class="mt-1">@Date(Model.ProviderUpdatedAtUtc)</dd></div>
+    </dl>
+    <h2 class="mt-10 text-xl font-semibold">Recibos de webhook processados</h2>
+    <p class="mt-3 text-sm text-stone-600">Até 50 recibos recentes. Falhas sem commit não aparecem aqui. Observações posteriores não apagam evidências de confirmação.</p>
+    <ol class="mt-5 grid gap-3">
+        @foreach (var receipt in Model.Receipts)
+        {
+            <li class="rounded-xl border border-stone-200 bg-white p-4 text-sm">@Date(receipt.ReceivedAtUtc) — @PaymentLabels.Receipt(receipt.Outcome)</li>
+        }
+    </ol>
+    @if (Model.Receipts.Count == 0)
+    {
+        <p class="mt-4">Nenhum recibo processado registrado.</p>
+    }
+    @if (Model.HasOlderReceipts)
+    {
+        <p class="mt-4">Existem recibos anteriores preservados no banco; esta consulta exibe somente os 50 mais recentes.</p>
+    }
+</section>

@@ -6,6 +6,12 @@
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.
 
+## Consulta administrativa de pagamentos — 28/09/2026
+
+`AdminPaymentQueryTests` cobre revisão ligada a pedido cancelado, envio sem ID, captura preservada após revisão, quatro filtros, paginação sem duplicatas com timestamps iguais, limite de 50 recibos, parâmetros inválidos, detalhe inexistente e ausência de mutation. O pipeline HTTP verifica conteúdo Razor, cache `no-store`, navegação, ausência de PII/tokens/chaves/hash no HTML e recusa de POST. `AdminAuthorizationTests` recusa anônimos e clientes tanto na lista quanto no detalhe. A consulta usa apenas banco, sem chamadas ao gateway.
+
+Os testes PostgreSQL existentes também exercitam as projeções da consulta, filtros/cursor e leitura de recibos capturados no banco efêmero do CI. Validação de HTML por TestServer não substitui homologação visual no navegador com uma conta administrativa autorizada; não criar ou publicar credenciais de demonstração para acessar a área.
+
 ## Camadas
 
 ### Unit tests

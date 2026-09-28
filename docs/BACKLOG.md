@@ -331,7 +331,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Implementar solicitação de reembolso total idempotente.
 - [ ] Implementar confirmação do reembolso e transição.
 - [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
-- [ ] Criar tela Admin de tentativas, divergências e retry seguro.
+- [x] Criar consulta Admin local de tentativas/divergências, filtros, detalhe e recibos, sem dados pessoais ou efeitos financeiros.
+- [ ] Acrescentar retry/recuperação seguros e resolução auditada à tela Admin após homologação.
 - [ ] Auditar reembolso e resolução manual.
 - [ ] Testar falha/retry, valor divergente e estoque indisponível.
 

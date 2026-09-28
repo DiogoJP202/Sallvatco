@@ -4,6 +4,16 @@
 
 ## Implementação atual — fundação local
 
+### Consulta administrativa de pagamentos — 28/09/2026
+
+`GET /Admin/Pagamentos` e `GET /Admin/Pagamentos/{id}` exigem policy `Admin`, retornam `Cache-Control: no-store` e páginas `noindex`. São consultas exclusivamente locais por `IAdminPaymentQuery`, sem gateway, mutations ou novas migrations. Funcionam mesmo com integrações desabilitadas. Não são exportadas para o GitHub Pages.
+
+A fila inicia em revisão/envios sem conclusão (`RequiresAttention` ou dispatch `Sending`), independentemente do estado do pedido: uma aprovação tardia ligada a pedido cancelado continua visível. `Sending` não é declarado abandonado: pode haver envio em andamento. Há filtros para todas, criadas/pendentes e aprovadas. Paginação por ID decrescente, até 25 registros e cursor validado, evita carregar o histórico inteiro. Os filtros são processados pelo servidor, sem JavaScript obrigatório.
+
+O detalhe separa estado financeiro, estado do pedido e dispatch; mostra motivo tipado de revisão, ambiente, valor esperado, IDs externos já persistidos e datas UTC. Exibe os 50 recibos processados mais recentes e informa quando existem anteriores. Falhas sem commit não possuem recibo. A leitura de detalhe e recibos não é um snapshot transacional; novas entregas podem ocorrer durante a consulta, que nunca autoriza efeitos financeiros.
+
+Os DTOs/projeções não incluem nome, e-mail, telefone, endereço, chave idempotente, token de posse, hash de entrega, payload ou segredos. Consultas não gravam auditoria de alteração porque não alteram nada; a trilha de confirmação permanece nos recibos persistidos. Não há botão de retry, associação manual, aprovação, liberação de estoque ou reembolso. Ausência de ID/recibo não significa ausência de cobrança. Recuperação e resolução auditadas continuam pendentes antes de ativar compras reais.
+
 ### Webhook e confirmação transacional — 28/09/2026
 
 O endpoint `POST /integracoes/mercado-pago/webhook` está implementado, **desabilitado por padrão**, sem credenciais reais. Exige HTTPS, JSON, corpo de até 16 KiB (inclusive sem Content-Length), headers únicos e `data.id` único na query. Somente esse controller dispensa antiforgery; o limitador global aceita até 120 requisições/minuto por processo, sem fila. O prazo total é de 18 segundos. O proxy de homologação precisa encaminhar HTTPS de modo confiável; não aceitar forwarded headers de origens arbitrárias.

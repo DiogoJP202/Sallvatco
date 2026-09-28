@@ -19,6 +19,8 @@ public sealed class AdminAuthorizationTests
     [InlineData("/Admin")]
     [InlineData("/Admin/Cupons")]
     [InlineData("/Admin/Pedidos")]
+    [InlineData("/Admin/Pagamentos")]
+    [InlineData("/Admin/Pagamentos/1")]
     public async Task AnonymousVisitorIsRedirectedToLogin(string path)
     {
         await using var application = new SallvatWebApplicationFactory();
@@ -41,6 +43,8 @@ public sealed class AdminAuthorizationTests
     [InlineData("/Admin")]
     [InlineData("/Admin/Cupons")]
     [InlineData("/Admin/Pedidos")]
+    [InlineData("/Admin/Pagamentos")]
+    [InlineData("/Admin/Pagamentos/1")]
     public async Task CustomerIsForbiddenFromAdmin(string path)
     {
         await using var application = CreateAuthenticatedApplication(
@@ -85,7 +89,7 @@ public sealed class AdminAuthorizationTests
         Assert.Contains("Nenhum pedido aberto", content, StringComparison.Ordinal);
     }
 
-    private static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>
+    internal static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>
         CreateAuthenticatedApplication(
             string role,
             SallvatWebApplicationFactory? rootApplication = null) =>

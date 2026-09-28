@@ -91,6 +91,14 @@ public sealed class PostgreSqlPaymentTests
             Assert.Equal(PostgresErrorCodes.CheckViolation, invalidAmount.SqlState);
             Assert.Equal("ck_payment_amount", invalidAmount.ConstraintName);
             Assert.Equal(158.50m, await setup.Payments.AsNoTracking().Select(payment => payment.Amount).SingleAsync());
+            var adminQuery = new AdminPaymentQuery(setup);
+            Assert.Single((await adminQuery.ListAsync(AdminPaymentFilter.Attention)).Items);
+            Assert.Empty((await adminQuery.ListAsync(AdminPaymentFilter.Pending)).Items);
+            Assert.Empty((await adminQuery.ListAsync(AdminPaymentFilter.Approved)).Items);
+            Assert.Empty((await adminQuery.ListAsync(AdminPaymentFilter.All, first.Id)).Items);
+            var adminDetail = Assert.IsType<AdminPaymentDetails>(await adminQuery.FindAsync(first.Id));
+            Assert.Equal(PaymentAttentionReason.PreferenceOutcomeUnknown, adminDetail.Payment.AttentionReason);
+            Assert.Empty(adminDetail.Receipts);
             Assert.False(setup.Database.HasPendingModelChanges());
         }
         finally
@@ -211,6 +219,10 @@ public sealed class PostgreSqlPaymentTests
             Assert.All(results, result => Assert.True(result is PaymentWebhookResult.Accepted or PaymentWebhookResult.Retry));
             await PaymentWebhookTests.AssertConfirmedAsync(db);
             Assert.Equal(1, await db.WebhookEvents.CountAsync());
+            var capturedDetail = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db).FindAsync((await db.Payments.SingleAsync()).Id));
+            Assert.Equal(PaymentStatus.Approved, capturedDetail.Payment.Status);
+            Assert.Equal(WebhookOutcome.Confirmed, Assert.Single(capturedDetail.Receipts).Outcome);
+            Assert.Equal("PAY-webhook", capturedDetail.ExternalPaymentId);
             Assert.Equal(PaymentWebhookResult.Accepted, await PaymentWebhookTests.Service(db, gateway).HandleAsync(PaymentWebhookTests.Request("new-receipt")));
             await PaymentWebhookTests.AssertConfirmedAsync(db);
             var duplicate = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync("""

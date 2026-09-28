@@ -168,6 +168,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
+**Consulta administrativa em 28/09/2026:** fila `/Admin/Pagamentos` com autorização Admin, filtros, paginação e detalhe de estados/recibos locais. Divergências permanecem visíveis independentemente do estado do pedido. Sem gateway, mutations, novas migrations ou ativação de compras. Retry, recuperação e resolução auditada continuam pendentes em `F7-S3`.
+
 **Progresso parcial:** fundação local de `Payment`, estados separados do pedido, snapshot comercial, preferência idempotente, tratamento de resultado incerto e migration com unicidade/concorrência implementados. O contrato de criação de preferência e adapter HTTP isolado também estão implementados, limitados a Sandbox e desabilitados por padrão. Testes cobrem domínio, persistência InMemory, PostgreSQL efêmero no CI e HTTP fake, não homologação com o provedor. Nenhuma cobrança ou conexão com Mercado Pago está habilitada. Envio transacional completo, retorno pela loja, homologação ponta a ponta, consulta canônica, webhook e reembolso seguem pendentes em `F7-S1`–`F7-S3`.
 
 **Objetivo:** cobrar pelo Checkout Pro e confirmar pedidos de forma idempotente.

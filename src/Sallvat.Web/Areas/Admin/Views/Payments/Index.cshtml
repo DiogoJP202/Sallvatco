@@ -1,0 +1,52 @@
+@using Sallvat.Application.Payments
+@using Sallvat.Web.Models.Payments
+@model AdminPaymentPage
+@{
+    ViewData["Title"] = "Pagamentos";
+    ViewData["ForceNoIndex"] = true;
+}
+<section class="mx-auto max-w-6xl px-6 py-12 lg:px-8">
+    <a class="text-sm underline" asp-controller="Home" asp-action="Index">Voltar à administração</a>
+    <h1 class="mt-4 text-3xl font-semibold text-stone-950">Pagamentos</h1>
+    <p class="mt-3 max-w-3xl text-sm leading-6 text-stone-600">Consulta aos registros locais, sem contato com o provedor. Esta tela não confirma, reenvia nem reembolsa cobranças. Os estados de pedido e pagamento são independentes.</p>
+    <form method="get" asp-action="Index" class="mt-6 flex flex-wrap items-end gap-3">
+        <div>
+            <label for="payment-filter" class="block text-sm font-semibold">Exibir tentativas</label>
+            <select id="payment-filter" name="filter" class="mt-2 rounded-xl border border-stone-300 bg-white px-4 py-3">
+                <option value="Attention" selected="@(Model.Filter == AdminPaymentFilter.Attention)">Revisão e envios sem conclusão</option>
+                <option value="All" selected="@(Model.Filter == AdminPaymentFilter.All)">Todas</option>
+                <option value="Pending" selected="@(Model.Filter == AdminPaymentFilter.Pending)">Criadas e pendentes</option>
+                <option value="Approved" selected="@(Model.Filter == AdminPaymentFilter.Approved)">Aprovadas</option>
+            </select>
+        </div>
+        <button class="btn-primary" type="submit">Filtrar</button>
+    </form>
+    <p class="mt-4 text-sm text-stone-600">Até 25 tentativas por página, das mais recentes para as mais antigas. Um envio sem conclusão pode ainda estar em andamento; não autoriza uma nova cobrança.</p>
+    <div class="mt-6 grid gap-4">
+        @foreach (var payment in Model.Items)
+        {
+            <article class="rounded-3xl border border-stone-200 bg-white p-6">
+                <h2 class="break-words text-lg font-semibold"><a class="underline" asp-action="Details" asp-route-id="@payment.Id">@payment.OrderNumber — tentativa @payment.Id</a></h2>
+                <p class="mt-3 text-sm">@payment.Amount.ToString("C") @payment.Currency · @(payment.Environment == Sallvat.Domain.Payments.PaymentEnvironment.Sandbox ? "Sandbox (teste)" : "Produção")</p>
+                <p class="mt-2 text-sm"><strong>Pagamento:</strong> @PaymentLabels.Status(payment.Status) · <strong>Pedido:</strong> @PaymentLabels.Order(payment.OrderStatus)</p>
+                <p class="mt-2 text-sm">@PaymentLabels.Dispatch(payment.DispatchState)</p>
+                @if (payment.AttentionReason is not null)
+                {
+                    <p class="mt-3 text-sm font-semibold text-amber-950">@PaymentLabels.Reason(payment.AttentionReason)</p>
+                }
+                <p class="mt-3 text-xs text-stone-600">Atualizado em @payment.UpdatedAtUtc.ToString("dd/MM/yyyy HH:mm:ss 'UTC'")</p>
+            </article>
+        }
+    </div>
+    @if (Model.Items.Count == 0)
+    {
+        <p class="mt-8" role="status">Nenhuma tentativa encontrada neste filtro.</p>
+    }
+    <nav class="mt-6 flex flex-wrap gap-3" aria-label="Páginas de pagamentos">
+        <a class="btn-secondary" asp-action="Index" asp-route-filter="@Model.Filter">Mais recentes</a>
+        @if (Model.NextBeforeId is { } cursor)
+        {
+            <a class="btn-secondary" asp-action="Index" asp-route-filter="@Model.Filter" asp-route-beforeId="@cursor">Próximas tentativas</a>
+        }
+    </nav>
+</section>
