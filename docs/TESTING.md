@@ -12,6 +12,12 @@ Testar riscos de negócio, segurança e integração, não perseguir 100% de cob
 
 Os testes PostgreSQL existentes também exercitam as projeções da consulta, filtros/cursor e leitura de recibos capturados no banco efêmero do CI. Validação de HTML por TestServer não substitui homologação visual no navegador com uma conta administrativa autorizada; não criar ou publicar credenciais de demonstração para acessar a área.
 
+## Recuperação interna de pagamentos — 28/09/2026
+
+`PaymentRecoveryTests` cobre captura recuperada sem recibo falso, auditoria antes/depois do GET, repetição sem segunda venda, webhook chegando durante/depois da consulta, Admin revogado durante HTTP, pedido alterado, aprovação tardia/cancelada, 404/indisponibilidade, resposta inválida, observação sem captura, ausência de ID, revisão não liberada, contexto dirty preservado e cancelamento com intenção aberta. Os gateways de teste recusam métodos de criação: recuperação só pode consultar.
+
+`RecoveryAuditFailureRollsBackCaptureAndRecoveryCompetesSafelyWithWebhook` usa PostgreSQL efêmero no CI: provoca falha na auditoria de conclusão e exige rollback dos efeitos financeiros, preservando apenas a intenção; depois disputa recuperação e webhook em contextos/conexões independentes e exige exatamente uma venda e uma evidência de confirmação. O teste não usa credenciais reais e só remove seu próprio banco temporário.
+
 ## Camadas
 
 ### Unit tests

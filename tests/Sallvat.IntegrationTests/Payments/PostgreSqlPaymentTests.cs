@@ -247,6 +247,81 @@ public sealed class PostgreSqlPaymentTests
         }
     }
 
+    [PostgreSqlFact]
+    public async Task RecoveryAuditFailureRollsBackCaptureAndRecoveryCompetesSafelyWithWebhook()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            await PaymentWebhookTests.SeedAsync(db);
+            await PaymentRecoveryTests.SeedAdminAsync(db);
+            var payment = await db.Payments.SingleAsync();
+            var version = payment.ConcurrencyVersion;
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE FUNCTION fail_test_recovery_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'simulated audit failure' USING ERRCODE = '23514'; END $$;
+                CREATE TRIGGER fail_recovery_audit BEFORE INSERT ON audit_log FOR EACH ROW
+                WHEN (NEW.action = 'payment.recovery.completed') EXECUTE FUNCTION fail_test_recovery_audit();
+                """);
+            Assert.Equal(PaymentRecoveryResult.Unavailable,
+                await PaymentRecoveryTests.Service(db, new()).RecoverAsync(payment.Id, version, PaymentRecoveryTests.Operation));
+            db.ChangeTracker.Clear();
+            Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
+            Assert.Equal(OrderStatus.PendingPayment, (await db.Orders.SingleAsync()).Status);
+            Assert.Equal(4, (await db.ProductVariants.SingleAsync()).OnHand);
+            Assert.Equal(2, (await db.ProductVariants.SingleAsync()).Reserved);
+            Assert.Empty(await db.InventoryMovements.ToListAsync());
+            Assert.Empty(await db.WebhookEvents.ToListAsync());
+            Assert.Equal("payment.recovery.requested", (await db.AuditLogs.SingleAsync()).Action);
+            await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_recovery_audit ON audit_log; DROP FUNCTION fail_test_recovery_audit();");
+
+            // Race independent contexts/connections, not just a process-local lock.
+            var recoveries = Enumerable.Range(0, 5).Select(async _ =>
+            {
+                await using var context = new SallvatDbContext(options);
+                return await PaymentRecoveryTests.Service(context, new()).RecoverAsync(payment.Id, version, PaymentRecoveryTests.Operation);
+            }).ToArray();
+            var webhooks = Enumerable.Range(0, 5).Select(async _ =>
+            {
+                await using var context = new SallvatDbContext(options);
+                return await PaymentWebhookTests.Service(context, new()).HandleAsync(PaymentWebhookTests.Request());
+            }).ToArray();
+            var recovered = await Task.WhenAll(recoveries);
+            var notified = await Task.WhenAll(webhooks);
+            Assert.All(recovered, result => Assert.Contains(result, new[] { PaymentRecoveryResult.Confirmed,
+                PaymentRecoveryResult.Conflict, PaymentRecoveryResult.NotEligible, PaymentRecoveryResult.Unavailable }));
+            Assert.All(notified, result => Assert.Contains(result, new[] { PaymentWebhookResult.Accepted, PaymentWebhookResult.Retry }));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            var confirmedAudits = await db.AuditLogs.AsNoTracking().Where(a => a.Action == "payment.recovery.completed").ToListAsync();
+            var captures = confirmedAudits.Count(a => a.ChangesJson.Contains("\"Confirmed\"", StringComparison.Ordinal))
+                + await db.WebhookEvents.CountAsync(e => e.Outcome == WebhookOutcome.Confirmed);
+            Assert.Equal(1, captures);
+            // Subsequent webhook and recovery cannot repeat the financial transition.
+            Assert.Equal(PaymentWebhookResult.Accepted, await PaymentWebhookTests.Service(db, new()).HandleAsync(PaymentWebhookTests.Request("after-recovery")));
+            var latest = await db.Payments.SingleAsync();
+            Assert.Equal(PaymentRecoveryResult.NotEligible,
+                await PaymentRecoveryTests.Service(db, new()).RecoverAsync(latest.Id, latest.ConcurrencyVersion, PaymentRecoveryTests.Operation));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
         await using var db = new SallvatDbContext(options);

@@ -326,6 +326,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [ ] Implementar job de conciliação de pendentes/eventos falhos.
+- [x] Implementar caso de uso interno de recuperação com ID conhecido, Admin atual, versão, GET canônico e auditoria atômica compartilhada com webhook; desabilitado por padrão e sem endpoint.
+- [ ] Conectar recuperação à interface administrativa com antiforgery, limite de requisições e histórico de resultados, sem permitir reenvio de cobrança.
 - [x] Implementar diagnóstico interno somente leitura de tentativas com ID, titularidade e releitura após HTTP, sem efeitos financeiros.
 - [ ] Recuperar claims sem ID com evidência de associação e auditoria, sem busca por referência seguida de vínculo automático.
 - [ ] Implementar solicitação de reembolso total idempotente.

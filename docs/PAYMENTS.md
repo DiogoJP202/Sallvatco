@@ -4,6 +4,20 @@
 
 ## Implementação atual — fundação local
 
+### Recuperação administrativa interna com ID conhecido — 28/09/2026
+
+`IPaymentRecoveryService.RecoverAsync` implementa o caso de uso interno de recuperação de notificação perdida: recebe tentativa, versão esperada e contexto administrativo (ator, motivo tipado e correlation ID). `RecoveryEnabled=false` por padrão; habilitação exige Orders e configuração Sandbox válida. **Não possui endpoint, botão ou job neste incremento**, não habilita checkout nem altera credenciais. A fila Admin continua somente leitura.
+
+O serviço exige associação atual do ator à role Admin no banco, contexto sem alterações pendentes e tentativa `Pending/Completed` com ID Orders conhecido, sem preferência/captura. Recusa versão antiga, usuário sem acesso, resultado incerto, revisão e claim sem ID antes do HTTP. Não busca por referência, não associa recursos, não cria cobrança e não remove revisão existente. Só realiza GET canônico pelo contrato já validado do gateway.
+
+Uma auditoria `payment.recovery.requested` é persistida **antes** do GET, com ID de solicitação aleatório, ator, motivo (`MissingNotification` ou `StatusCheck`) e correlação. Após consulta válida, `PaymentObservationProcessor` compartilha a transação financeira com o webhook: relê versões de tentativa/pedido, autorização Admin, snapshots e reservas. Confirma somente captura integral elegível ou registra divergência/aprovação tardia para revisão. Pedido cancelado não reabre. Mudança de versão durante HTTP retorna conflito; revogação de Admin impede confirmação.
+
+O resultado `payment.recovery.completed` e os efeitos financeiros são gravados na mesma transação serializável. Falha ao gravar a auditoria reverte captura, pedido, estoque e movimentos. Webhook concorrente e recuperação usam as mesmas proteções de versão/ID capturado. Recuperação **não fabrica recibo de webhook nem assinatura**: sua evidência é auditoria administrativa. Recibo posterior apenas observa captura já aplicada.
+
+GET indisponível, 404 ou falha de autenticação registra resultado sanitizado `Unavailable`, sem autorizar POST ou liberação de reserva. Queda/cancelamento após intenção, ou falha do banco na conclusão, pode deixar auditoria de solicitação sem conclusão: isso não comprova captura e exige reconsulta controlada. Não há retry automático. Auditoria não contém payload, assinatura, chave idempotente, token de posse, ID externo ou dados do comprador. Dados de teste são criados exclusivamente em bancos efêmeros de testes, nunca como contas administrativas reais.
+
+Limites remanescentes: interface protegida para acionar/acompanhar recuperação, tratamento operacional de solicitações sem conclusão, job com backoff, recuperação auditada de claims sem ID, resolução de `RequiresAttention`, reembolso e homologação real antes de ativar compras.
+
 ### Consulta administrativa de pagamentos — 28/09/2026
 
 `GET /Admin/Pagamentos` e `GET /Admin/Pagamentos/{id}` exigem policy `Admin`, retornam `Cache-Control: no-store` e páginas `noindex`. São consultas exclusivamente locais por `IAdminPaymentQuery`, sem gateway, mutations ou novas migrations. Funcionam mesmo com integrações desabilitadas. Não são exportadas para o GitHub Pages.
