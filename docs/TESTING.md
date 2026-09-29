@@ -8,6 +8,10 @@ Testar riscos de negócio, segurança e integração, não perseguir 100% de cob
 
 ## Execuções duráveis de recuperação — 29/09/2026
 
+`AutomaticPaymentRecoveryTests` cobre configuração desligada, dependência das flags, limite de lote, intervalos e orçamento persistido entre instâncias, captura com evidência de sistema sem conta Admin/recibo inventados, recuperação manual após orçamento, concorrência com outro worker/manual, reinício após cancelamento, resposta antiga após substituição/webhook, exclusão de tentativa antiga/sem ID/em revisão e aprovação tardia de pedido cancelado. `PaymentRecoveryWebTests` verifica origem/contador/resultado no HTML administrativo, sem chamada extra ao abrir a página.
+
+`AutomaticRecoveryPreservesLegacyHistoryRollsBackOutcomeFailureAndRacesSafely` usa PostgreSQL efêmero no CI: aplica upgrade com execução legada, preserva resultado desconhecido, força falha na gravação do resultado automático e exige rollback financeiro mantendo intenção, verifica intervalo no SQL, disputa oito workers em conexões distintas, exige uma captura e duas execuções automáticas incluindo a interrompida, recusa resultado ausente/downgrade destrutivo e lê o resumo administrativo. Não usa credenciais nem banco operacional.
+
 `PaymentRecoveryExecutionTests` verifica identidade, UTC, limite exato, transições terminais e versão. `PaymentRecoveryTests` cobre outra solicitação durante GET sem nova chamada, cancelamento com execução aberta, nova ação após expiração, resposta expirada sem substituição e resposta antiga chegando depois de uma substituição concluída: nenhuma pode confirmar captura. Uma consulta posterior válida confirma uma única venda. Indisponibilidade encerrada possui execução `Completed`, sem significar aprovação.
 
 `PaymentRecoveryWebTests` verifica formulário oculto enquanto vigente, POST bloqueado, liberação após limite e leitura sem recuperação automática. HTML é verificado por TestServer, não por homologação visual autenticada.

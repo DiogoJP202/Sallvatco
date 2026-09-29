@@ -15,20 +15,29 @@ namespace Sallvat.Infrastructure.Payments;
 internal sealed class PaymentRecoveryService(
     SallvatDbContext db, IPaymentGateway gateway, IOptions<MercadoPagoOptions> configuredOptions, IClock clock) : IPaymentRecoveryService
 {
-    public async Task<PaymentRecoveryResult> RecoverAsync(long paymentId, Guid expectedVersion,
+    public Task<PaymentRecoveryResult> RecoverAsync(long paymentId, Guid expectedVersion,
         PaymentRecoveryOperation operation, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
+        return RecoverCoreAsync(paymentId, expectedVersion, operation, cancellationToken);
+    }
+
+    internal Task<PaymentRecoveryResult> RecoverAutomaticallyAsync(long paymentId, Guid expectedVersion, CancellationToken cancellationToken) =>
+        RecoverCoreAsync(paymentId, expectedVersion, null, cancellationToken);
+
+    private async Task<PaymentRecoveryResult> RecoverCoreAsync(long paymentId, Guid expectedVersion,
+        PaymentRecoveryOperation? operation, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         var options = configuredOptions.Value;
-        if (!options.RecoveryEnabled || !MercadoPagoOptions.IsValid(options))
+        if (!options.RecoveryEnabled || (operation is null && !options.AutomaticRecoveryEnabled) || !MercadoPagoOptions.IsValid(options))
         {
             return PaymentRecoveryResult.Disabled;
         }
 
-        if (paymentId <= 0 || expectedVersion == Guid.Empty || operation.ActorUserId == Guid.Empty || !Enum.IsDefined(operation.Reason)
+        if (paymentId <= 0 || expectedVersion == Guid.Empty || (operation is not null && (operation.ActorUserId == Guid.Empty || !Enum.IsDefined(operation.Reason)
             || string.IsNullOrWhiteSpace(operation.CorrelationId) || operation.CorrelationId.Length > AuditLog.CorrelationIdMaxLength
-            || !operation.CorrelationId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.'))
+            || !operation.CorrelationId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.'))))
         {
             return PaymentRecoveryResult.Invalid;
         }
@@ -40,7 +49,7 @@ internal sealed class PaymentRecoveryService(
 
         try
         {
-            if (!await IsAdminAsync(db, operation.ActorUserId, cancellationToken))
+            if (operation is not null && !await IsAdminAsync(db, operation.ActorUserId, cancellationToken))
             {
                 return PaymentRecoveryResult.Forbidden;
             }
@@ -71,7 +80,7 @@ internal sealed class PaymentRecoveryService(
                 return claimed.Value;
             }
 
-            // Persist intent before GET. A crash here leaves an open audit, never an untracked financial POST.
+            // Persist execution (and human audit when applicable) before GET; never issue a financial POST.
             var response = await gateway.GetOrderAsync(new(payment.ExternalOrderId!, payment.Environment,
                 payment.ExternalReference, payment.Amount, payment.Currency), cancellationToken);
             return await new PaymentObservationProcessor(db, clock).ApplyAsync(payment.Id, payment.ExternalOrderId!,
@@ -101,7 +110,7 @@ internal sealed class PaymentRecoveryService(
         {
             await using var transaction = relational ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken) : null;
             db.ChangeTracker.Clear();
-            if (!await IsAdminAsync(db, evidence.Operation.ActorUserId, cancellationToken))
+            if (evidence.Operation is { } operation && !await IsAdminAsync(db, operation.ActorUserId, cancellationToken))
             {
                 return PaymentRecoveryResult.Forbidden;
             }
@@ -114,6 +123,10 @@ internal sealed class PaymentRecoveryService(
             }
 
             var now = clock.UtcNow;
+            if (evidence.Operation is null && !await PaymentRecoverySchedule.Due(db, now).AnyAsync(p => p.Id == paymentId, cancellationToken))
+            {
+                return PaymentRecoveryResult.NotEligible;
+            }
             var running = await db.PaymentRecoveryExecutions.SingleOrDefaultAsync(e => e.PaymentId == paymentId
                 && e.State == PaymentRecoveryExecutionState.Running, cancellationToken);
             if (running is not null)
@@ -129,7 +142,8 @@ internal sealed class PaymentRecoveryService(
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            db.PaymentRecoveryExecutions.Add(new(evidence.RequestId, paymentId, now));
+            db.PaymentRecoveryExecutions.Add(new(evidence.RequestId, paymentId, now,
+                evidence.Operation is null ? PaymentRecoverySource.Automatic : PaymentRecoverySource.Manual));
             AddAudit(paymentId, evidence, "payment.recovery.requested", null);
             await db.SaveChangesAsync(cancellationToken);
             if (transaction is not null)
@@ -160,12 +174,15 @@ internal sealed class PaymentRecoveryService(
          where user.Id == actorId && role.NormalizedName == "ADMIN"
          select user.Id).AnyAsync(cancellationToken);
 
-    private void AddAudit(long paymentId, RecoveryEvidence evidence, string action, PaymentRecoveryResult? result) =>
-        db.AuditLogs.Add(new AuditLog(evidence.Operation.ActorUserId, action, nameof(Payment),
+    private void AddAudit(long paymentId, RecoveryEvidence evidence, string action, PaymentRecoveryResult? result)
+    {
+        if (evidence.Operation is not { } operation) { return; }
+        db.AuditLogs.Add(new AuditLog(operation.ActorUserId, action, nameof(Payment),
             paymentId.ToString(CultureInfo.InvariantCulture), JsonSerializer.Serialize(new
             {
                 evidence.RequestId,
-                Reason = evidence.Operation.Reason.ToString(),
+                Reason = operation.Reason.ToString(),
                 Result = result?.ToString(),
-            }), evidence.Operation.CorrelationId, clock.UtcNow));
+            }), operation.CorrelationId, clock.UtcNow));
+    }
 }

@@ -24,6 +24,7 @@ using Sallvat.Web.Configuration;
 using Sallvat.Web.Email;
 using Sallvat.Web.Observability;
 using Sallvat.Web.Orders;
+using Sallvat.Web.Payments;
 using Sallvat.Web.Security;
 using Serilog;
 using Serilog.Events;
@@ -159,6 +160,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CartCookieManager>();
 builder.Services.AddHostedService<CartCleanupService>();
 builder.Services.AddHostedService<OrderExpirationService>();
+builder.Services.AddHostedService<PaymentRecoveryWorker>();
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     {

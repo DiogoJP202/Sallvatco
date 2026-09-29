@@ -4,6 +4,20 @@
 
 ## Implementação atual — fundação local
 
+### Recuperação automática limitada — 29/09/2026
+
+`PaymentRecoveryWorker` chama `IPaymentRecoveryBatchService` em escopo próprio, dois minutos após iniciar o processo e depois a cada minuto **após terminar o lote**. Seleciona até 20 candidatos elegíveis, ordenados pelo início do envio/ID, e consulta sequencialmente. `AutomaticRecoveryEnabled=false` é independente do acionamento manual e exige `RecoveryEnabled`, Orders e configuração Sandbox válidos. Desabilitado, o lote não acessa banco ou provedor. Nenhum endpoint dispara ou habilita o job.
+
+A seleção é feita no banco antes do limite do lote: somente `Pending/Completed` com ID Orders conhecido, sem preferência/captura/revisão, cujo envio começou entre dois minutos e 24 horas atrás. São no máximo **três execuções automáticas por tentativa**: primeira após dois minutos do início do envio, segunda pelo menos cinco minutos após o início da primeira e terceira pelo menos 15 minutos após o início da segunda. São intervalos técnicos mínimos, não promessas comerciais. O ciclo/lote pode atrasar a consulta. Captura aprovada, revisão e ID ausente saem da seleção; pedido cancelado ainda pode produzir revisão por aprovação tardia, nunca reabertura.
+
+Contagem e horários vêm das execuções duráveis, não de memória nem de contagem de falhas. Intenção persistida conta mesmo se o processo cair antes do GET. Observação sem pagamento, indisponibilidade, interrupção e cancelamento consomem tentativa. Reinício, nova instância ou recuperação manual não reiniciam o orçamento. O claim serializável revalida seleção, orçamento, versões e posse antes de gravar execução, protegendo a disputa entre workers; a restrição de execução vigente também protege contra ação manual. Não há retry de criação, busca/vínculo por referência ou envio financeiro automático.
+
+Cada execução registra origem `Manual`/`Automatic` e resultado tipado. No automático, essa é a evidência do sistema, persistida na mesma transação que captura/pedido/estoque: **não é criada uma conta Admin fictícia nem auditoria em nome de uma pessoa**. A auditoria humana continua restrita às ações manuais. Interrupção de uma execução anterior pelo job fica registrada no estado/resultado durável; eventual auditoria humana anterior permanece preservada. Recibos de webhook continuam separados. Uma execução `Completed` com resultado `Unavailable` não é pagamento confirmado.
+
+Após três execuções, 24 horas ou falhas não resolvidas, não há nova seleção automática: conferir tentativas pendentes/revisões no painel e decidir ação manual autorizada. O job não cancela pedido nem libera estoque por esgotar tentativas. Um GET de página não executa recuperação. O painel informa origem, resultado e contador; logs contêm apenas quantidade de candidatos ou mensagem genérica de erro, sem exceção bruta/payload/segredos. Cancelamento do host interrompe o lote preservando a intenção já gravada.
+
+`AddAutomaticPaymentRecovery` preserva execuções antigas como `Manual`, com resultado nulo (não deduz captura histórica). Downgrade é recusado se houver origem automática ou resultado registrado. Aplicação explícita no deploy, sem migration no startup. Configuração permanece desligada, sem credenciais, chamadas reais ou compras habilitadas. Homologação, claims sem ID, resolução de revisão, reembolso e ligação ao checkout continuam pendentes. Os incrementos anteriores abaixo registram seus limites à época.
+
 ### Controle durável de recuperação — 29/09/2026
 
 Cada recuperação com ID conhecido agora possui `PaymentRecoveryExecution`: identificador vinculado à auditoria, estado `Running`, `Completed` ou `Interrupted`, início, limite e encerramento UTC e versão de concorrência. A janela técnica é de dois minutos; **não é prazo de pagamento nem reserva de estoque**. A posse e a intenção são persistidas juntas antes do GET, em transação serializável, com índice único parcial que permite somente uma execução `Running` por tentativa. Não há transação aberta durante HTTP.

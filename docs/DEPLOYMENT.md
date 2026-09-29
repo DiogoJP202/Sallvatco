@@ -13,6 +13,16 @@
 
 ## Artefatos
 
+### Recuperação automática de pagamentos (Sandbox)
+
+Aplicar explicitamente `AddPaymentRecoveryExecutions` e `AddAutomaticPaymentRecovery` antes da imagem que utiliza os novos campos. Fazer backup e validar em ambiente isolado. Ambas protegem histórico contra downgrade destrutivo; rollback de imagem exige compatibilidade de schema e preservação das evidências.
+
+`Payments__MercadoPago__AutomaticRecoveryEnabled=false` permanece desligado. Habilitação futura exige homologação, `RecoveryEnabled=true`, `OrdersEnabled=true`, configuração Sandbox e segredos válidos, sem habilitar Preferences simultaneamente. Não criar usuário Admin para executar o job: origem/resultado do sistema são persistidos na execução. O serviço começa após dois minutos, roda lotes sequenciais de até 20 e espera um minuto após cada lote. Não é tarefa do GitHub Actions/Pages nem automação do Codex: executa no processo ASP.NET hospedado.
+
+Para suspender novas consultas, desabilitar a flag e reiniciar o processo com a nova configuração. Um cancelamento pode deixar execução sem conclusão; não apagar registros ou reenviar cobrança. Reiniciar não zera tentativas: até três consultas automáticas com intervalos mínimos de 2/5/15 minutos e seleção até 24 horas do início do envio. Esgotamento ou pendência antiga exige conferência manual em `/Admin/Pagamentos`, inclusive filtro de pendentes. Monitorar saúde do serviço e logs sanitizados `4301`/`4302`; ver [Pagamentos](PAYMENTS.md). As flags não foram ativadas e nenhuma migration operacional foi executada nesta entrega.
+
+### Infraestrutura versionada
+
 Já estão versionados o Compose de Development, o pipeline de validação e os assets Tailwind compilados em build reprodutível.
 
 Ainda serão adicionados:

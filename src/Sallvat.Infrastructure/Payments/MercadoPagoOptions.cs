@@ -13,6 +13,7 @@ public sealed class MercadoPagoOptions
     public bool WebhookEnabled { get; set; }
 
     public bool RecoveryEnabled { get; set; }
+    public bool AutomaticRecoveryEnabled { get; set; }
 
     public string WebhookSecret { get; set; } = string.Empty;
 
@@ -34,6 +35,7 @@ public sealed class MercadoPagoOptions
             || options.Environment != PaymentEnvironment.Sandbox
             || (options.Enabled && options.OrdersEnabled)
             || (options.RecoveryEnabled && !options.OrdersEnabled)
+            || (options.AutomaticRecoveryEnabled && !options.RecoveryEnabled)
             || (options.WebhookEnabled && (!options.OrdersEnabled || string.IsNullOrWhiteSpace(options.WebhookSecret) || options.WebhookSecret.Length is < 32 or > 256
                 || options.WebhookSecret.Any(char.IsWhiteSpace) || options.WebhookSecret.Any(char.IsControl))))
         {

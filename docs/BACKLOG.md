@@ -325,7 +325,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 #### TASK
 
-- [ ] Implementar job de conciliação de pendentes/eventos falhos.
+- [x] Implementar job limitado de recuperação de pendentes/notificações perdidas com ID conhecido, orçamento persistido, intervalos progressivos e origem/resultado do sistema; desativado por padrão.
+- [ ] Homologar job com provedor real de teste, avaliar janela/limites e operação de pendências após esgotamento; não habilitar produção nesta etapa.
 - [x] Persistir controle de execução da recuperação por tentativa, janela técnica, bloqueio concorrente, interrupção auditada e rejeição de resposta antiga; manter retomada manual e integração desabilitada.
 - [x] Implementar caso de uso interno de recuperação com ID conhecido, Admin atual, versão, GET canônico e auditoria atômica compartilhada com webhook; desabilitado por padrão e sem endpoint.
 - [x] Conectar recuperação à interface administrativa com antiforgery, limite de requisições e histórico de resultados, sem permitir reenvio de cobrança; desabilitada por padrão.

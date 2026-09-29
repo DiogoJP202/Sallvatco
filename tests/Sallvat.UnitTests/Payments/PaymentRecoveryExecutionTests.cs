@@ -4,6 +4,19 @@ namespace Sallvat.UnitTests.Payments;
 
 public sealed class PaymentRecoveryExecutionTests
 {
+    [Fact]
+    public void AutomaticSourceAndOutcomeAreExplicitAndValidated()
+    {
+        Assert.Throws<ArgumentException>(() => new PaymentRecoveryExecution(Guid.NewGuid(), 1, Now, (PaymentRecoverySource)99));
+        var execution = new PaymentRecoveryExecution(Guid.NewGuid(), 1, Now, PaymentRecoverySource.Automatic);
+        Assert.Equal(PaymentRecoverySource.Automatic, execution.Source);
+        Assert.Null(execution.Outcome);
+        Assert.Throws<ArgumentException>(() => execution.Complete(Now, (PaymentRecoveryOutcome)99));
+        Assert.Throws<ArgumentException>(() => execution.Complete(Now, PaymentRecoveryOutcome.Interrupted));
+        execution.Complete(Now, PaymentRecoveryOutcome.Unavailable);
+        Assert.Equal(PaymentRecoveryOutcome.Unavailable, execution.Outcome);
+    }
+
     private static readonly DateTimeOffset Now = new(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]

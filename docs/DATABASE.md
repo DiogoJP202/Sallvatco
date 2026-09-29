@@ -144,6 +144,8 @@ A migration `AddPaymentFoundation` cria somente `payment`: FK restritiva para pe
 
 `AddPaymentRecoveryExecutions` cria `payment_recovery_execution`, com FK restritiva à tentativa, ID UUID compartilhado com a auditoria, estado fechado, datas UTC e token de concorrência. O índice parcial `ux_recovery_execution_running` permite uma execução `Running` por pagamento; índice por pagamento/início atende histórico. Constraints exigem ID não vazio, limite exatamente dois minutos após início, encerramento ausente enquanto `Running`, encerramento anterior ao limite para `Completed` e a partir do limite para `Interrupted`, sempre não nulo nos estados terminais. A auditoria histórica não é convertida retroativamente. Claim/interrupção e intenção são atômicos; conclusão compartilha a transação financeira. Downgrade é recusado se existir qualquer execução. Startup não aplica migrations.
 
+`AddAutomaticPaymentRecovery` acrescenta `source` (`Manual`/`Automatic`), `outcome` tipado e índice pagamento/origem/início. Migra histórico prévio para `Manual` sem inventar resultado; resultados nulos em estados terminais são tolerados somente para legado manual. Novas conclusões sempre registram resultado. Constraints recusam resultado enquanto `Running`, resultado inválido ou conclusão automática sem resultado. Contagem automática e último início são consultados dentro do claim serializável; não há contador volátil para reinícios apagarem. Origem e resultado automáticos são evidência de sistema, não registros atribuídos a usuário em `audit_log`. Downgrade com execução automática ou resultado não nulo é recusado.
+
 ## Soft delete e retenção
 
 - produto, variante, cupom e endereço usam inativação/arquivamento quando há histórico;

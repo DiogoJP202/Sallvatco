@@ -6,6 +6,18 @@ namespace Sallvat.Web.Models.Payments;
 
 public static class PaymentLabels
 {
+    public static string ExecutionOutcome(PaymentRecoveryOutcome? value) => value switch
+    {
+        PaymentRecoveryOutcome.Observed => "Consulta concluída sem nova confirmação financeira.",
+        PaymentRecoveryOutcome.Confirmed => "Pagamento confirmado e estoque atualizado na mesma transação.",
+        PaymentRecoveryOutcome.RequiresAttention => "Divergência registrada; revisão necessária.",
+        PaymentRecoveryOutcome.Conflict => "Conflito: os registros mudaram durante a consulta.",
+        PaymentRecoveryOutcome.Unavailable => "Consulta indisponível; nenhuma confirmação aplicada.",
+        PaymentRecoveryOutcome.Interrupted => "Execução interrompida; resposta antiga bloqueada.",
+        PaymentRecoveryOutcome.Forbidden => "Acesso administrativo revogado; confirmação bloqueada.",
+        _ => "Sem resultado neste registro; consulte estado e auditoria legada.",
+    };
+
     public static string RecoveryReason(PaymentRecoveryReason? value) => value switch
     {
         PaymentRecoveryReason.MissingNotification => "Notificação não recebida",

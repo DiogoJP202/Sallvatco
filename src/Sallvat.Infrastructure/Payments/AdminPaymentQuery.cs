@@ -78,7 +78,7 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
         var enabled = options.Value.RecoveryEnabled && MercadoPagoOptions.IsValid(options.Value);
         var executions = await db.PaymentRecoveryExecutions.AsNoTracking().Where(e => e.PaymentId == id)
             .OrderByDescending(e => e.StartedAtUtc).ThenByDescending(e => e.Id)
-            .Select(e => new AdminRecoveryExecution(e.Id, e.State, e.StartedAtUtc, e.ExpiresAtUtc, e.FinishedAtUtc))
+            .Select(e => new AdminRecoveryExecution(e.Id, e.State, e.StartedAtUtc, e.ExpiresAtUtc, e.FinishedAtUtc, e.Source, e.Outcome))
             .Take(21).ToListAsync(cancellationToken);
         var now = clock.UtcNow;
         var blockedUntil = await db.PaymentRecoveryExecutions.AsNoTracking().Where(e => e.PaymentId == id
@@ -91,7 +91,9 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
             detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50,
             detail.ConcurrencyVersion, enabled, enabled && eligible && blockedUntil is null,
             history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50,
-            executions.Take(20).ToArray(), executions.Count > 20, blockedUntil);
+            executions.Take(20).ToArray(), executions.Count > 20, blockedUntil,
+            enabled && options.Value.AutomaticRecoveryEnabled,
+            await db.PaymentRecoveryExecutions.CountAsync(e => e.PaymentId == id && e.Source == PaymentRecoverySource.Automatic, cancellationToken));
     }
 
     private static AdminRecoveryEntry ReadEntry(DateTimeOffset timestamp, string action, string json)

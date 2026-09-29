@@ -25,7 +25,8 @@ public sealed record AdminRecoveryEntry(DateTimeOffset CreatedAtUtc, Guid? Reque
     PaymentRecoveryReason? Reason, PaymentRecoveryResult? Result);
 
 public sealed record AdminRecoveryExecution(Guid Id, PaymentRecoveryExecutionState State,
-    DateTimeOffset StartedAtUtc, DateTimeOffset ExpiresAtUtc, DateTimeOffset? FinishedAtUtc);
+    DateTimeOffset StartedAtUtc, DateTimeOffset ExpiresAtUtc, DateTimeOffset? FinishedAtUtc,
+    PaymentRecoverySource Source, PaymentRecoveryOutcome? Outcome);
 
 public sealed record AdminPaymentDetails(
     AdminPaymentSummary Payment, string? ExternalOrderId, string? ExternalPaymentId,
@@ -34,4 +35,5 @@ public sealed record AdminPaymentDetails(
     IReadOnlyList<AdminPaymentReceipt> Receipts, bool HasOlderReceipts,
     Guid ConcurrencyVersion, bool RecoveryEnabled, bool CanRecover,
     IReadOnlyList<AdminRecoveryEntry> RecoveryEntries, bool HasOlderRecoveryEntries,
-    IReadOnlyList<AdminRecoveryExecution> Executions, bool HasOlderExecutions, DateTimeOffset? RecoveryBlockedUntilUtc);
+    IReadOnlyList<AdminRecoveryExecution> Executions, bool HasOlderExecutions, DateTimeOffset? RecoveryBlockedUntilUtc,
+    bool AutomaticRecoveryEnabled, int AutomaticRecoveryCount);

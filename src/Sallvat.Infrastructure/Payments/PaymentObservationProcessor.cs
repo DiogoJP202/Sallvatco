@@ -42,7 +42,8 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
             if (recovery is not null)
             {
                 execution = await db.PaymentRecoveryExecutions.SingleOrDefaultAsync(e => e.Id == recovery.RequestId && e.PaymentId == paymentId, cancellationToken);
-                if (execution is null || execution.State != PaymentRecoveryExecutionState.Running)
+                if (execution is null || execution.State != PaymentRecoveryExecutionState.Running
+                    || execution.Source != (recovery.Operation is null ? PaymentRecoverySource.Automatic : PaymentRecoverySource.Manual))
                 {
                     // A superseded owner may not apply its delayed response or finish the replacement execution.
                     return PaymentRecoveryResult.Interrupted;
@@ -62,9 +63,9 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
                 }
             }
 
-            if (recovery is not null && !await PaymentRecoveryService.IsAdminAsync(db, recovery.Operation.ActorUserId, cancellationToken))
+            if (recovery?.Operation is { } operation && !await PaymentRecoveryService.IsAdminAsync(db, operation.ActorUserId, cancellationToken))
             {
-                execution!.Complete(now);
+                execution!.Complete(now, PaymentRecoveryOutcome.Forbidden);
                 AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Forbidden, now);
                 await db.SaveChangesAsync(cancellationToken);
                 if (transaction is not null)
@@ -79,7 +80,7 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
                 || order.ConcurrencyVersion != recovery.OrderVersion
                 || !PaymentRecoveryService.IsEligible(payment)))
             {
-                execution!.Complete(now);
+                execution!.Complete(now, PaymentRecoveryOutcome.Conflict);
                 AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Conflict, now);
                 await db.SaveChangesAsync(cancellationToken);
                 if (transaction is not null)
@@ -92,7 +93,7 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
 
             if (recovery is not null && response.Status is not (PaymentOrderQueryStatus.Found or PaymentOrderQueryStatus.InvalidResponse))
             {
-                execution!.Complete(now);
+                execution!.Complete(now, PaymentRecoveryOutcome.Unavailable);
                 AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Unavailable, now);
                 await db.SaveChangesAsync(cancellationToken);
                 if (transaction is not null)
@@ -153,7 +154,12 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
 
             if (recovery is not null)
             {
-                execution!.Complete(now);
+                execution!.Complete(now, result switch
+                {
+                    PaymentRecoveryResult.Confirmed => PaymentRecoveryOutcome.Confirmed,
+                    PaymentRecoveryResult.RequiresAttention => PaymentRecoveryOutcome.RequiresAttention,
+                    _ => PaymentRecoveryOutcome.Observed,
+                });
                 AddRecoveryAudit(payment.Id, recovery, result, now);
             }
 
@@ -220,14 +226,17 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
         }
     }
 
-    private void AddRecoveryAudit(long paymentId, RecoveryEvidence evidence, PaymentRecoveryResult result, DateTimeOffset now) =>
-        db.AuditLogs.Add(new AuditLog(evidence.Operation.ActorUserId, "payment.recovery.completed", nameof(Payment),
+    private void AddRecoveryAudit(long paymentId, RecoveryEvidence evidence, PaymentRecoveryResult result, DateTimeOffset now)
+    {
+        if (evidence.Operation is not { } operation) { return; }
+        db.AuditLogs.Add(new AuditLog(operation.ActorUserId, "payment.recovery.completed", nameof(Payment),
             paymentId.ToString(CultureInfo.InvariantCulture), JsonSerializer.Serialize(new
             {
                 evidence.RequestId,
-                Reason = evidence.Operation.Reason.ToString(),
+                Reason = operation.Reason.ToString(),
                 Result = result.ToString(),
-            }), evidence.Operation.CorrelationId, now));
+            }), operation.CorrelationId, now));
+    }
 }
 
-internal sealed record RecoveryEvidence(Guid RequestId, Guid PaymentVersion, Guid OrderVersion, PaymentRecoveryOperation Operation);
+internal sealed record RecoveryEvidence(Guid RequestId, Guid PaymentVersion, Guid OrderVersion, PaymentRecoveryOperation? Operation);

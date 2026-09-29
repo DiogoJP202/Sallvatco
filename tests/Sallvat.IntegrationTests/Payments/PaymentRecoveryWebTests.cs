@@ -17,6 +17,29 @@ namespace Sallvat.IntegrationTests.Payments;
 public sealed partial class PaymentRecoveryWebTests
 {
     [Fact]
+    public async Task AdminReadsSystemOutcomeWithoutAttributingItToHumanAudit()
+    {
+        var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddMinutes(2) };
+        await using var root = new AccountWebApplicationFactory(clock: clock);
+        var gateway = new PaymentWebhookTests.Gateway();
+        await using var app = Configure(root, gateway);
+        var payment = await SeedAsync(app.Services);
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+            await AutomaticPaymentRecoveryTests.Service(db, gateway, clock).RunAsync(20);
+        }
+        using var client = Client(app);
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Admin/Pagamentos/{payment.Id}"));
+        Assert.Contains("Origem: sistema automático", html);
+        Assert.Contains("Execuções utilizadas: 1 de 3", html);
+        Assert.Contains("Pagamento confirmado e estoque atualizado na mesma transação", html);
+        Assert.DoesNotContain("Solicitação registrada", html);
+        Assert.DoesNotContain("name=\"Confirm\"", html);
+        Assert.Equal(1, gateway.Calls);
+    }
+
+    [Fact]
     public async Task RunningExecutionHidesFormUntilExpiryAndGetNeverRecoversIt()
     {
         var clock = new PaymentDispatchTests.Clock();

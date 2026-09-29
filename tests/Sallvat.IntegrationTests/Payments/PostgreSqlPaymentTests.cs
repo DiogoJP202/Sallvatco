@@ -414,6 +414,92 @@ public sealed class PostgreSqlPaymentTests
         }
     }
 
+    [PostgreSqlFact]
+    public async Task AutomaticRecoveryPreservesLegacyHistoryRollsBackOutcomeFailureAndRacesSafely()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.GetService<IMigrator>().MigrateAsync("20260929113017_AddPaymentRecoveryExecutions");
+            await PaymentWebhookTests.SeedAsync(db);
+            var payment = await db.Payments.SingleAsync();
+            var legacyId = Guid.NewGuid();
+            var now = PaymentDispatchTests.Now;
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO payment_recovery_execution (id, payment_id, state, started_at_utc, expires_at_utc, finished_at_utc, concurrency_version)
+                VALUES ({legacyId}, {payment.Id}, 'Completed', {now}, {now.AddMinutes(2)}, {now}, {Guid.NewGuid()})
+                """);
+            await db.Database.MigrateAsync();
+            var legacy = await db.PaymentRecoveryExecutions.SingleAsync();
+            Assert.Equal(PaymentRecoverySource.Manual, legacy.Source);
+            Assert.Null(legacy.Outcome);
+            var clock = new PaymentDispatchTests.Clock { UtcNow = now.AddMinutes(2) };
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE FUNCTION fail_test_auto_outcome() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'simulated outcome failure' USING ERRCODE = '23514'; END $$;
+                CREATE TRIGGER fail_auto_outcome BEFORE UPDATE ON payment_recovery_execution FOR EACH ROW
+                WHEN (NEW.source = 'Automatic' AND NEW.state = 'Completed') EXECUTE FUNCTION fail_test_auto_outcome();
+                """);
+            await AutomaticPaymentRecoveryTests.Service(db, new(), clock).RunAsync(20);
+            db.ChangeTracker.Clear();
+            Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
+            Assert.Equal(OrderStatus.PendingPayment, (await db.Orders.SingleAsync()).Status);
+            Assert.Empty(await db.InventoryMovements.ToListAsync());
+            var failed = await db.PaymentRecoveryExecutions.SingleAsync(e => e.Source == PaymentRecoverySource.Automatic);
+            Assert.Equal(PaymentRecoveryExecutionState.Running, failed.State);
+            Assert.Null(failed.Outcome);
+            await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_auto_outcome ON payment_recovery_execution; DROP FUNCTION fail_test_auto_outcome();");
+            clock.UtcNow = now.AddMinutes(4);
+            var blocked = new PaymentWebhookTests.Gateway();
+            Assert.Equal(0, await AutomaticPaymentRecoveryTests.Service(db, blocked, clock).RunAsync(20));
+            Assert.Equal(0, blocked.Calls);
+            clock.UtcNow = now.AddMinutes(7);
+            var gateway = new PaymentWebhookTests.Gateway();
+            await Task.WhenAll(Enumerable.Range(0, 8).Select(async _ =>
+            {
+                await using var other = new SallvatDbContext(options);
+                await AutomaticPaymentRecoveryTests.Service(other, gateway, clock).RunAsync(20);
+            }));
+            Assert.Equal(1, gateway.Calls);
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            Assert.Equal(2, await db.PaymentRecoveryExecutions.CountAsync(e => e.Source == PaymentRecoverySource.Automatic));
+            Assert.Equal(1, await db.PaymentRecoveryExecutions.CountAsync(e => e.Outcome == PaymentRecoveryOutcome.Confirmed));
+            Assert.Equal(1, await db.PaymentRecoveryExecutions.CountAsync(e => e.Outcome == PaymentRecoveryOutcome.Interrupted));
+            Assert.Empty(await db.AuditLogs.ToListAsync());
+            Assert.Empty(await db.Users.ToListAsync());
+            Assert.Equal(PaymentWebhookResult.Accepted, await PaymentWebhookTests.Service(db, new(), clock)
+                .HandleAsync(PaymentWebhookTests.Request(now: clock.UtcNow)));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            var invalid = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlRawAsync(
+                "UPDATE payment_recovery_execution SET outcome = NULL WHERE source = 'Automatic' AND state = 'Completed'"));
+            Assert.Equal("ck_recovery_execution_outcome", invalid.ConstraintName);
+            var downgrade = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>()
+                .MigrateAsync("20260929113017_AddPaymentRecoveryExecutions"));
+            Assert.Equal(PostgresErrorCodes.RaiseException, downgrade.SqlState);
+            var detail = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db,
+                Microsoft.Extensions.Options.Options.Create(AutomaticPaymentRecoveryTests.Configuration()), clock).FindAsync(payment.Id));
+            Assert.Equal(2, detail.AutomaticRecoveryCount);
+            Assert.True(detail.AutomaticRecoveryEnabled);
+            Assert.Equal(3, detail.Executions.Count);
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
         await using var db = new SallvatDbContext(options);
