@@ -18,11 +18,14 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
             throw new ArgumentOutOfRangeException(nameof(filter));
         }
 
+        var now = clock.UtcNow;
+        var followUps = PaymentRecoverySchedule.FollowUp(db, now).Select(p => p.Id);
         var payments = db.Payments.AsNoTracking();
         payments = filter switch
         {
             AdminPaymentFilter.Attention => payments.Where(p => p.Status == PaymentStatus.RequiresAttention
-                || p.DispatchState == PaymentDispatchState.RequiresAttention || p.DispatchState == PaymentDispatchState.Sending),
+                || p.DispatchState == PaymentDispatchState.RequiresAttention || p.DispatchState == PaymentDispatchState.Sending || followUps.Contains(p.Id)),
+            AdminPaymentFilter.RecoveryFollowUp => payments.Where(p => followUps.Contains(p.Id)),
             AdminPaymentFilter.Pending => payments.Where(p => (p.Status == PaymentStatus.Created || p.Status == PaymentStatus.Pending)
                 && p.DispatchState != PaymentDispatchState.Sending && p.DispatchState != PaymentDispatchState.RequiresAttention),
             AdminPaymentFilter.Approved => payments.Where(p => p.Status == PaymentStatus.Approved),
@@ -40,7 +43,10 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
                            select new AdminPaymentSummary(p.Id, o.OrderNumber, o.Status, p.Environment,
                                p.Status, p.DispatchState, p.AttentionReason, p.Amount, p.Currency, p.CreatedAtUtc, p.UpdatedAtUtc))
             .Take(26).ToListAsync(cancellationToken);
-        return new(filter, items.Take(25).ToArray(), items.Count > 25 ? items[24].Id : null);
+        var visible = items.Take(25).ToArray();
+        var reasons = await FollowUpReasonsAsync(visible.Select(p => p.Id).ToArray(), now, cancellationToken);
+        return new(filter, visible.Select(p => p with { RecoveryFollowUp = reasons.GetValueOrDefault(p.Id) }).ToArray(),
+            items.Count > 25 ? items[24].Id : null);
     }
 
     public async Task<AdminPaymentDetails?> FindAsync(long id, CancellationToken cancellationToken = default)
@@ -87,13 +93,30 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
         var eligible = detail.Provider == "MercadoPago" && detail.Summary.Environment == PaymentEnvironment.Sandbox
             && detail.Summary.Status == PaymentStatus.Pending && detail.Summary.DispatchState == PaymentDispatchState.Completed
             && detail.ExternalOrderId is not null && detail.PreferenceId is null && detail.ExternalPaymentId is null;
-        return new(detail.Summary, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
+        var reasons = await FollowUpReasonsAsync([id], now, cancellationToken);
+        return new(detail.Summary with { RecoveryFollowUp = reasons.GetValueOrDefault(id) }, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
             detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50,
             detail.ConcurrencyVersion, enabled, enabled && eligible && blockedUntil is null,
             history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50,
             executions.Take(20).ToArray(), executions.Count > 20, blockedUntil,
             enabled && options.Value.AutomaticRecoveryEnabled,
             await db.PaymentRecoveryExecutions.CountAsync(e => e.PaymentId == id && e.Source == PaymentRecoverySource.Automatic, cancellationToken));
+    }
+
+    private async Task<Dictionary<long, AdminRecoveryFollowUp>> FollowUpReasonsAsync(long[] ids, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        if (ids.Length == 0) { return []; }
+        var oldest = now.AddHours(-PaymentRecoverySchedule.WindowHours);
+        var rows = await PaymentRecoverySchedule.FollowUp(db, now).AsNoTracking().Where(p => ids.Contains(p.Id))
+            .Select(p => new
+            {
+                p.Id,
+                Expired = p.DispatchStartedAtUtc < oldest,
+                Exhausted = db.PaymentRecoveryExecutions.Count(e => e.PaymentId == p.Id && e.Source == PaymentRecoverySource.Automatic)
+                    >= PaymentRecoverySchedule.MaximumAttempts,
+            }).ToListAsync(cancellationToken);
+        return rows.ToDictionary(p => p.Id, p => (p.Expired ? AdminRecoveryFollowUp.WindowExpired : AdminRecoveryFollowUp.None)
+            | (p.Exhausted ? AdminRecoveryFollowUp.AttemptsExhausted : AdminRecoveryFollowUp.None));
     }
 
     private static AdminRecoveryEntry ReadEntry(DateTimeOffset timestamp, string action, string json)

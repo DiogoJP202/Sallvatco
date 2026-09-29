@@ -6,6 +6,14 @@ namespace Sallvat.Web.Models.Payments;
 
 public static class PaymentLabels
 {
+    public static string RecoveryFollowUp(AdminRecoveryFollowUp reason) => reason switch
+    {
+        AdminRecoveryFollowUp.AttemptsExhausted => "Limite de três consultas automáticas atingido; conferir manualmente.",
+        AdminRecoveryFollowUp.WindowExpired => "Janela de 24 horas da recuperação automática encerrada; conferir manualmente.",
+        AdminRecoveryFollowUp.AttemptsExhausted | AdminRecoveryFollowUp.WindowExpired => "Limite de consultas atingido e janela automática encerrada; conferir manualmente.",
+        _ => "Sem pendência de limite ou janela automática identificada.",
+    };
+
     public static string ExecutionOutcome(PaymentRecoveryOutcome? value) => value switch
     {
         PaymentRecoveryOutcome.Observed => "Consulta concluída sem nova confirmação financeira.",

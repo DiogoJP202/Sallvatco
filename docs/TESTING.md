@@ -20,6 +20,10 @@ Testar riscos de negócio, segurança e integração, não perseguir 100% de cob
 
 ## Consulta administrativa de pagamentos — 28/09/2026
 
+Incremento de 29/09: `PaymentRecoveryFollowUpTests` verifica motivos isolados/combinados, limite exato de 24 horas, orçamento sem contar consultas manuais, ausência de mutation, flags desligadas, consulta vigente até o instante de expiração, exclusão de captura/revisão/ID ausente/produção e paginação de 31 tentativas com pedidos cancelados. HTML mantém `no-store`, `noindex`, filtro no cursor e orientação sem expor PII. Autorização recusa anônimos e Customer no novo filtro. O fluxo HTTP habilitado verifica que conferência manual ainda exige POST confirmado e que captura tardia vai para revisão sem movimento de estoque.
+
+`FollowUpQueueUsesDurableLimitsAndLeaseBoundariesWithoutChangingPayment` exercita no PostgreSQL efêmero a consulta de filtro/motivos, cursor, limite temporal, orçamento, bloqueio por execução vigente e detalhe de pedido cancelado. As consultas não alteram versões, execuções, auditoria ou estoque. Não equivale a homologação com o provedor.
+
 `AdminPaymentQueryTests` cobre revisão ligada a pedido cancelado, envio sem ID, captura preservada após revisão, quatro filtros, paginação sem duplicatas com timestamps iguais, limite de 50 recibos, parâmetros inválidos, detalhe inexistente e ausência de mutation. O pipeline HTTP verifica conteúdo Razor, cache `no-store`, navegação, ausência de PII/tokens/chaves/hash no HTML e recusa de POST. `AdminAuthorizationTests` recusa anônimos e clientes tanto na lista quanto no detalhe. A consulta usa apenas banco, sem chamadas ao gateway.
 
 Os testes PostgreSQL existentes também exercitam as projeções da consulta, filtros/cursor e leitura de recibos capturados no banco efêmero do CI. Validação de HTML por TestServer não substitui homologação visual no navegador com uma conta administrativa autorizada; não criar ou publicar credenciais de demonstração para acessar a área.

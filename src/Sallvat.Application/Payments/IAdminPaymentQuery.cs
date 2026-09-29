@@ -10,12 +10,18 @@ public interface IAdminPaymentQuery
     Task<AdminPaymentDetails?> FindAsync(long id, CancellationToken cancellationToken = default);
 }
 
-public enum AdminPaymentFilter { Attention, All, Pending, Approved }
+public enum AdminPaymentFilter { Attention, All, Pending, Approved, RecoveryFollowUp }
+
+[Flags]
+public enum AdminRecoveryFollowUp { None = 0, AttemptsExhausted = 1, WindowExpired = 2 }
 
 public sealed record AdminPaymentSummary(
     long Id, string OrderNumber, OrderStatus OrderStatus, PaymentEnvironment Environment,
     PaymentStatus Status, PaymentDispatchState DispatchState, PaymentAttentionReason? AttentionReason,
-    decimal Amount, string Currency, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc);
+    decimal Amount, string Currency, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc)
+{
+    public AdminRecoveryFollowUp RecoveryFollowUp { get; init; }
+}
 
 public sealed record AdminPaymentPage(AdminPaymentFilter Filter, IReadOnlyList<AdminPaymentSummary> Items, long? NextBeforeId);
 

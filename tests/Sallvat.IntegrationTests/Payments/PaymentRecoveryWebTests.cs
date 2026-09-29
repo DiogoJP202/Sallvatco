@@ -17,6 +17,32 @@ namespace Sallvat.IntegrationTests.Payments;
 public sealed partial class PaymentRecoveryWebTests
 {
     [Fact]
+    public async Task FollowUpWarningPreservesExplicitManualRecoveryAndLateCaptureMovesToReview()
+    {
+        var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddHours(25) };
+        await using var root = new AccountWebApplicationFactory(clock: clock);
+        var gateway = new PaymentWebhookTests.Gateway();
+        await using var app = Configure(root, gateway);
+        var payment = await SeedAsync(app.Services);
+        using var client = Client(app);
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Admin/Pagamentos/{payment.Id}"));
+        Assert.Contains("Conferência manual necessária", html);
+        Assert.Contains("name=\"Confirm\"", html);
+        Assert.Equal(0, gateway.Calls);
+        using var response = await client.PostAsync($"/Admin/Pagamentos/{payment.Id}/Recuperar", Form(Token(html), payment.ConcurrencyVersion));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(1, gateway.Calls);
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        Assert.Equal(PaymentStatus.RequiresAttention, (await db.Payments.SingleAsync()).Status);
+        Assert.Empty(await db.InventoryMovements.ToListAsync());
+        var query = scope.ServiceProvider.GetRequiredService<IAdminPaymentQuery>();
+        Assert.Empty((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp)).Items);
+        Assert.Single((await query.ListAsync(AdminPaymentFilter.Attention)).Items);
+        Assert.Equal(2, await db.AuditLogs.CountAsync());
+    }
+
+    [Fact]
     public async Task AdminReadsSystemOutcomeWithoutAttributingItToHumanAudit()
     {
         var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddMinutes(2) };

@@ -20,6 +20,7 @@ public sealed class AdminAuthorizationTests
     [InlineData("/Admin/Cupons")]
     [InlineData("/Admin/Pedidos")]
     [InlineData("/Admin/Pagamentos")]
+    [InlineData("/Admin/Pagamentos?filter=RecoveryFollowUp")]
     [InlineData("/Admin/Pagamentos/1")]
     public async Task AnonymousVisitorIsRedirectedToLogin(string path)
     {
@@ -44,6 +45,7 @@ public sealed class AdminAuthorizationTests
     [InlineData("/Admin/Cupons")]
     [InlineData("/Admin/Pedidos")]
     [InlineData("/Admin/Pagamentos")]
+    [InlineData("/Admin/Pagamentos?filter=RecoveryFollowUp")]
     [InlineData("/Admin/Pagamentos/1")]
     public async Task CustomerIsForbiddenFromAdmin(string path)
     {

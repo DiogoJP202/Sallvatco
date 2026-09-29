@@ -219,7 +219,7 @@ public sealed class AdminPaymentQueryTests
 
     private static async Task<AccountWebApplicationFactory> CreateAsync()
     {
-        var app = new AccountWebApplicationFactory();
+        var app = new AccountWebApplicationFactory(clock: new PaymentDispatchTests.Clock());
         await app.InitializeDatabaseAsync();
         using var scope = app.Services.CreateScope();
         await PaymentWebhookTests.SeedAsync(scope.ServiceProvider.GetRequiredService<SallvatDbContext>());

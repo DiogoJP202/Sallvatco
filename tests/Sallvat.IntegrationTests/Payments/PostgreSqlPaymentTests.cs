@@ -500,6 +500,68 @@ public sealed class PostgreSqlPaymentTests
         }
     }
 
+    [PostgreSqlFact]
+    public async Task FollowUpQueueUsesDurableLimitsAndLeaseBoundariesWithoutChangingPayment()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            await PaymentWebhookTests.SeedAsync(db);
+            var payment = await db.Payments.SingleAsync();
+            var version = payment.ConcurrencyVersion;
+            var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddHours(24) };
+            var query = new AdminPaymentQuery(db, Microsoft.Extensions.Options.Options.Create(new MercadoPagoOptions()), clock);
+            Assert.Empty((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp)).Items);
+            clock.UtcNow = clock.UtcNow.AddMilliseconds(1);
+            Assert.Equal(AdminRecoveryFollowUp.WindowExpired, Assert.Single((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp)).Items).RecoveryFollowUp);
+            Assert.Single((await query.ListAsync(AdminPaymentFilter.Attention)).Items);
+            for (var index = 0; index < 3; index++)
+            {
+                var execution = new PaymentRecoveryExecution(Guid.NewGuid(), payment.Id, PaymentDispatchTests.Now.AddMinutes(index), PaymentRecoverySource.Automatic);
+                execution.Complete(PaymentDispatchTests.Now.AddMinutes(index), PaymentRecoveryOutcome.Unavailable);
+                db.PaymentRecoveryExecutions.Add(execution);
+            }
+            await db.SaveChangesAsync();
+            var combined = AdminRecoveryFollowUp.AttemptsExhausted | AdminRecoveryFollowUp.WindowExpired;
+            Assert.Equal(combined, Assert.Single((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp)).Items).RecoveryFollowUp);
+            Assert.Empty((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp, payment.Id)).Items);
+            db.PaymentRecoveryExecutions.Add(new(Guid.NewGuid(), payment.Id, clock.UtcNow));
+            await db.SaveChangesAsync();
+            Assert.Empty((await query.ListAsync(AdminPaymentFilter.RecoveryFollowUp)).Items);
+            clock.UtcNow += PaymentRecoveryExecution.Lifetime;
+            (await db.Orders.SingleAsync()).TransitionTo(OrderStatus.Cancelled, clock.UtcNow);
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+            var detail = Assert.IsType<AdminPaymentDetails>(await query.FindAsync(payment.Id));
+            Assert.Equal(combined, detail.Payment.RecoveryFollowUp);
+            Assert.Equal(OrderStatus.Cancelled, detail.Payment.OrderStatus);
+            Assert.False(detail.CanRecover);
+            Assert.Single((await query.ListAsync(AdminPaymentFilter.Attention)).Items);
+            Assert.Empty(db.ChangeTracker.Entries());
+            Assert.Equal(version, (await db.Payments.AsNoTracking().SingleAsync()).ConcurrencyVersion);
+            Assert.Empty(await db.AuditLogs.ToListAsync());
+            Assert.Empty(await db.InventoryMovements.ToListAsync());
+            Assert.Equal(4, await db.PaymentRecoveryExecutions.CountAsync());
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
     private static async Task AssertUniqueAsync(DbContextOptions<SallvatDbContext> options, Payment payment, string constraint)
     {
         await using var db = new SallvatDbContext(options);

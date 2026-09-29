@@ -13,7 +13,8 @@
         <div>
             <label for="payment-filter" class="block text-sm font-semibold">Exibir tentativas</label>
             <select id="payment-filter" name="filter" class="mt-2 rounded-xl border border-stone-300 bg-white px-4 py-3">
-                <option value="Attention" selected="@(Model.Filter == AdminPaymentFilter.Attention)">Revisão e envios sem conclusão</option>
+                <option value="Attention" selected="@(Model.Filter == AdminPaymentFilter.Attention)">Revisão, envios e recuperação pendente</option>
+                <option value="RecoveryFollowUp" selected="@(Model.Filter == AdminPaymentFilter.RecoveryFollowUp)">Recuperação: limite ou janela encerrada</option>
                 <option value="All" selected="@(Model.Filter == AdminPaymentFilter.All)">Todas</option>
                 <option value="Pending" selected="@(Model.Filter == AdminPaymentFilter.Pending)">Criadas e pendentes</option>
                 <option value="Approved" selected="@(Model.Filter == AdminPaymentFilter.Approved)">Aprovadas</option>
@@ -22,6 +23,7 @@
         <button class="btn-primary" type="submit">Filtrar</button>
     </form>
     <p class="mt-4 text-sm text-stone-600">Até 25 tentativas por página, das mais recentes para as mais antigas. Um envio sem conclusão pode ainda estar em andamento; não autoriza uma nova cobrança.</p>
+    <p class="mt-3 text-sm text-stone-600">Limite ou janela encerrada não significa pagamento recusado. A sinalização aparece mesmo com o job desativado e fica suspensa enquanto uma consulta estiver vigente. Confira o detalhe antes de qualquer ação; nenhuma leitura aprova, cancela ou libera estoque.</p>
     <div class="mt-6 grid gap-4">
         @foreach (var payment in Model.Items)
         {
@@ -30,6 +32,10 @@
                 <p class="mt-3 text-sm">@payment.Amount.ToString("C") @payment.Currency · @(payment.Environment == Sallvat.Domain.Payments.PaymentEnvironment.Sandbox ? "Sandbox (teste)" : "Produção")</p>
                 <p class="mt-2 text-sm"><strong>Pagamento:</strong> @PaymentLabels.Status(payment.Status) · <strong>Pedido:</strong> @PaymentLabels.Order(payment.OrderStatus)</p>
                 <p class="mt-2 text-sm">@PaymentLabels.Dispatch(payment.DispatchState)</p>
+                @if (payment.RecoveryFollowUp != AdminRecoveryFollowUp.None)
+                {
+                    <p class="mt-3 text-sm font-semibold text-amber-950">@PaymentLabels.RecoveryFollowUp(payment.RecoveryFollowUp)</p>
+                }
                 @if (payment.AttentionReason is not null)
                 {
                     <p class="mt-3 text-sm font-semibold text-amber-950">@PaymentLabels.Reason(payment.AttentionReason)</p>

@@ -4,6 +4,14 @@
 
 ## Implementação atual — fundação local
 
+### Fila de conferência após limites automáticos — 29/09/2026
+
+`/Admin/Pagamentos?filter=RecoveryFollowUp` reúne tentativas Sandbox `Pending/Completed` com ID Orders conhecido, sem preferência/captura, que atingiram três execuções automáticas ou passaram de 24 horas desde o início do envio. A fila padrão `Attention` também inclui esses casos junto de revisão/envios sem conclusão. O filtro de pendentes continua incluindo-os: os filtros são visões operacionais, não estados financeiros exclusivos.
+
+Cards e detalhe distinguem limite de tentativas, janela encerrada ou ambos. Execução `Running` ainda vigente (manual ou automática) suspende o aviso; no instante da expiração volta a valer a avaliação dos limites, sem alterar a execução. Exatamente 24 horas ainda pertence à janela do job; apenas depois disso aparece como encerrada. Consultas manuais não consomem orçamento automático. Sinalização independe das flags: janela vencida com job desligado não afirma que o provedor foi consultado. Tentativas aprovadas, em revisão ou sem ID seguem seus filtros próprios, sem falso diagnóstico de esgotamento. Pedido cancelado não esconde pendência de pagamento.
+
+O detalhe orienta conferir estados, IDs, recibos e execuções. A recuperação manual existente continua exigindo flag, Admin, versão, motivo, antiforgery e confirmação; não há nova ação de aprovação/cancelamento/reembolso nem reset de tentativas. Consulta manual que observa captura tardia encaminha à revisão e sai deste filtro, mas permanece em `Attention`. GETs não consultam gateway, não geram auditoria de alteração e não mudam estoque ou pagamento. Paginação keyset de 25 itens preserva o filtro; motivos são projetados em consulta limitada aos IDs da página, sem uma consulta por card. Leituras sucessivas podem refletir mudanças concorrentes e não autorizam efeitos financeiros. Sem migration ou habilitação de integrações neste incremento.
+
 ### Recuperação automática limitada — 29/09/2026
 
 `PaymentRecoveryWorker` chama `IPaymentRecoveryBatchService` em escopo próprio, dois minutos após iniciar o processo e depois a cada minuto **após terminar o lote**. Seleciona até 20 candidatos elegíveis, ordenados pelo início do envio/ID, e consulta sequencialmente. `AutomaticRecoveryEnabled=false` é independente do acionamento manual e exige `RecoveryEnabled`, Orders e configuração Sandbox válidos. Desabilitado, o lote não acessa banco ou provedor. Nenhum endpoint dispara ou habilita o job.
