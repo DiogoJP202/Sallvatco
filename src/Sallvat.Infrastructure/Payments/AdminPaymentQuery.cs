@@ -3,12 +3,13 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Sallvat.Application.Payments;
+using Sallvat.Application.Time;
 using Sallvat.Domain.Payments;
 using Sallvat.Infrastructure.Persistence;
 
 namespace Sallvat.Infrastructure.Payments;
 
-internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPagoOptions> options) : IAdminPaymentQuery
+internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPagoOptions> options, IClock clock) : IAdminPaymentQuery
 {
     public async Task<AdminPaymentPage> ListAsync(AdminPaymentFilter filter, long? beforeId = null, CancellationToken cancellationToken = default)
     {
@@ -71,22 +72,31 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
             .Select(e => new AdminPaymentReceipt(e.ReceivedAtUtc, e.Outcome)).Take(51).ToListAsync(cancellationToken);
         var entityId = id.ToString(CultureInfo.InvariantCulture);
         var history = await db.AuditLogs.AsNoTracking().Where(a => a.EntityType == nameof(Payment) && a.EntityId == entityId
-                && (a.Action == "payment.recovery.requested" || a.Action == "payment.recovery.completed"))
+                && (a.Action == "payment.recovery.requested" || a.Action == "payment.recovery.completed" || a.Action == "payment.recovery.interrupted"))
             .OrderByDescending(a => a.CreatedAtUtc).ThenByDescending(a => a.Id)
             .Select(a => new { a.CreatedAtUtc, a.Action, a.ChangesJson }).Take(51).ToListAsync(cancellationToken);
         var enabled = options.Value.RecoveryEnabled && MercadoPagoOptions.IsValid(options.Value);
+        var executions = await db.PaymentRecoveryExecutions.AsNoTracking().Where(e => e.PaymentId == id)
+            .OrderByDescending(e => e.StartedAtUtc).ThenByDescending(e => e.Id)
+            .Select(e => new AdminRecoveryExecution(e.Id, e.State, e.StartedAtUtc, e.ExpiresAtUtc, e.FinishedAtUtc))
+            .Take(21).ToListAsync(cancellationToken);
+        var now = clock.UtcNow;
+        var blockedUntil = await db.PaymentRecoveryExecutions.AsNoTracking().Where(e => e.PaymentId == id
+            && e.State == PaymentRecoveryExecutionState.Running && e.ExpiresAtUtc > now)
+            .Select(e => (DateTimeOffset?)e.ExpiresAtUtc).SingleOrDefaultAsync(cancellationToken);
         var eligible = detail.Provider == "MercadoPago" && detail.Summary.Environment == PaymentEnvironment.Sandbox
             && detail.Summary.Status == PaymentStatus.Pending && detail.Summary.DispatchState == PaymentDispatchState.Completed
             && detail.ExternalOrderId is not null && detail.PreferenceId is null && detail.ExternalPaymentId is null;
         return new(detail.Summary, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
             detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50,
-            detail.ConcurrencyVersion, enabled, enabled && eligible,
-            history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50);
+            detail.ConcurrencyVersion, enabled, enabled && eligible && blockedUntil is null,
+            history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50,
+            executions.Take(20).ToArray(), executions.Count > 20, blockedUntil);
     }
 
     private static AdminRecoveryEntry ReadEntry(DateTimeOffset timestamp, string action, string json)
     {
-        var completion = action == "payment.recovery.completed";
+        var completion = action != "payment.recovery.requested";
         if (json.Length <= 4096)
         {
             try

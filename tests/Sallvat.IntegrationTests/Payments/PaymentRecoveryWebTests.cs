@@ -17,6 +17,39 @@ namespace Sallvat.IntegrationTests.Payments;
 public sealed partial class PaymentRecoveryWebTests
 {
     [Fact]
+    public async Task RunningExecutionHidesFormUntilExpiryAndGetNeverRecoversIt()
+    {
+        var clock = new PaymentDispatchTests.Clock();
+        await using var root = new AccountWebApplicationFactory(clock: clock);
+        var gateway = new PaymentWebhookTests.Gateway();
+        await using var app = Configure(root, gateway);
+        var payment = await SeedAsync(app.Services);
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+            db.PaymentRecoveryExecutions.Add(new(Guid.NewGuid(), payment.Id, clock.UtcNow));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = Client(app);
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Admin/Pagamentos/{payment.Id}"));
+        Assert.Contains("Consulta em andamento", html);
+        Assert.Contains("Controle das execuções", html);
+        Assert.DoesNotContain("name=\"Confirm\"", html);
+        using var blocked = await client.PostAsync($"/Admin/Pagamentos/{payment.Id}/Recuperar", Form(Token(html), payment.ConcurrencyVersion));
+        Assert.Equal(HttpStatusCode.Redirect, blocked.StatusCode);
+        Assert.Equal(0, gateway.Calls);
+        clock.UtcNow += PaymentRecoveryExecution.Lifetime;
+        html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Admin/Pagamentos/{payment.Id}"));
+        Assert.Contains("name=\"Confirm\"", html);
+        using var check = app.Services.CreateScope();
+        var checkDb = check.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        Assert.Equal(PaymentRecoveryExecutionState.Running, (await checkDb.PaymentRecoveryExecutions.SingleAsync()).State);
+        Assert.Empty(await checkDb.AuditLogs.ToListAsync());
+        Assert.Equal(0, gateway.Calls);
+    }
+
+    [Fact]
     public async Task AdminConfirmsRecoveryThroughHttpAndSeesSanitizedHistoryWithoutRepeatingSale()
     {
         await using var root = new AccountWebApplicationFactory(clock: new PaymentDispatchTests.Clock());

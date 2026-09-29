@@ -4,6 +4,16 @@
 
 ## Implementação atual — fundação local
 
+### Controle durável de recuperação — 29/09/2026
+
+Cada recuperação com ID conhecido agora possui `PaymentRecoveryExecution`: identificador vinculado à auditoria, estado `Running`, `Completed` ou `Interrupted`, início, limite e encerramento UTC e versão de concorrência. A janela técnica é de dois minutos; **não é prazo de pagamento nem reserva de estoque**. A posse e a intenção são persistidas juntas antes do GET, em transação serializável, com índice único parcial que permite somente uma execução `Running` por tentativa. Não há transação aberta durante HTTP.
+
+Enquanto a execução estiver vigente, outra solicitação retorna `Busy`, sem consulta externa. Após o limite, uma nova ação administrativa elegível pode marcar a anterior como `Interrupted` e iniciar outra atomicamente. O registro `payment.recovery.interrupted` usa o identificador anterior e o ator/motivo da nova solicitação que constatou a interrupção. Não significa cancelamento da cobrança nem certeza sobre a entrega do HTTP anterior. Uma resposta atrasada só pode ser aplicada se ainda possuir a execução vigente: posse substituída ou expirada retorna `Interrupted`, sem efeitos financeiros. Na própria resposta expirada, a interrupção consta como resultado da solicitação original.
+
+Conclusão da execução, auditoria e efeitos em pagamento/estoque compartilham a transação. `Completed` significa processamento encerrado, **não necessariamente pagamento aprovado**: consultar o resultado auditado. Cancelamento, queda ou falha na gravação podem deixar `Running` sem conclusão. A expiração não altera registros por si só e nenhum GET de tela recupera automaticamente; nova consulta exige novamente Admin, versão, motivo e confirmação. Webhooks continuam independentes e podem confirmar a captura durante a janela, sem duplicar venda.
+
+O painel exibe as 20 execuções mais recentes e bloqueia o formulário enquanto houver execução vigente. Auditorias antigas continuam preservadas, sem inventar execuções retroativas. `AddPaymentRecoveryExecutions` deve ser aplicada explicitamente no deploy; `Down` recusa excluir qualquer histórico existente. Não houve migration em banco operacional, chamada real nem alteração das flags desabilitadas. Job/backoff, claims sem ID, resolução de revisão, reembolso e homologação continuam pendentes. As seções abaixo descrevem incrementos anteriores e seus limites à época.
+
 ### Recuperação no painel administrativo — 28/09/2026
 
 O detalhe `/Admin/Pagamentos/{id}` agora oferece formulário de recuperação **apenas quando** `RecoveryEnabled` está habilitado com configuração Sandbox válida e a tentativa é elegível. Exige motivo tipado, versão esperada e checkbox de confirmação explícita: a consulta pode confirmar pagamento/estoque ou registrar revisão, mas não cria, reenvia ou reembolsa cobrança. O GET do detalhe continua exclusivamente local; não executa recuperação automaticamente.

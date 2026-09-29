@@ -21,6 +21,8 @@ public static class PaymentLabels
         PaymentRecoveryResult.Conflict => "Os registros mudaram durante a operação. Recarregue e confira o estado atual.",
         PaymentRecoveryResult.Unavailable => "Não foi possível concluir. Confira o histórico e o estado atual antes de uma nova consulta; não crie outra cobrança.",
         PaymentRecoveryResult.Disabled => "Recuperação desativada neste ambiente.",
+        PaymentRecoveryResult.Busy => "Já existe uma recuperação em andamento. Aguarde o prazo informado e recarregue o detalhe.",
+        PaymentRecoveryResult.Interrupted => "Execução interrompida ou substituída após o prazo de segurança. A resposta antiga não pode confirmar pagamentos; confira o estado atual antes de nova consulta.",
         PaymentRecoveryResult.NotEligible => "Esta tentativa não permite recuperação. Revisões e tentativas sem ID exigem tratamento específico.",
         PaymentRecoveryResult.Forbidden => "Acesso administrativo não autorizado na operação.",
         PaymentRecoveryResult.NotFound => "Tentativa não encontrada.",

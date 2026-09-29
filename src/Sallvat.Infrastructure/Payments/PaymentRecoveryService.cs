@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -64,19 +65,15 @@ internal sealed class PaymentRecoveryService(
             var orderVersion = await db.Orders.AsNoTracking().Where(o => o.Id == payment.OrderId)
                 .Select(o => o.ConcurrencyVersion).SingleAsync(cancellationToken);
             var evidence = new RecoveryEvidence(Guid.NewGuid(), payment.ConcurrencyVersion, orderVersion, operation);
-            AddAudit(paymentId, evidence, "payment.recovery.requested", null);
-            await db.SaveChangesAsync(cancellationToken);
+            var claimed = await ClaimAsync(paymentId, evidence, cancellationToken);
+            if (claimed is not null)
+            {
+                return claimed.Value;
+            }
 
             // Persist intent before GET. A crash here leaves an open audit, never an untracked financial POST.
             var response = await gateway.GetOrderAsync(new(payment.ExternalOrderId!, payment.Environment,
                 payment.ExternalReference, payment.Amount, payment.Currency), cancellationToken);
-            if (response.Status is not (PaymentOrderQueryStatus.Found or PaymentOrderQueryStatus.InvalidResponse))
-            {
-                AddAudit(paymentId, evidence, "payment.recovery.completed", PaymentRecoveryResult.Unavailable);
-                await db.SaveChangesAsync(cancellationToken);
-                return PaymentRecoveryResult.Unavailable;
-            }
-
             return await new PaymentObservationProcessor(db, clock).ApplyAsync(payment.Id, payment.ExternalOrderId!,
                 null, response, evidence, cancellationToken);
         }
@@ -89,6 +86,65 @@ internal sealed class PaymentRecoveryService(
         {
             db.ChangeTracker.Clear();
             return PaymentRecoveryResult.Unavailable;
+        }
+    }
+
+    private async Task<PaymentRecoveryResult?> ClaimAsync(long paymentId, RecoveryEvidence evidence, CancellationToken cancellationToken)
+    {
+        var relational = db.Database.IsRelational();
+        if (!relational)
+        {
+            await PaymentObservationProcessor.InMemoryLock.WaitAsync(cancellationToken);
+        }
+
+        try
+        {
+            await using var transaction = relational ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken) : null;
+            db.ChangeTracker.Clear();
+            if (!await IsAdminAsync(db, evidence.Operation.ActorUserId, cancellationToken))
+            {
+                return PaymentRecoveryResult.Forbidden;
+            }
+
+            var payment = await db.Payments.SingleAsync(p => p.Id == paymentId, cancellationToken);
+            var orderVersion = await db.Orders.Where(o => o.Id == payment.OrderId).Select(o => o.ConcurrencyVersion).SingleAsync(cancellationToken);
+            if (!IsEligible(payment) || payment.ConcurrencyVersion != evidence.PaymentVersion || orderVersion != evidence.OrderVersion)
+            {
+                return PaymentRecoveryResult.Conflict;
+            }
+
+            var now = clock.UtcNow;
+            var running = await db.PaymentRecoveryExecutions.SingleOrDefaultAsync(e => e.PaymentId == paymentId
+                && e.State == PaymentRecoveryExecutionState.Running, cancellationToken);
+            if (running is not null)
+            {
+                if (now < running.ExpiresAtUtc)
+                {
+                    return PaymentRecoveryResult.Busy;
+                }
+
+                running.Interrupt(now);
+                AddAudit(paymentId, evidence with { RequestId = running.Id }, "payment.recovery.interrupted", PaymentRecoveryResult.Interrupted);
+                // Release the unique running slot before INSERT; both writes remain in this transaction.
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
+            db.PaymentRecoveryExecutions.Add(new(evidence.RequestId, paymentId, now));
+            AddAudit(paymentId, evidence, "payment.recovery.requested", null);
+            await db.SaveChangesAsync(cancellationToken);
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return null;
+        }
+        finally
+        {
+            if (!relational)
+            {
+                PaymentObservationProcessor.InMemoryLock.Release();
+            }
         }
     }
 

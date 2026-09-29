@@ -15,7 +15,7 @@ namespace Sallvat.Infrastructure.Payments;
 // One financial transaction boundary for signed notifications and authorized recovery queries.
 internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock clock)
 {
-    private static readonly SemaphoreSlim InMemoryLock = new(1, 1);
+    internal static readonly SemaphoreSlim InMemoryLock = new(1, 1);
 
     internal async Task<PaymentRecoveryResult> ApplyAsync(long paymentId, string externalId, string? deliveryKey,
         PaymentOrderQueryResult response, RecoveryEvidence? recovery, CancellationToken cancellationToken)
@@ -38,8 +38,33 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
             var payment = await db.Payments.SingleAsync(p => p.Id == paymentId, cancellationToken);
             var order = await db.Orders.SingleAsync(o => o.Id == payment.OrderId, cancellationToken);
             var now = clock.UtcNow;
+            PaymentRecoveryExecution? execution = null;
+            if (recovery is not null)
+            {
+                execution = await db.PaymentRecoveryExecutions.SingleOrDefaultAsync(e => e.Id == recovery.RequestId && e.PaymentId == paymentId, cancellationToken);
+                if (execution is null || execution.State != PaymentRecoveryExecutionState.Running)
+                {
+                    // A superseded owner may not apply its delayed response or finish the replacement execution.
+                    return PaymentRecoveryResult.Interrupted;
+                }
+
+                if (now >= execution.ExpiresAtUtc)
+                {
+                    execution.Interrupt(now);
+                    AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Interrupted, now);
+                    await db.SaveChangesAsync(cancellationToken);
+                    if (transaction is not null)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                    }
+
+                    return PaymentRecoveryResult.Interrupted;
+                }
+            }
+
             if (recovery is not null && !await PaymentRecoveryService.IsAdminAsync(db, recovery.Operation.ActorUserId, cancellationToken))
             {
+                execution!.Complete(now);
                 AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Forbidden, now);
                 await db.SaveChangesAsync(cancellationToken);
                 if (transaction is not null)
@@ -54,6 +79,7 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
                 || order.ConcurrencyVersion != recovery.OrderVersion
                 || !PaymentRecoveryService.IsEligible(payment)))
             {
+                execution!.Complete(now);
                 AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Conflict, now);
                 await db.SaveChangesAsync(cancellationToken);
                 if (transaction is not null)
@@ -62,6 +88,19 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
                 }
 
                 return PaymentRecoveryResult.Conflict;
+            }
+
+            if (recovery is not null && response.Status is not (PaymentOrderQueryStatus.Found or PaymentOrderQueryStatus.InvalidResponse))
+            {
+                execution!.Complete(now);
+                AddRecoveryAudit(paymentId, recovery, PaymentRecoveryResult.Unavailable, now);
+                await db.SaveChangesAsync(cancellationToken);
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
+
+                return PaymentRecoveryResult.Unavailable;
             }
 
             var outcome = WebhookOutcome.Observed;
@@ -114,6 +153,7 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
 
             if (recovery is not null)
             {
+                execution!.Complete(now);
                 AddRecoveryAudit(payment.Id, recovery, result, now);
             }
 

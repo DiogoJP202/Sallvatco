@@ -6,6 +6,14 @@
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.
 
+## Execuções duráveis de recuperação — 29/09/2026
+
+`PaymentRecoveryExecutionTests` verifica identidade, UTC, limite exato, transições terminais e versão. `PaymentRecoveryTests` cobre outra solicitação durante GET sem nova chamada, cancelamento com execução aberta, nova ação após expiração, resposta expirada sem substituição e resposta antiga chegando depois de uma substituição concluída: nenhuma pode confirmar captura. Uma consulta posterior válida confirma uma única venda. Indisponibilidade encerrada possui execução `Completed`, sem significar aprovação.
+
+`PaymentRecoveryWebTests` verifica formulário oculto enquanto vigente, POST bloqueado, liberação após limite e leitura sem recuperação automática. HTML é verificado por TestServer, não por homologação visual autenticada.
+
+`RecoveryOwnershipBlocksParallelGetFencesOldResponseAndPreservesHistory` executa no PostgreSQL efêmero do CI: oito contextos concorrentes não iniciam outro GET; índice único e constraint de encerramento recusam registros inválidos; substituição impede efeito da resposta antiga; query administrativa lê o histórico e downgrade com dados é recusado. O teste de rollback de auditoria também exige execução ainda aberta após falha, bloqueio antes do limite e disputa com webhook após expiração. Provedor continua simulado; banco real não equivale a homologação no Mercado Pago.
+
 ## Consulta administrativa de pagamentos — 28/09/2026
 
 `AdminPaymentQueryTests` cobre revisão ligada a pedido cancelado, envio sem ID, captura preservada após revisão, quatro filtros, paginação sem duplicatas com timestamps iguais, limite de 50 recibos, parâmetros inválidos, detalhe inexistente e ausência de mutation. O pipeline HTTP verifica conteúdo Razor, cache `no-store`, navegação, ausência de PII/tokens/chaves/hash no HTML e recusa de POST. `AdminAuthorizationTests` recusa anônimos e clientes tanto na lista quanto no detalhe. A consulta usa apenas banco, sem chamadas ao gateway.

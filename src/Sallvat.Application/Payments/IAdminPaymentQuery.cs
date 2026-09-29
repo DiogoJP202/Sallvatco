@@ -24,10 +24,14 @@ public sealed record AdminPaymentReceipt(DateTimeOffset ReceivedAtUtc, WebhookOu
 public sealed record AdminRecoveryEntry(DateTimeOffset CreatedAtUtc, Guid? RequestId, bool IsCompletion,
     PaymentRecoveryReason? Reason, PaymentRecoveryResult? Result);
 
+public sealed record AdminRecoveryExecution(Guid Id, PaymentRecoveryExecutionState State,
+    DateTimeOffset StartedAtUtc, DateTimeOffset ExpiresAtUtc, DateTimeOffset? FinishedAtUtc);
+
 public sealed record AdminPaymentDetails(
     AdminPaymentSummary Payment, string? ExternalOrderId, string? ExternalPaymentId,
     DateTimeOffset? DispatchStartedAtUtc, DateTimeOffset ExpiresAtUtc,
     DateTimeOffset? ConfirmedAtUtc, DateTimeOffset? ProviderUpdatedAtUtc,
     IReadOnlyList<AdminPaymentReceipt> Receipts, bool HasOlderReceipts,
     Guid ConcurrencyVersion, bool RecoveryEnabled, bool CanRecover,
-    IReadOnlyList<AdminRecoveryEntry> RecoveryEntries, bool HasOlderRecoveryEntries);
+    IReadOnlyList<AdminRecoveryEntry> RecoveryEntries, bool HasOlderRecoveryEntries,
+    IReadOnlyList<AdminRecoveryExecution> Executions, bool HasOlderExecutions, DateTimeOffset? RecoveryBlockedUntilUtc);

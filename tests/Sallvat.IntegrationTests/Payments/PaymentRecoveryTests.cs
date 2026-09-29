@@ -48,6 +48,7 @@ public sealed class PaymentRecoveryTests
         Assert.Empty(await db.WebhookEvents.ToListAsync());
         var audits = await db.AuditLogs.OrderBy(a => a.Id).ToListAsync();
         Assert.Equal(2, audits.Count);
+        Assert.Equal(PaymentRecoveryExecutionState.Completed, (await db.PaymentRecoveryExecutions.SingleAsync()).State);
         Assert.Equal("payment.recovery.completed", audits[1].Action);
         using var intent = JsonDocument.Parse(audits[0].ChangesJson);
         using var completed = JsonDocument.Parse(audits[1].ChangesJson);
@@ -82,6 +83,7 @@ public sealed class PaymentRecoveryTests
         Assert.Equal(PaymentRecoveryResult.Unavailable, await Service(db, gateway).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
         Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
         Assert.Equal(2, await db.AuditLogs.CountAsync());
+        Assert.Equal(PaymentRecoveryExecutionState.Completed, (await db.PaymentRecoveryExecutions.SingleAsync()).State);
         Assert.Empty(await db.WebhookEvents.ToListAsync());
         Assert.Empty(await db.InventoryMovements.ToListAsync());
         Assert.Equal(PaymentRecoveryResult.Confirmed, await Service(db, new()).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
@@ -109,6 +111,66 @@ public sealed class PaymentRecoveryTests
         Assert.Equal(cancelled ? OrderStatus.Cancelled : OrderStatus.RequiresAttention, (await db.Orders.SingleAsync()).Status);
         Assert.Equal(4, (await db.ProductVariants.SingleAsync()).OnHand);
         Assert.Empty(await db.InventoryMovements.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ConcurrentRequestCannotStartAnotherGetWhileExecutionIsRunning()
+    {
+        await using var app = await CreateAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        var payment = await db.Payments.SingleAsync();
+        var otherGateway = new PaymentWebhookTests.Gateway();
+        var gateway = new PaymentWebhookTests.Gateway
+        {
+            DuringQuery = async () =>
+            {
+                using var other = app.Services.CreateScope();
+                Assert.Equal(PaymentRecoveryResult.Busy, await Service(other.ServiceProvider.GetRequiredService<SallvatDbContext>(), otherGateway)
+                    .RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+            },
+        };
+        Assert.Equal(PaymentRecoveryResult.Confirmed, await Service(db, gateway).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+        Assert.Equal(0, otherGateway.Calls);
+        Assert.Single(await db.PaymentRecoveryExecutions.ToListAsync());
+        await PaymentWebhookTests.AssertConfirmedAsync(db);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExpiredResponseNeverAppliesEvenWhenAReplacementAlreadyCompleted(bool replace)
+    {
+        await using var app = await CreateAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        var payment = await db.Payments.SingleAsync();
+        var clock = new PaymentDispatchTests.Clock();
+        var gateway = new PaymentWebhookTests.Gateway
+        {
+            DuringQuery = async () =>
+            {
+                clock.UtcNow += PaymentRecoveryExecution.Lifetime;
+                if (replace)
+                {
+                    using var other = app.Services.CreateScope();
+                    var pending = new PaymentWebhookTests.Gateway
+                    {
+                        Result = new(PaymentOrderQueryStatus.Found,
+                        PaymentWebhookTests.Observation() with { State = ObservedOrderState.Created, PaidAmount = 0, HasTransactions = false, SettledPaymentId = null })
+                    };
+                    Assert.Equal(PaymentRecoveryResult.Observed, await Service(other.ServiceProvider.GetRequiredService<SallvatDbContext>(), pending, clock)
+                        .RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+                }
+            },
+        };
+        Assert.Equal(PaymentRecoveryResult.Interrupted, await Service(db, gateway, clock).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+        Assert.Empty(await db.InventoryMovements.ToListAsync());
+        Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
+        Assert.Equal(1, await db.PaymentRecoveryExecutions.CountAsync(e => e.State == PaymentRecoveryExecutionState.Interrupted));
+        Assert.Equal(replace ? 1 : 0, await db.PaymentRecoveryExecutions.CountAsync(e => e.State == PaymentRecoveryExecutionState.Completed));
+        Assert.Equal(PaymentRecoveryResult.Confirmed, await Service(db, new(), clock).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+        await PaymentWebhookTests.AssertConfirmedAsync(db);
     }
 
     [Theory]
@@ -240,6 +302,16 @@ public sealed class PaymentRecoveryTests
         Assert.Equal("payment.recovery.requested", (await db.AuditLogs.SingleAsync()).Action);
         Assert.Equal(PaymentStatus.Pending, (await db.Payments.SingleAsync()).Status);
         Assert.Empty(await db.InventoryMovements.ToListAsync());
+        Assert.Equal(PaymentRecoveryExecutionState.Running, (await db.PaymentRecoveryExecutions.SingleAsync()).State);
+        var retryGateway = new PaymentWebhookTests.Gateway();
+        Assert.Equal(PaymentRecoveryResult.Busy, await Service(db, retryGateway).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+        Assert.Equal(0, retryGateway.Calls);
+        var clock = new PaymentDispatchTests.Clock { UtcNow = PaymentDispatchTests.Now.AddMinutes(2) };
+        Assert.Equal(PaymentRecoveryResult.Confirmed, await Service(db, retryGateway, clock).RecoverAsync(payment.Id, payment.ConcurrencyVersion, Operation));
+        Assert.Equal(1, await db.PaymentRecoveryExecutions.CountAsync(e => e.State == PaymentRecoveryExecutionState.Interrupted));
+        Assert.Equal(1, await db.PaymentRecoveryExecutions.CountAsync(e => e.State == PaymentRecoveryExecutionState.Completed));
+        Assert.Equal(4, await db.AuditLogs.CountAsync());
+        await PaymentWebhookTests.AssertConfirmedAsync(db);
     }
 
     [Theory]

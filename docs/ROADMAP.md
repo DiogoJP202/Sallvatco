@@ -168,6 +168,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
+**Controle durável em 29/09/2026 (`F7-S3`):** execução exclusiva persistida por tentativa, janela técnica de dois minutos, interrupção auditada e resposta antiga bloqueada após expiração/substituição. Painel distingue execução de resultado financeiro. Migration explícita protege histórico no downgrade. Retomada continua manual; não há job/backoff ou integração real habilitada.
+
 **Painel de recuperação em 28/09/2026:** ação POST protegida com Admin, antiforgery, versão, motivo e confirmação explícita; limite de cinco requisições/minuto por usuário/processo e histórico sanitizado de até 50 registros. GET continua local. Habilitação permanece desligada; job/backoff, claims sem ID, resolução de revisão e homologação externa seguem pendentes em `F7-S3`.
 
 **Recuperação interna em 28/09/2026:** caso de uso para Admin reconsultar tentativa pendente com ID Orders conhecido, sem POST financeiro. Audita intenção antes do GET e resultado junto dos efeitos transacionais, revalida acesso/versões e disputa com webhook sem duplicar venda. Desabilitado, sem endpoint/job; interface operacional, claims sem ID e resolução de revisão continuam pendentes (`F7-S3`).

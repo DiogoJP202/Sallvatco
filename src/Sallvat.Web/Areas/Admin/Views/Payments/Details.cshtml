@@ -54,11 +54,39 @@
                 <button type="submit" class="btn-primary">Consultar provedor e recuperar confirmação</button>
             </form>
         }
+        else if (Model.RecoveryEnabled && Model.RecoveryBlockedUntilUtc is { } blockedUntil)
+        {
+            <p class="mt-3 text-sm leading-6 text-stone-600" role="status">Consulta em andamento. Aguarde a conclusão ou o limite de @Date(blockedUntil). Recarregue o detalhe antes de tentar novamente.</p>
+        }
         else
         {
             <p class="mt-3 text-sm leading-6 text-stone-600">@(Model.RecoveryEnabled ? "Tentativa não elegível. Pagamentos já confirmados, em revisão ou sem ID externo não podem ser recuperados por esta ação." : "Recuperação desativada neste ambiente. Nenhuma consulta será enviada ao provedor.")</p>
         }
     </section>
+    <h2 class="mt-10 text-xl font-semibold">Controle das execuções</h2>
+    <p class="mt-3 text-sm leading-6 text-stone-600">Cada consulta tem uma janela de dois minutos. Depois dela, a resposta antiga não pode alterar pagamento ou estoque. Uma nova consulta depende de confirmação explícita e das condições atuais da tentativa; nunca recria cobrança. Registros anteriores à implantação deste controle permanecem somente na auditoria abaixo.</p>
+    <ol class="mt-5 grid gap-3">
+        @foreach (var execution in Model.Executions)
+        {
+            <li class="rounded-xl border border-stone-200 bg-white p-4 text-sm">
+                <p class="break-all">Execução @execution.Id</p>
+                <p class="mt-2">@(execution.State == Sallvat.Domain.Payments.PaymentRecoveryExecutionState.Completed ? "Concluída — veja o resultado financeiro na auditoria" : execution.State == Sallvat.Domain.Payments.PaymentRecoveryExecutionState.Interrupted ? "Interrompida — resposta antiga bloqueada" : "Sem conclusão registrada — confira o prazo antes de solicitar outra consulta")</p>
+                <p class="mt-2">Início: @Date(execution.StartedAtUtc) · limite: @Date(execution.ExpiresAtUtc)</p>
+                @if (execution.FinishedAtUtc is not null)
+                {
+                    <p class="mt-2">Encerramento: @Date(execution.FinishedAtUtc)</p>
+                }
+            </li>
+        }
+    </ol>
+    @if (Model.Executions.Count == 0)
+    {
+        <p class="mt-4">Nenhuma execução registrada neste controle.</p>
+    }
+    @if (Model.HasOlderExecutions)
+    {
+        <p class="mt-4">Exibindo as 20 execuções mais recentes; as anteriores permanecem preservadas.</p>
+    }
     <h2 class="mt-10 text-xl font-semibold">Histórico de recuperação</h2>
     <p class="mt-3 text-sm leading-6 text-stone-600">Até 50 registros recentes. Solicitação não significa conclusão: relacione os registros pelo identificador. Uma operação pode estar em andamento ou ter sido interrompida; a ausência de conclusão não autoriza outra cobrança. Confirmações por recuperação usam esta auditoria e não geram recibo de webhook.</p>
     <ol class="mt-5 grid gap-3">
