@@ -239,6 +239,7 @@ public sealed class PaymentDispatchTests
 
     internal sealed class Gateway : IPaymentGateway
     {
+        public Task<PaymentRefundSubmitResult> RefundOrderAsync(PaymentRefundSubmit request, CancellationToken cancellationToken = default) => throw new InvalidOperationException("No refund from payment dispatch.");
         public Task<PaymentOrderQueryResult> GetOrderAsync(PaymentOrderQuery request, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Queries must never be called by Orders dispatch.");
 

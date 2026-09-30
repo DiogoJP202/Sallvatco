@@ -246,6 +246,47 @@ public sealed class MercadoPagoOrderQueryTests
         Assert.Equal(settled ? "PAY-query" : null, result.Observation!.SettledPaymentId);
     }
 
+    [Theory]
+    [InlineData("valid", true)]
+    [InlineData("refunded-root", true)]
+    [InlineData("partial", false)]
+    [InlineData("pending", false)]
+    [InlineData("other-payment", false)]
+    [InlineData("multiple", false)]
+    [InlineData("chargeback", false)]
+    [InlineData("unknown-kind", false)]
+    [InlineData("payment-pending", false)]
+    [InlineData("root-pending", false)]
+    [InlineData("missing-refund-id", false)]
+    public async Task RefundRequiresSingleCompletedTotalLinkedToTheCapture(string variation, bool confirmed)
+    {
+        var body = Body();
+        body["status"] = variation == "refunded-root" ? "refunded" : "processed";
+        body["status_detail"] = variation == "root-pending" ? "partially_refunded" : "refunded";
+        body["total_paid_amount"] = "70.00";
+        var refund = new
+        {
+            id = variation == "missing-refund-id" ? "REF" : "REF-query",
+            status = variation == "pending" ? "processing" : "processed",
+            transaction_id = variation == "other-payment" ? "PAY-other" : "PAY-query",
+            amount = variation == "partial" ? "1.00" : "70.00"
+        };
+        var transactions = new Dictionary<string, object?>
+        {
+            ["payments"] = new[] { new { id = "PAY-query", amount = "70.00", status = variation == "payment-pending" ? "processed" : "refunded", status_detail = "refunded" } },
+            ["refunds"] = variation == "multiple" ? new[] { refund, refund } : new[] { refund },
+        };
+        if (variation is "chargeback" or "unknown-kind") { transactions[variation == "chargeback" ? "chargebacks" : "future"] = new[] { new { id = "activity" } }; }
+        body["transactions"] = transactions;
+        using var handler = new Handler((_, _) => Task.FromResult(JsonResponse(body)));
+        using var client = new HttpClient(handler);
+        var result = await Service(client).GetOrderAsync(Request());
+        Assert.Equal(PaymentOrderQueryStatus.Found, result.Status);
+        Assert.Null(result.Observation!.SettledPaymentId);
+        Assert.Equal(confirmed, result.Observation.Refund is not null);
+        if (confirmed) { Assert.Equal(new ConfirmedOrderRefund("REF-query", "PAY-query", 70m), result.Observation.Refund); }
+    }
+
     private static PaymentOrderQuery Request() => new("ORD-query", PaymentEnvironment.Sandbox, "SVT-query", 70m, "BRL");
     private static MercadoPagoPaymentGateway Service(HttpClient client, MercadoPagoOptions? options = null) =>
         new(client, Options.Create(options ?? PaymentDispatchTests.Configuration()), new PaymentDispatchTests.Clock());

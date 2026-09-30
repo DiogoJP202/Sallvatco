@@ -126,9 +126,93 @@ public sealed partial class PaymentRefundWebTests
         Assert.Equal(0, gateway.Calls);
     }
 
+    [Fact]
+    public async Task AdminSendsOnceThenChecksCanonicalRefundThroughSeparateProtectedForms()
+    {
+        await using var root = new AccountWebApplicationFactory(clock: new PaymentDispatchTests.Clock());
+        var gateway = new PaymentRefundFlowTests.Gateway();
+        await using var app = Configure(root, gateway, refundEnabled: true);
+        var request = await PrepareAsync(app.Services);
+        using var client = Client(app);
+        var detailRoute = $"/Admin/Pagamentos/{request.PaymentId}";
+        var html = await client.GetStringAsync(detailRoute);
+        Assert.Contains("/EnviarReembolso", html);
+        using var send = await client.PostAsync(detailRoute + "/EnviarReembolso", RefundForm(Token(html), request.ConcurrencyVersion));
+        Assert.Equal(HttpStatusCode.Redirect, send.StatusCode);
+        html = await client.GetStringAsync(detailRoute);
+        Assert.DoesNotContain("/EnviarReembolso", html);
+        Assert.Contains("/ConsultarReembolso", html);
+        var list = await client.GetStringAsync("/Admin/Pagamentos?filter=RefundPending");
+        Assert.Contains(detailRoute, list);
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            request = await db.PaymentRefundRequests.AsNoTracking().SingleAsync();
+        }
+        gateway.Result = PaymentRefundFlowTests.Refunded();
+        using var check = await client.PostAsync(detailRoute + "/ConsultarReembolso", RefundForm(Token(html), request.ConcurrencyVersion));
+        Assert.Equal(HttpStatusCode.Redirect, check.StatusCode);
+        using var final = await client.GetAsync(detailRoute);
+        Assert.True(final.Headers.CacheControl?.NoStore);
+        html = WebUtility.HtmlDecode(await final.Content.ReadAsStringAsync());
+        Assert.Contains("Reembolso total confirmado", html);
+        Assert.Contains("REF-total", html);
+        Assert.DoesNotContain("/ConsultarReembolso", html);
+        Assert.Equal(1, gateway.Posts);
+        using var verify = app.Services.CreateScope();
+        await PaymentRefundFlowTests.AssertRefundedAsync(verify.ServiceProvider.GetRequiredService<SallvatDbContext>());
+    }
+
+    [Theory]
+    [InlineData("EnviarReembolso", "csrf", HttpStatusCode.BadRequest)]
+    [InlineData("ConsultarReembolso", "csrf", HttpStatusCode.BadRequest)]
+    [InlineData("EnviarReembolso", "confirm", HttpStatusCode.BadRequest)]
+    [InlineData("ConsultarReembolso", "confirm", HttpStatusCode.BadRequest)]
+    [InlineData("EnviarReembolso", "revoked", HttpStatusCode.Forbidden)]
+    [InlineData("ConsultarReembolso", "revoked", HttpStatusCode.Forbidden)]
+    [InlineData("EnviarReembolso", "disabled", HttpStatusCode.Redirect)]
+    [InlineData("ConsultarReembolso", "disabled", HttpStatusCode.Redirect)]
+    public async Task RefundActionsRejectForgeryAndRevocation(string action, string fault, HttpStatusCode expected)
+    {
+        await using var root = new AccountWebApplicationFactory(clock: new PaymentDispatchTests.Clock());
+        var gateway = new PaymentRefundFlowTests.Gateway();
+        await using var app = Configure(root, gateway, refundEnabled: fault != "disabled");
+        var request = await PrepareAsync(app.Services);
+        using var client = Client(app);
+        var url = $"/Admin/Pagamentos/{request.PaymentId}";
+        var html = await client.GetStringAsync(url);
+        using var get = await client.GetAsync(url + "/" + action);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, get.StatusCode);
+        if (fault == "revoked")
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+            db.UserRoles.Remove(await db.UserRoles.SingleAsync());
+            await db.SaveChangesAsync();
+        }
+        using var response = await client.PostAsync(url + "/" + action, RefundForm(fault == "csrf" ? "invalid" : Token(html), request.ConcurrencyVersion, fault != "confirm"));
+        Assert.Equal(expected, response.StatusCode);
+        Assert.Equal(0, gateway.Posts);
+    }
+
+    private static async Task<PaymentRefundRequest> PrepareAsync(IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+        await db.Database.EnsureCreatedAsync();
+        return await PaymentRefundFlowTests.SeedAsync(db);
+    }
+    private static FormUrlEncodedContent RefundForm(string token, Guid version, bool confirm = true) => new(new Dictionary<string, string>
+    {
+        ["__RequestVerificationToken"] = token,
+        ["ExpectedRefundVersion"] = version.ToString(),
+        ["Confirm"] = confirm.ToString(),
+    });
+
     private static string Route(Payment payment) => $"/Admin/Pagamentos/{payment.Id}/PrepararReembolso";
-    private static WebApplicationFactory<Program> Configure(AccountWebApplicationFactory root, PaymentWebhookTests.Gateway gateway,
-        bool enabled = true, string role = RoleNames.Admin) =>
+    private static WebApplicationFactory<Program> Configure(AccountWebApplicationFactory root, IPaymentGateway gateway,
+        bool enabled = true, string role = RoleNames.Admin, bool refundEnabled = false) =>
         AdminAuthorizationTests.CreateAuthenticatedApplication(role, root, PaymentRecoveryTests.AdminId)
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             {
@@ -140,6 +224,7 @@ public sealed partial class PaymentRefundWebTests
                     options.WebhookEnabled = true;
                     options.WebhookSecret = PaymentWebhookTests.Secret;
                     options.RefundPreparationEnabled = enabled;
+                    options.RefundEnabled = refundEnabled;
                     options.AccessToken = "test-only";
                     options.TestSellerConfirmed = true;
                     options.TestSellerId = 123;

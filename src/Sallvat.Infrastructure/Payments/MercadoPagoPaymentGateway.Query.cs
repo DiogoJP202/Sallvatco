@@ -102,7 +102,7 @@ internal sealed partial class MercadoPagoPaymentGateway
             _ => ObservedOrderState.Other,
         };
         return new(PaymentOrderQueryStatus.Found, new(request.ExternalOrderId, observedState, paid, created, updated, hasTransactions,
-            SettledPaymentId(root, amount, paid)));
+            SettledPaymentId(root, amount, paid), TotalRefund(root, amount)));
     }
 
     private static string? SettledPaymentId(JsonElement root, decimal amount, decimal paid)
@@ -137,7 +137,7 @@ internal sealed partial class MercadoPagoPaymentGateway
             return false;
         }
 
-        // Any entry, including refunds, chargebacks and future transaction kinds, requires review.
+        // Validate structure before the narrow settlement/refund parsers; unknown activity is never implicitly approved.
         foreach (var property in transactions.EnumerateObject())
         {
             if (property.Value.ValueKind != JsonValueKind.Array || property.Value.GetArrayLength() > 100

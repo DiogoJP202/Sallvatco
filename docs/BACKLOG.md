@@ -336,8 +336,9 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar diagnóstico interno somente leitura de tentativas com ID, titularidade e releitura após HTTP, sem efeitos financeiros.
 - [ ] Recuperar claims sem ID com evidência de associação e auditoria, sem busca por referência seguida de vínculo automático.
 - [x] Preparar intenção local de reembolso total Sandbox com Admin, motivo, confirmação, versões, auditoria transacional e unicidade por captura; exibir fila sem envio externo, desabilitada por padrão.
-- [ ] Implementar envio de reembolso total idempotente ao provedor a partir da intenção preparada, com revalidação canônica, controle de execução e recuperação de resultado incerto.
-- [ ] Implementar confirmação do reembolso e transição.
+- [x] Implementar envio total Sandbox a partir da intenção, com consulta prévia, claim durável auditado, chave estável e nenhum re-POST após início; resultado incerto permite somente consulta, desativado por padrão.
+- [x] Implementar confirmação total por webhook/consulta Admin com captura/valor/versões, evidência atômica e transição de pedido/pagamento, sem reposição automática de estoque/cupom.
+- [ ] Homologar envio/consulta de reembolso em conta real de teste, payloads, notificações atrasadas e operação de claims que podem não ter chegado ao provedor; não habilitar produção automaticamente.
 - [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
 - [x] Criar consulta Admin local de tentativas/divergências, filtros, detalhe e recibos, sem dados pessoais ou efeitos financeiros.
 - [ ] Homologar recuperação no painel e acrescentar resolução auditada de divergências, sem retry de POST financeiro.

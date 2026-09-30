@@ -6,6 +6,25 @@ namespace Sallvat.Web.Models.Payments;
 
 public static class PaymentLabels
 {
+    public static string RefundState(PaymentRefundRequestState state) => state switch
+    {
+        PaymentRefundRequestState.Prepared => "Preparado — não enviado ao provedor",
+        PaymentRefundRequestState.Sending => "Envio iniciado — resultado ainda não confirmado",
+        PaymentRefundRequestState.AwaitingConfirmation => "Aguardando confirmação canônica — não reenviar",
+        PaymentRefundRequestState.Confirmed => "Reembolso total confirmado por consulta canônica",
+        _ => "Requer conferência financeira — envio bloqueado",
+    };
+
+    public static string RefundResult(PaymentRefundResult result) => result switch
+    {
+        PaymentRefundResult.Confirmed => "Reembolso total confirmado. Nenhuma reposição automática de estoque foi feita.",
+        PaymentRefundResult.AwaitingConfirmation => "Aguardando confirmação do reembolso. Consulte o resultado; nenhum novo envio é permitido.",
+        PaymentRefundResult.Disabled => "Envio e consulta de reembolso desativados neste ambiente.",
+        PaymentRefundResult.RequiresAttention => "Há divergência ou situação não suportada. Não reenvie; mantenha a conferência financeira.",
+        PaymentRefundResult.Conflict => "Os dados mudaram. Recarregue o detalhe e confira a situação antes de continuar.",
+        _ => "Não foi possível concluir. Confira a situação registrada; falha não comprova ausência de reembolso externo.",
+    };
+
     public static string RefundReason(PaymentRefundReason value) => value switch
     {
         PaymentRefundReason.CustomerRequest => "Solicitação do cliente",
@@ -120,6 +139,7 @@ public static class PaymentLabels
     {
         WebhookOutcome.Observed => "Observado, sem nova confirmação",
         WebhookOutcome.Confirmed => "Confirmação aplicada",
+        WebhookOutcome.Refunded => "Reembolso total confirmado",
         WebhookOutcome.RequiresAttention => "Encaminhado para revisão",
         _ => "Desconhecido",
     };

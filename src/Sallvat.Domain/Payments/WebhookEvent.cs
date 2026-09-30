@@ -5,6 +5,7 @@ public enum WebhookOutcome
     Observed,
     Confirmed,
     RequiresAttention,
+    Refunded,
 }
 
 // Minimal immutable receipt/audit. Never stores headers, signatures, buyer information or raw JSON.

@@ -13,7 +13,8 @@ namespace Sallvat.Web.Areas.Admin.Controllers;
 [Authorize(Policy = RoleNames.Admin)]
 [Route("Admin/Pagamentos")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentRecoveryService recovery, IPaymentRefundPreparationService refunds) : Controller
+public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentRecoveryService recovery, IPaymentRefundPreparationService refunds,
+    IPaymentRefundService refundOperations) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(AdminPaymentFilter filter = AdminPaymentFilter.Attention,
@@ -85,6 +86,33 @@ public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentReco
         if (result.Status == PaymentRefundPreparationStatus.Forbidden) { return Forbid(); }
         if (result.Status == PaymentRefundPreparationStatus.NotFound) { return NotFound(); }
         TempData["RefundMessage"] = PaymentLabels.RefundPreparation(result.Status);
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:long}/EnviarReembolso")]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting(RateLimitPolicyNames.PaymentRecovery)]
+    [RequestSizeLimit(8192)]
+    [RequestFormLimits(ValueCountLimit = 5, ValueLengthLimit = 512)]
+    public Task<IActionResult> SendRefund(long id, PaymentRefundActionViewModel model, CancellationToken cancellationToken) => RefundAction(id, model, true, cancellationToken);
+
+    [HttpPost("{id:long}/ConsultarReembolso")]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting(RateLimitPolicyNames.PaymentRecovery)]
+    [RequestSizeLimit(8192)]
+    [RequestFormLimits(ValueCountLimit = 5, ValueLengthLimit = 512)]
+    public Task<IActionResult> CheckRefund(long id, PaymentRefundActionViewModel model, CancellationToken cancellationToken) => RefundAction(id, model, false, cancellationToken);
+
+    private async Task<IActionResult> RefundAction(long id, PaymentRefundActionViewModel model, bool send, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || id <= 0 || model.ExpectedRefundVersion == Guid.Empty || !model.Confirm) { return BadRequest(); }
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor) || actor == Guid.Empty) { return Forbid(); }
+        var operation = new PaymentRefundActor(actor, HttpContext.TraceIdentifier);
+        var result = send ? await refundOperations.SendAsync(id, model.ExpectedRefundVersion, operation, cancellationToken)
+            : await refundOperations.CheckAsync(id, model.ExpectedRefundVersion, operation, cancellationToken);
+        if (result == PaymentRefundResult.Forbidden) { return Forbid(); }
+        if (result == PaymentRefundResult.NotFound) { return NotFound(); }
+        TempData["RefundMessage"] = PaymentLabels.RefundResult(result);
         return RedirectToAction(nameof(Details), new { id });
     }
 }

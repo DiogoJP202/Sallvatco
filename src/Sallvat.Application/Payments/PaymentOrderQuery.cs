@@ -34,6 +34,7 @@ public sealed record PaymentOrderObservation(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
     bool HasTransactions,
-    string? SettledPaymentId = null);
+    string? SettledPaymentId = null,
+    ConfirmedOrderRefund? Refund = null);
 
 public sealed record PaymentOrderQueryResult(PaymentOrderQueryStatus Status, PaymentOrderObservation? Observation = null);

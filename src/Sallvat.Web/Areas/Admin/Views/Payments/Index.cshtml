@@ -16,6 +16,7 @@
                 <option value="Attention" selected="@(Model.Filter == AdminPaymentFilter.Attention)">Revisão, envios e recuperação pendente</option>
                 <option value="RecoveryFollowUp" selected="@(Model.Filter == AdminPaymentFilter.RecoveryFollowUp)">Recuperação: limite ou janela encerrada</option>
                 <option value="RefundPrepared" selected="@(Model.Filter == AdminPaymentFilter.RefundPrepared)">Reembolsos preparados — não enviados</option>
+                <option value="RefundPending" selected="@(Model.Filter == AdminPaymentFilter.RefundPending)">Reembolsos pendentes de confirmação ou revisão</option>
                 <option value="All" selected="@(Model.Filter == AdminPaymentFilter.All)">Todas</option>
                 <option value="Pending" selected="@(Model.Filter == AdminPaymentFilter.Pending)">Criadas e pendentes</option>
                 <option value="Approved" selected="@(Model.Filter == AdminPaymentFilter.Approved)">Aprovadas</option>

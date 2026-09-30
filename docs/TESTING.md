@@ -6,6 +6,12 @@
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.
 
+## Envio e confirmação de reembolso — 30/09/2026
+
+`PaymentRefundFlowTests` valida posse antes do HTTP, chave estável, nenhum reenvio, revalidação de versões/Admin, concorrência, timeout, navegador desconectado, confirmação manual idempotente, webhook durante POST sem overwrite, captura/valor divergentes, intenção não enviada e pedido alterado. `MercadoPagoRefundGatewayTests` confere host/path fixos, corpo vazio, header idempotente, flags/Sandbox, resposta inválida, 401/409/429/500 e cancelamento sem retry. `MercadoPagoOrderQueryTests` cobre devolução única integral ligada à captura, estados inconsistentes, parcialidade, múltiplas devoluções, IDs inválidos, contestação e transação desconhecida.
+
+O fluxo HTTP Admin em `PaymentRefundWebTests` exercita formulários distintos, permissão, revogação, antiforgery, confirmação obrigatória, GET sem efeito, flag desligada, fila pendente, `no-store` e resultado final sanitizado. `RefundDispatchAndConfirmationAreAtomicExclusiveAndRecoverableWithoutRepost` roda em PostgreSQL isolado no CI: falha da auditoria de claim impede POST; seis conexões enviam uma vez; falha da auditoria de confirmação desfaz todos os efeitos; consulta e webhook concorrentes confirmam sem duplicidade; downgrade com evidência é recusado. Nenhum teste usa conta real ou habilita operação produtiva; homologação externa continua obrigatória.
+
 ## Preparação local de reembolso — 30/09/2026
 
 `PaymentRefundPreparationTests` cobre snapshot imutável, replay com motivo diferente, auditoria sanitizada, valor capturado, versões, ausência de efeitos financeiros/estoque, flag/configuração inválida, Admin revogado/desconhecido, motivo/correlation ID inválidos, relógio anterior, captura pendente/em revisão/produtiva/divergente, falta de ID/confirmação, pedido cancelado/reembolsado, cancelamento e contexto com alterações pendentes. Oito chamadas simultâneas InMemory produzem uma intenção e uma auditoria; consultas administrativas não deixam entidades rastreadas.

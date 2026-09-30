@@ -10,7 +10,7 @@ public interface IAdminPaymentQuery
     Task<AdminPaymentDetails?> FindAsync(long id, CancellationToken cancellationToken = default);
 }
 
-public enum AdminPaymentFilter { Attention, All, Pending, Approved, RecoveryFollowUp, RefundPrepared }
+public enum AdminPaymentFilter { Attention, All, Pending, Approved, RecoveryFollowUp, RefundPrepared, RefundPending }
 
 [Flags]
 public enum AdminRecoveryFollowUp { None = 0, AttemptsExhausted = 1, WindowExpired = 2 }
@@ -49,4 +49,5 @@ public sealed record AdminPaymentDetails(
     public bool RefundPreparationEnabled { get; init; }
     public bool CanPrepareRefund { get; init; }
     public AdminRefundRequest? RefundRequest { get; init; }
+    public bool RefundEnabled { get; init; }
 }

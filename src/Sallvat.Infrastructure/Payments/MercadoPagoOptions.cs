@@ -12,6 +12,7 @@ public sealed class MercadoPagoOptions
 
     public bool CheckoutEnabled { get; set; }
     public bool RefundPreparationEnabled { get; set; }
+    public bool RefundEnabled { get; set; }
 
     public bool WebhookEnabled { get; set; }
 
@@ -37,6 +38,7 @@ public sealed class MercadoPagoOptions
         if (options.TimeoutSeconds is < 2 or > 30
             || options.Environment != PaymentEnvironment.Sandbox
             || (options.Enabled && options.OrdersEnabled)
+            || (options.RefundEnabled && !options.RefundPreparationEnabled)
             || (options.RefundPreparationEnabled && (!options.OrdersEnabled || !options.WebhookEnabled))
             || (options.RecoveryEnabled && !options.OrdersEnabled)
             || (options.AutomaticRecoveryEnabled && !options.RecoveryEnabled)

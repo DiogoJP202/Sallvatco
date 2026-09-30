@@ -121,6 +121,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentPreparationService, PaymentPreparationService>();
         services.AddScoped<IPaymentRefundPreparationService, PaymentRefundPreparationService>();
+        services.AddScoped<IPaymentRefundService, PaymentRefundService>();
         services.AddScoped<IPaymentDispatchService, PaymentDispatchService>();
         services.AddScoped<IPaymentReconciliationService, PaymentReconciliationService>();
         services.AddScoped<IPaymentWebhookService, PaymentWebhookService>();

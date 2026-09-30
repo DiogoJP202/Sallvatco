@@ -11,7 +11,7 @@ internal sealed class WebhookEventConfiguration : IEntityTypeConfiguration<Webho
         builder.ToTable("payment_webhook_event", table =>
         {
             table.HasCheckConstraint("ck_webhook_delivery", "delivery_key ~ '^[0-9A-F]{64}$'");
-            table.HasCheckConstraint("ck_webhook_outcome", "outcome IN ('Observed', 'Confirmed', 'RequiresAttention')");
+            table.HasCheckConstraint("ck_webhook_outcome", "outcome IN ('Observed', 'Confirmed', 'RequiresAttention', 'Refunded')");
         });
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");

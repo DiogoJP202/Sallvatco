@@ -214,6 +214,7 @@ public sealed class PaymentReconciliationTests
 
     private sealed class Gateway : IPaymentGateway
     {
+        public Task<PaymentRefundSubmitResult> RefundOrderAsync(PaymentRefundSubmit request, CancellationToken cancellationToken = default) => throw new InvalidOperationException("No refund from reconciliation.");
         public int Calls { get; private set; }
         public PaymentOrderQuery? Request { get; private set; }
         public PaymentOrderQueryResult Result { get; init; } = new(PaymentOrderQueryStatus.Found, Observation());

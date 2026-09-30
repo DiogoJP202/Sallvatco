@@ -18,7 +18,7 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
     internal static readonly SemaphoreSlim InMemoryLock = new(1, 1);
 
     internal async Task<PaymentRecoveryResult> ApplyAsync(long paymentId, string externalId, string? deliveryKey,
-        PaymentOrderQueryResult response, RecoveryEvidence? recovery, CancellationToken cancellationToken)
+        PaymentOrderQueryResult response, RecoveryEvidence? recovery, CancellationToken cancellationToken, RefundCheckEvidence? refundCheck = null)
     {
         var relational = db.Database.IsRelational();
         if (!relational)
@@ -38,6 +38,16 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
             var payment = await db.Payments.SingleAsync(p => p.Id == paymentId, cancellationToken);
             var order = await db.Orders.SingleAsync(o => o.Id == payment.OrderId, cancellationToken);
             var now = clock.UtcNow;
+            if (refundCheck is not null)
+            {
+                if (!await PaymentRecoveryService.IsAdminAsync(db, refundCheck.Actor.UserId, cancellationToken)) { return PaymentRecoveryResult.Forbidden; }
+                var checkedRefund = await db.PaymentRefundRequests.SingleOrDefaultAsync(r => r.Id == refundCheck.RequestId && r.PaymentId == paymentId, cancellationToken);
+                if (checkedRefund is null) { return PaymentRecoveryResult.NotFound; }
+                if (checkedRefund.State == PaymentRefundRequestState.Confirmed) { return PaymentRecoveryResult.Refunded; }
+                if (checkedRefund.ConcurrencyVersion != refundCheck.RequestVersion || payment.ConcurrencyVersion != refundCheck.PaymentVersion
+                    || order.ConcurrencyVersion != refundCheck.OrderVersion) { return PaymentRecoveryResult.Conflict; }
+                if (response.Status is not (PaymentOrderQueryStatus.Found or PaymentOrderQueryStatus.InvalidResponse)) { return PaymentRecoveryResult.Unavailable; }
+            }
             PaymentRecoveryExecution? execution = null;
             if (recovery is not null)
             {
@@ -118,6 +128,10 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
             {
                 outcome = WebhookOutcome.Observed;
             }
+            else if (observation.Refund is { } refund)
+            {
+                outcome = await ConfirmRefundAsync(payment, order, refund, observation.UpdatedAtUtc, now, cancellationToken);
+            }
             else if (observation.SettledPaymentId is { } externalPaymentId && observation.State == ObservedOrderState.Processed
                 && observation.PaidAmount == payment.Amount)
             {
@@ -143,10 +157,21 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
 
             var result = outcome switch
             {
+                WebhookOutcome.Refunded => PaymentRecoveryResult.Refunded,
                 WebhookOutcome.Confirmed => PaymentRecoveryResult.Confirmed,
                 WebhookOutcome.RequiresAttention => PaymentRecoveryResult.RequiresAttention,
                 _ => PaymentRecoveryResult.Observed,
             };
+            if (outcome == WebhookOutcome.RequiresAttention)
+            {
+                var intention = await db.PaymentRefundRequests.SingleOrDefaultAsync(r => r.PaymentId == paymentId, cancellationToken);
+                intention?.RequireAttention();
+            }
+            if (refundCheck is not null)
+            {
+                db.AuditLogs.Add(new(refundCheck.Actor.UserId, "payment.refund.checked", nameof(Payment), paymentId.ToString(CultureInfo.InvariantCulture),
+                    JsonSerializer.Serialize(new { refundCheck.RequestId, Result = result.ToString() }), refundCheck.Actor.CorrelationId, now));
+            }
             if (deliveryKey is not null)
             {
                 db.WebhookEvents.Add(new WebhookEvent(deliveryKey, payment.Id, externalId, outcome, now));
@@ -178,6 +203,31 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
                 InMemoryLock.Release();
             }
         }
+    }
+
+    private async Task<WebhookOutcome> ConfirmRefundAsync(Payment payment, Order order, ConfirmedOrderRefund observed,
+        DateTimeOffset providerUpdated, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var request = await db.PaymentRefundRequests.SingleOrDefaultAsync(r => r.PaymentId == payment.Id, cancellationToken);
+        if (request?.State == PaymentRefundRequestState.Confirmed && request.ExternalRefundId == observed.Id
+            && payment.Status == PaymentStatus.Refunded && order.Status == OrderStatus.Refunded
+            && observed.PaymentId == request.ExternalPaymentId && observed.Amount == request.Amount)
+        { return WebhookOutcome.Observed; }
+        if (request is not null && request.State is (PaymentRefundRequestState.Sending or PaymentRefundRequestState.AwaitingConfirmation)
+            && PaymentRefundRequest.CanPrepare(payment, order) && request.PaymentVersion == payment.ConcurrencyVersion
+            && request.OrderVersion == order.ConcurrencyVersion && request.ExternalPaymentId == observed.PaymentId
+            && observed.Amount == request.Amount && request.Amount == payment.Amount
+            && request.StartedAtUtc is { } started && providerUpdated >= started && now >= started
+            && !await db.PaymentRefundRequests.AnyAsync(r => r.Id != request.Id && r.ExternalRefundId == observed.Id, cancellationToken))
+        {
+            request.Confirm(observed.Id, now);
+            payment.ConfirmTotalRefund(providerUpdated, now);
+            order.TransitionTo(OrderStatus.Refunded, now);
+            // Returned merchandise must be inspected separately. No inventory, reservation or coupon mutation.
+            return WebhookOutcome.Refunded;
+        }
+        Review(payment, order, PaymentAttentionReason.FinancialReview, now);
+        return WebhookOutcome.RequiresAttention;
     }
 
     private async Task<WebhookOutcome> ConfirmAsync(Payment payment, Order order, string transactionId,
@@ -240,3 +290,4 @@ internal sealed class PaymentObservationProcessor(SallvatDbContext db, IClock cl
 }
 
 internal sealed record RecoveryEvidence(Guid RequestId, Guid PaymentVersion, Guid OrderVersion, PaymentRecoveryOperation? Operation);
+internal sealed record RefundCheckEvidence(Guid RequestId, Guid RequestVersion, Guid PaymentVersion, Guid OrderVersion, PaymentRefundActor Actor);

@@ -411,6 +411,7 @@ public sealed partial class CheckoutPaymentFlowTests
 
     private sealed class Gateway : IPaymentGateway
     {
+        public Task<PaymentRefundSubmitResult> RefundOrderAsync(PaymentRefundSubmit request, CancellationToken cancellationToken = default) => throw new InvalidOperationException("No refund from checkout.");
         public int Calls { get; private set; }
         public int Queries { get; private set; }
         public bool Unknown { get; set; }

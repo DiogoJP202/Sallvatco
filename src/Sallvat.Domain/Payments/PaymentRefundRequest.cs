@@ -3,7 +3,7 @@ using Sallvat.Domain.Orders;
 namespace Sallvat.Domain.Payments;
 
 public enum PaymentRefundReason { CustomerRequest, FulfillmentUnavailable, OperationalCorrection }
-public enum PaymentRefundRequestState { Prepared }
+public enum PaymentRefundRequestState { Prepared, Sending, AwaitingConfirmation, Confirmed, RequiresAttention }
 
 // A durable local intention, not proof of an external refund. Its ID is the future idempotency key.
 public sealed class PaymentRefundRequest
@@ -55,6 +55,52 @@ public sealed class PaymentRefundRequest
     public PaymentRefundReason Reason { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public Guid ConcurrencyVersion { get; private set; } = Guid.NewGuid();
+    public DateTimeOffset? StartedAtUtc { get; private set; }
+    public DateTimeOffset? ConfirmedAtUtc { get; private set; }
+    public string? ExternalRefundId { get; private set; }
+
+    public void Begin(DateTimeOffset now)
+    {
+        RequireTime(now);
+        if (State != PaymentRefundRequestState.Prepared) { throw new InvalidOperationException("Refund already started; only query its outcome."); }
+        StartedAtUtc = now;
+        State = PaymentRefundRequestState.Sending;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
+    public void AwaitConfirmation()
+    {
+        if (State != PaymentRefundRequestState.Sending) { return; }
+        State = PaymentRefundRequestState.AwaitingConfirmation;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
+    public void Confirm(string externalRefundId, DateTimeOffset now)
+    {
+        RequireTime(now);
+        if (State is not (PaymentRefundRequestState.Sending or PaymentRefundRequestState.AwaitingConfirmation)
+            || string.IsNullOrEmpty(externalRefundId) || externalRefundId.Length is < 4 or > 64
+            || !externalRefundId.StartsWith("REF", StringComparison.Ordinal)
+            || !externalRefundId.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))
+        { throw new InvalidOperationException("A sent intention and canonical refund ID are required."); }
+        ExternalRefundId = externalRefundId;
+        ConfirmedAtUtc = now;
+        State = PaymentRefundRequestState.Confirmed;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
+    public void RequireAttention()
+    {
+        if (State is PaymentRefundRequestState.Confirmed or PaymentRefundRequestState.RequiresAttention) { return; }
+        State = PaymentRefundRequestState.RequiresAttention;
+        ConcurrencyVersion = Guid.NewGuid();
+    }
+
+    private void RequireTime(DateTimeOffset now)
+    {
+        if (now.Offset != TimeSpan.Zero || now < CreatedAtUtc || (StartedAtUtc is { } started && now < started))
+        { throw new ArgumentOutOfRangeException(nameof(now)); }
+    }
 
     public static bool CanPrepare(Payment payment, Order order) => payment.Id > 0 && payment.OrderId == order.Id
         && payment.Provider == "MercadoPago" && payment.Environment == PaymentEnvironment.Sandbox

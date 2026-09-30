@@ -14,5 +14,5 @@ public sealed record PaymentRecoveryOperation(Guid ActorUserId, PaymentRecoveryR
 public enum PaymentRecoveryResult
 {
     Disabled, Invalid, Forbidden, NotFound, NotEligible, Conflict, Unavailable,
-    Observed, Confirmed, RequiresAttention, Busy, Interrupted,
+    Observed, Confirmed, RequiresAttention, Busy, Interrupted, Refunded,
 }

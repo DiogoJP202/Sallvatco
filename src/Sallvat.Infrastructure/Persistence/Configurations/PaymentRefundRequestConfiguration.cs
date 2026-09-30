@@ -12,7 +12,11 @@ internal sealed class PaymentRefundRequestConfiguration : IEntityTypeConfigurati
         builder.ToTable("payment_refund_request", table =>
         {
             table.HasCheckConstraint("ck_refund_request_ids", "id <> '00000000-0000-0000-0000-000000000000'::uuid AND actor_user_id <> '00000000-0000-0000-0000-000000000000'::uuid AND payment_version <> '00000000-0000-0000-0000-000000000000'::uuid AND order_version <> '00000000-0000-0000-0000-000000000000'::uuid AND concurrency_version <> '00000000-0000-0000-0000-000000000000'::uuid");
-            table.HasCheckConstraint("ck_refund_request_state", "state = 'Prepared' AND environment = 'Sandbox'");
+            table.HasCheckConstraint("ck_refund_request_state", "environment = 'Sandbox' AND " +
+                "((state = 'Prepared' AND started_at_utc IS NULL) OR (state IN ('Sending', 'AwaitingConfirmation', 'Confirmed') AND started_at_utc IS NOT NULL) OR state = 'RequiresAttention') AND " +
+                "(started_at_utc IS NULL OR started_at_utc >= created_at_utc) AND " +
+                "((state = 'Confirmed' AND external_refund_id IS NOT NULL AND external_refund_id ~ '^REF[A-Za-z0-9_-]+$' AND confirmed_at_utc IS NOT NULL AND confirmed_at_utc >= started_at_utc) OR " +
+                "(state <> 'Confirmed' AND external_refund_id IS NULL AND confirmed_at_utc IS NULL))");
             table.HasCheckConstraint("ck_refund_request_amount", "amount > 0 AND currency = 'BRL'");
             table.HasCheckConstraint("ck_refund_request_reason", "reason IN ('CustomerRequest', 'FulfillmentUnavailable', 'OperationalCorrection')");
             table.HasCheckConstraint("ck_refund_request_external_ids", "external_order_id ~ '^ORD[A-Za-z0-9_-]+$' AND external_payment_id ~ '^PAY[A-Za-z0-9_-]+$'");
@@ -32,6 +36,10 @@ internal sealed class PaymentRefundRequestConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.Reason).HasColumnName("reason").HasConversion<string>().HasMaxLength(32);
         builder.Property(r => r.CreatedAtUtc).HasColumnName("created_at_utc").HasColumnType("timestamptz");
         builder.Property(r => r.ConcurrencyVersion).HasColumnName("concurrency_version").IsConcurrencyToken();
+        builder.Property(r => r.StartedAtUtc).HasColumnName("started_at_utc").HasColumnType("timestamptz");
+        builder.Property(r => r.ConfirmedAtUtc).HasColumnName("confirmed_at_utc").HasColumnType("timestamptz");
+        builder.Property(r => r.ExternalRefundId).HasColumnName("external_refund_id").HasMaxLength(64);
+        builder.HasIndex(r => r.ExternalRefundId).IsUnique().HasFilter("external_refund_id IS NOT NULL").HasDatabaseName("ux_refund_external_id");
         builder.HasOne<Payment>().WithMany().HasForeignKey(r => r.PaymentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.ActorUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(r => r.PaymentId).IsUnique().HasDatabaseName("ux_refund_request_payment");

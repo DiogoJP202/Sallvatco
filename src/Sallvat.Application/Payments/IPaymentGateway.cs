@@ -2,6 +2,8 @@ namespace Sallvat.Application.Payments;
 
 public interface IPaymentGateway
 {
+    Task<PaymentRefundSubmitResult> RefundOrderAsync(PaymentRefundSubmit request, CancellationToken cancellationToken = default);
+
     Task<PaymentOrderQueryResult> GetOrderAsync(
         PaymentOrderQuery request,
         CancellationToken cancellationToken = default);

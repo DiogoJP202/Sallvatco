@@ -240,6 +240,18 @@ public sealed class Payment
         Touch(now);
     }
 
+    public void ConfirmTotalRefund(DateTimeOffset providerUpdated, DateTimeOffset now)
+    {
+        ValidateTimestamp(now, UpdatedAtUtc);
+        if (Status != PaymentStatus.Approved || DispatchState != PaymentDispatchState.Completed
+            || ExternalPaymentId is null || ConfirmedAtUtc is null || ProviderUpdatedAtUtc is null
+            || providerUpdated.Offset != TimeSpan.Zero || providerUpdated < ProviderUpdatedAtUtc)
+        { throw new InvalidOperationException("Only a confirmed capture can be refunded."); }
+        Status = PaymentStatus.Refunded;
+        ProviderUpdatedAtUtc = providerUpdated;
+        Touch(now);
+    }
+
     public void RequireCanonicalReview(PaymentAttentionReason reason, DateTimeOffset now)
     {
         ValidateTimestamp(now, UpdatedAtUtc);

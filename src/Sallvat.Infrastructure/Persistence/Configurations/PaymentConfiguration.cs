@@ -31,17 +31,17 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
                 "dispatch_token IS NOT NULL AND dispatch_token <> '00000000-0000-0000-0000-000000000000'::uuid AND " +
                 "dispatch_started_at_utc IS NOT NULL AND dispatch_started_at_utc >= created_at_utc AND dispatch_started_at_utc <= updated_at_utc AND " +
                 "((dispatch_state = 'Sending' AND status = 'Created' AND external_order_id IS NULL) OR " +
-                "(dispatch_state = 'Completed' AND external_order_id IS NOT NULL AND status IN ('Pending', 'Approved')) OR " +
+                "(dispatch_state = 'Completed' AND external_order_id IS NOT NULL AND status IN ('Pending', 'Approved', 'Refunded')) OR " +
                 "(dispatch_state = 'RequiresAttention' AND status = 'RequiresAttention')))");
             table.HasCheckConstraint("ck_payment_attention",
                 "(status = 'RequiresAttention' AND attention_reason IS NOT NULL AND " +
                 "attention_reason IN ('PreferenceOutcomeUnknown', 'LatePreferenceResponse', 'OrderOutcomeUnknown', 'LateOrderResponse', 'CanonicalMismatch', 'FinancialReview', 'LateApproval')) OR " +
                 "(status <> 'RequiresAttention' AND attention_reason IS NULL)");
             table.HasCheckConstraint("ck_payment_confirmation",
-                "(external_payment_id IS NULL AND confirmed_at_utc IS NULL AND provider_updated_at_utc IS NULL AND status <> 'Approved') OR " +
+                "(external_payment_id IS NULL AND confirmed_at_utc IS NULL AND provider_updated_at_utc IS NULL AND status NOT IN ('Approved', 'Refunded')) OR " +
                 "(external_payment_id IS NOT NULL AND external_payment_id ~ '^PAY[A-Za-z0-9_-]+$' AND confirmed_at_utc IS NOT NULL AND " +
                 "provider_updated_at_utc IS NOT NULL AND confirmed_at_utc >= created_at_utc AND confirmed_at_utc <= updated_at_utc AND " +
-                "external_order_id IS NOT NULL AND status IN ('Approved', 'RequiresAttention'))");
+                "external_order_id IS NOT NULL AND status IN ('Approved', 'RequiresAttention', 'Refunded'))");
         });
         builder.HasKey(payment => payment.Id).HasName("pk_payment");
         builder.Property(payment => payment.Id).HasColumnName("id");

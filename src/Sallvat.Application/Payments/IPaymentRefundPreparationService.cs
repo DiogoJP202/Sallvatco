@@ -12,4 +12,10 @@ public sealed record PaymentRefundOperation(Guid ActorUserId, PaymentRefundReaso
 public enum PaymentRefundPreparationStatus { Prepared, AlreadyPrepared, Disabled, Forbidden, NotFound, Invalid, NotEligible, Conflict, Unavailable }
 public sealed record PaymentRefundPreparationResult(PaymentRefundPreparationStatus Status, Guid? RequestId = null);
 public sealed record AdminRefundRequest(Guid Id, PaymentRefundRequestState State, decimal Amount, string Currency,
-    PaymentRefundReason Reason, DateTimeOffset CreatedAtUtc);
+    PaymentRefundReason Reason, DateTimeOffset CreatedAtUtc)
+{
+    public Guid Version { get; init; }
+    public DateTimeOffset? StartedAtUtc { get; init; }
+    public DateTimeOffset? ConfirmedAtUtc { get; init; }
+    public string? ExternalRefundId { get; init; }
+}

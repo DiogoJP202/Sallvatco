@@ -373,6 +373,7 @@ public sealed class PaymentWebhookTests
 
     internal sealed class Gateway : IPaymentGateway
     {
+        public Task<PaymentRefundSubmitResult> RefundOrderAsync(PaymentRefundSubmit request, CancellationToken cancellationToken = default) => throw new InvalidOperationException("No refund POST from webhook.");
         private int calls;
         public int Calls => calls;
         public PaymentOrderQueryResult Result { get; init; } = new(PaymentOrderQueryStatus.Found, Observation());

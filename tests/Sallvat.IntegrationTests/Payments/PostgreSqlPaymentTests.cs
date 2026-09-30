@@ -701,9 +701,11 @@ public sealed class PostgreSqlPaymentTests
                 "UPDATE payment_refund_request SET amount = 0"));
             Assert.Equal("ck_refund_request_amount", constraint.ConstraintName);
             var migrations = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
-            Assert.EndsWith("AddPaymentRefundRequests", migrations[^1]);
-            var rollback = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>().MigrateAsync(migrations[^2]));
+            var intentionMigration = Array.FindIndex(migrations, m => m.EndsWith("AddPaymentRefundRequests", StringComparison.Ordinal));
+            Assert.True(intentionMigration > 0);
+            var rollback = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>().MigrateAsync(migrations[intentionMigration - 1]));
             Assert.Contains("Cannot remove durable refund intentions", rollback.MessageText);
+            await db.Database.MigrateAsync();
             Assert.Single(await db.PaymentRefundRequests.ToListAsync());
             Assert.Contains(migrations[^1], await db.Database.GetAppliedMigrationsAsync());
             await PaymentWebhookTests.AssertConfirmedAsync(db);
@@ -715,6 +717,75 @@ public sealed class PostgreSqlPaymentTests
             {
                 await db.Database.EnsureDeletedAsync();
             }
+        }
+    }
+
+    [PostgreSqlFact]
+    public async Task RefundDispatchAndConfirmationAreAtomicExclusiveAndRecoverableWithoutRepost()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        { Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"), Pooling = false };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            var request = await PaymentRefundFlowTests.SeedAsync(db);
+            var gateway = new PaymentRefundFlowTests.Gateway();
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE FUNCTION fail_test_refund_dispatch_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'simulated refund audit failure' USING ERRCODE='23514'; END $$;
+                CREATE TRIGGER fail_refund_dispatch_audit BEFORE INSERT ON audit_log FOR EACH ROW
+                    WHEN (NEW.action = 'payment.refund.dispatch.started') EXECUTE FUNCTION fail_test_refund_dispatch_audit();
+                """);
+            Assert.Equal(PaymentRefundResult.Unavailable, await PaymentRefundFlowTests.Service(db, gateway)
+                .SendAsync(request.PaymentId, request.ConcurrencyVersion, PaymentRefundFlowTests.Actor));
+            Assert.Equal(0, gateway.Posts);
+            Assert.Equal(PaymentRefundRequestState.Prepared, (await db.PaymentRefundRequests.AsNoTracking().SingleAsync()).State);
+            await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_refund_dispatch_audit ON audit_log;");
+            var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(async _ =>
+            {
+                await using var isolated = new SallvatDbContext(options);
+                return await PaymentRefundFlowTests.Service(isolated, gateway).SendAsync(request.PaymentId, request.ConcurrencyVersion, PaymentRefundFlowTests.Actor);
+            }));
+            Assert.Equal(1, gateway.Posts);
+            Assert.Contains(PaymentRefundResult.AwaitingConfirmation, results);
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            request = await db.PaymentRefundRequests.AsNoTracking().SingleAsync();
+            Assert.Equal(PaymentRefundRequestState.AwaitingConfirmation, request.State);
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE TRIGGER fail_refund_check_audit BEFORE INSERT ON audit_log FOR EACH ROW
+                    WHEN (NEW.action = 'payment.refund.checked') EXECUTE FUNCTION fail_test_refund_dispatch_audit();
+                """);
+            gateway.Result = PaymentRefundFlowTests.Refunded();
+            Assert.Equal(PaymentRefundResult.Unavailable, await PaymentRefundFlowTests.Service(db, gateway)
+                .CheckAsync(request.PaymentId, request.ConcurrencyVersion, PaymentRefundFlowTests.Actor));
+            await PaymentWebhookTests.AssertConfirmedAsync(db);
+            Assert.Equal(PaymentRefundRequestState.AwaitingConfirmation, (await db.PaymentRefundRequests.AsNoTracking().SingleAsync()).State);
+            await db.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_refund_check_audit ON audit_log; DROP FUNCTION fail_test_refund_dispatch_audit();");
+            await Task.WhenAll(Enumerable.Range(0, 6).Select(async index =>
+            {
+                await using var isolated = new SallvatDbContext(options);
+                if (index % 2 == 0) { await PaymentRefundFlowTests.Service(isolated, gateway).CheckAsync(request.PaymentId, request.ConcurrencyVersion, PaymentRefundFlowTests.Actor); }
+                else { await PaymentWebhookTests.Service(isolated, new() { Result = PaymentRefundFlowTests.Refunded() }).HandleAsync(PaymentWebhookTests.Request("refund-race")); }
+            }));
+            await PaymentRefundFlowTests.AssertRefundedAsync(db);
+            Assert.Equal(1, gateway.Posts);
+            Assert.Equal(PaymentRefundResult.Confirmed, await PaymentRefundFlowTests.Service(db, gateway)
+                .SendAsync(request.PaymentId, request.ConcurrencyVersion, PaymentRefundFlowTests.Actor));
+            var pending = await new AdminPaymentQuery(db, Microsoft.Extensions.Options.Options.Create(PaymentRefundFlowTests.Configuration()), new FixedClock())
+                .ListAsync(AdminPaymentFilter.RefundPending);
+            Assert.Empty(pending.Items);
+            var rollback = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>().MigrateAsync("20260930175435_AddPaymentRefundRequests"));
+            Assert.Contains("Cannot remove refund dispatch", rollback.MessageText);
+            await PaymentRefundFlowTests.AssertRefundedAsync(db);
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database) { await db.Database.EnsureDeletedAsync(); }
         }
     }
 
