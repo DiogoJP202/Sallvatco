@@ -158,6 +158,7 @@ builder.Services.AddSingleton<
 builder.Services.AddHostedService<DataProtectionKeyRingInitializer>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CartCookieManager>();
+builder.Services.AddScoped<CheckoutReviewProtector>();
 builder.Services.AddHostedService<CartCleanupService>();
 builder.Services.AddHostedService<OrderExpirationService>();
 builder.Services.AddHostedService<PaymentRecoveryWorker>();
@@ -202,6 +203,8 @@ builder.Services.AddSingleton<IRecoveryRequestLimiter, RecoveryRequestLimiter>()
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy<string>(RateLimitPolicyNames.CheckoutPayment,
+        context => CreateIpFixedWindowLimiter(context, permitLimit: 5, TimeSpan.FromMinutes(1)));
     options.AddPolicy<string>(RateLimitPolicyNames.PaymentRecovery, context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown",

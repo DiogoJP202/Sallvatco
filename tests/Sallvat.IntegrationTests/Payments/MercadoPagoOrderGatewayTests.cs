@@ -63,6 +63,22 @@ public sealed class MercadoPagoOrderGatewayTests
         }
     }
 
+    [Fact]
+    public async Task ReturnUrlsCarryOnlyServerOwnedAttemptLocator()
+    {
+        using var handler = new Handler((_, _) => Task.FromResult(Response()));
+        using var client = new HttpClient(handler);
+        var attempt = Guid.NewGuid();
+        Assert.Equal(PaymentOrderStatus.Created,
+            (await Service(client).CreateOrderAsync(Request() with { CheckoutAttemptId = attempt })).Status);
+        using var json = JsonDocument.Parse(handler.Body!);
+        var online = json.RootElement.GetProperty("config").GetProperty("online");
+        foreach (var pair in new[] { ("success_url", "sucesso"), ("pending_url", "pendente"), ("failure_url", "falha") })
+        {
+            Assert.Equal($"https://staging.example.com/pagamentos/retorno/{pair.Item2}?tentativa={attempt:D}", online.GetProperty(pair.Item1).GetString());
+        }
+    }
+
     [Theory]
     [InlineData("user_id", "999")]
     [InlineData("currency", "USD")]

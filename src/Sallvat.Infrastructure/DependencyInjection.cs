@@ -116,6 +116,7 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICatalogService, CatalogService>();
         services.AddScoped<ICheckoutService, CheckoutService>();
+        services.AddScoped<ICheckoutPaymentService, CheckoutPaymentService>();
         services.AddScoped<IOrderLifecycleService, OrderLifecycleService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentPreparationService, PaymentPreparationService>();

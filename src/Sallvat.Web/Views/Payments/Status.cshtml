@@ -1,0 +1,54 @@
+@model CheckoutPaymentSummary
+@{
+    ViewData["Title"] = "Situação do pagamento";
+    ViewData["ForceNoIndex"] = true;
+    var title = Model.State switch
+    {
+        CheckoutPaymentState.Confirmed => "Pagamento confirmado nos registros locais.",
+        CheckoutPaymentState.RequiresAttention => "Estamos verificando este pagamento.",
+        CheckoutPaymentState.Closed => "Esta tentativa está encerrada.",
+        CheckoutPaymentState.Refunded => "Reembolso registrado.",
+        _ => "Aguardando confirmação do pagamento.",
+    };
+}
+
+<section class="bg-paper">
+    <div class="mx-auto max-w-3xl px-5 py-16 sm:px-8 lg:py-24">
+        <p class="eyebrow">Homologação · ambiente de testes</p>
+        <h1 class="mt-5 font-serif text-4xl leading-tight sm:text-5xl">@title</h1>
+        <p class="mt-5 text-base leading-7 text-stone-600">Esta tela mostra somente a situação registrada pelo servidor. Voltar do Mercado Pago, mesmo por um link de sucesso, não confirma uma compra.</p>
+        <div class="mt-8 rounded-3xl border border-stone-300 bg-white p-6 sm:p-8" data-payment-state="@Model.State">
+            <dl class="grid gap-5 sm:grid-cols-2">
+                <div><dt class="text-sm text-stone-600">Pedido de teste</dt><dd class="mt-2 break-words font-semibold">@Model.OrderNumber</dd></div>
+                <div><dt class="text-sm text-stone-600">Total com frete</dt><dd class="mt-2 font-serif text-3xl">@Model.Total.ToString("C") <span class="text-sm">@Model.Currency</span></dd></div>
+            </dl>
+            @if (Model.State == CheckoutPaymentState.AwaitingPayment)
+            {
+                <p class="mt-6 text-sm leading-6">A reserva é temporária, até <time datetime="@Model.ExpiresAtUtc.ToString("O")">@Model.ExpiresAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</time>. Se já concluiu o pagamento de teste, aguarde a confirmação e atualize esta página; não faça outro pagamento.</p>
+            }
+            @if (Model.State is CheckoutPaymentState.RequiresAttention or CheckoutPaymentState.Closed)
+            {
+                <p class="mt-6 text-sm leading-6">Não tente pagar por outro meio. Um retorno tardio ou resultado incerto precisa ser conferido pela equipe. Esta tela não garante cancelamento ou reembolso no provedor.</p>
+            }
+            @if (TempData["PaymentMessage"] is string message)
+            {
+                <p class="mt-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-950" role="alert">@message</p>
+            }
+            @if (Model.CanContinue)
+            {
+                <form asp-action="Continue" asp-route-attemptId="@Model.AttemptId" method="post" class="mt-8 grid gap-5">
+                    <label class="flex items-start gap-3 text-sm leading-6">
+                        <input type="checkbox" name="confirmed" value="true" required class="mt-1 size-5 shrink-0" />
+                        Estou em homologação e usarei somente uma conta compradora e meios de pagamento de teste. Não enviarei dados de cartão reais.
+                    </label>
+                    <button type="submit" class="btn-primary">Abrir pagamento de teste</button>
+                </form>
+            }
+        </div>
+        <nav class="mt-8 flex flex-wrap gap-5 text-sm font-semibold" aria-label="Próximas ações">
+            <a asp-action="Status" asp-route-attemptId="@Model.AttemptId" class="underline underline-offset-4">Atualizar situação</a>
+            <a asp-controller="Perfumes" asp-action="Index" class="underline underline-offset-4">Continuar explorando</a>
+        </nav>
+        <p class="mt-8 text-xs leading-6 text-stone-600">Acesso restrito à conta vinculada ou à sessão guest que criou o pedido. Guarde esta página e mantenha a sessão; informar um e-mail não concede acesso a pedidos anteriores. Compras reais não estão habilitadas.</p>
+    </div>
+</section>

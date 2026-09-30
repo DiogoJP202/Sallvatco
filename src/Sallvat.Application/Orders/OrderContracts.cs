@@ -20,7 +20,16 @@ public sealed record CreateOrderRequest(
     Guid CheckoutAttemptId,
     CartOwner CartOwner,
     CheckoutDraftInput Checkout,
-    CheckoutShippingSnapshot Shipping);
+    CheckoutShippingSnapshot Shipping,
+    OrderReviewExpectation? ExpectedReview = null);
+
+public sealed record OrderReviewLine(long VariantId, int Quantity, decimal UnitPrice, string Currency);
+
+public sealed record OrderReviewExpectation(
+    IReadOnlyList<OrderReviewLine> Lines,
+    decimal ItemsSubtotal,
+    decimal DiscountTotal,
+    long? CouponId);
 
 public sealed record OrderAmountLine(
     long LineId,

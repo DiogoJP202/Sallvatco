@@ -6,6 +6,14 @@
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.
 
+## Checkout e retorno — 30/09/2026
+
+`CheckoutPaymentFlowTests` atravessa controllers, antiforgery, Data Protection, serviços e persistência InMemory com gateways de pagamento/frete simulados. Cobre criação após revisão, replay sem duplicidade, segunda confirmação, redirecionamento reutilizado sem novo POST externo, confirmação por webhook canônico e estoque consumido. Retornos de sucesso/pendência/falha com `status=approved` falso permanecem pendentes; GET não consulta o provedor. Confere `no-store`, `noindex` e ausência de dados pessoais na página de situação.
+
+Negativos: token adulterado, expirado e usado por outro cliente; checkbox/antiforgery ausentes; conta alheia e sessão guest vencida; falta de localizador; preço/quantidade/cupom/frete/prazo/transportadora alterados; frete indisponível; resultado de envio incerto sem reenvio; flags desativadas, proteção Sandbox incompleta, frete produtivo e limite compartilhado de cinco requisições/minuto. O teste do gateway verifica que as três URLs recebem somente o localizador server-side da tentativa.
+
+`ReviewedOrderChecksTermsAndConcurrentSubmissionsReserveOnlyOnce` usa PostgreSQL isolado no CI: revisão divergente não grava efeitos e seis criações concorrentes para a mesma tentativa deixam um pedido, item, reserva, movimento e cliente guest, mantendo replay idempotente. Não usa banco operacional nem credenciais reais. Homologação no provedor e revisão visual em Staging continuam obrigatórias; testes simulados não comprovam funcionamento da conta ou transporte HTTP externo real.
+
 ## Execuções duráveis de recuperação — 29/09/2026
 
 `AutomaticPaymentRecoveryTests` cobre configuração desligada, dependência das flags, limite de lote, intervalos e orçamento persistido entre instâncias, captura com evidência de sistema sem conta Admin/recibo inventados, recuperação manual após orçamento, concorrência com outro worker/manual, reinício após cancelamento, resposta antiga após substituição/webhook, exclusão de tentativa antiga/sem ID/em revisão e aprovação tardia de pedido cancelado. `PaymentRecoveryWebTests` verifica origem/contador/resultado no HTML administrativo, sem chamada extra ao abrir a página.

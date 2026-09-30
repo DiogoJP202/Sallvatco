@@ -4,10 +4,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Sallvat.Application.Carts;
+using Sallvat.Application.Checkout;
+using Sallvat.Application.Orders;
 using Sallvat.Application.Payments;
 using Sallvat.Application.Time;
 using Sallvat.Domain.Orders;
 using Sallvat.Domain.Payments;
+using Sallvat.Infrastructure.Orders;
 using Sallvat.Infrastructure.Payments;
 using Sallvat.Infrastructure.Persistence;
 using Sallvat.IntegrationTests.Web;
@@ -551,6 +554,85 @@ public sealed class PostgreSqlPaymentTests
             Assert.Empty(await db.AuditLogs.ToListAsync());
             Assert.Empty(await db.InventoryMovements.ToListAsync());
             Assert.Equal(4, await db.PaymentRecoveryExecutions.CountAsync());
+        }
+        finally
+        {
+            if (builder.Database!.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == builder.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
+    [PostgreSqlFact]
+    public async Task ReviewedOrderChecksTermsAndConcurrentSubmissionsReserveOnlyOnce()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var app = new SallvatWebApplicationFactory();
+        using var scope = app.Services.CreateScope();
+        var options = CreateOptions(scope.ServiceProvider, builder.ConnectionString);
+        await using var db = new SallvatDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            var now = FixedClock.Now;
+            var owner = CartOwner.ForGuest(new string('A', 43));
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(owner.GuestToken!)));
+            var cart = Sallvat.Domain.Carts.Cart.CreateGuest(hash, now, now.AddHours(2));
+            var product = new Sallvat.Domain.Catalog.Product("Perfume", "reviewed-perfume", "Resumo", "Descrição", "Família",
+                "Saída", "Coração", "Fundo", "EDP", null, null, null, null, null, now);
+            product.Publish(true, true, now);
+            db.Products.Add(product);
+            db.Carts.Add(cart);
+            await db.SaveChangesAsync();
+            var variant = new Sallvat.Domain.Catalog.ProductVariant(product.Id, "REVIEW-50", 50, 70m, .13m, 5m, 16m, 11m, now);
+            variant.AdjustOnHand(4, now);
+            db.ProductVariants.Add(variant);
+            await db.SaveChangesAsync();
+            db.CartItems.Add(new(cart.Id, variant.Id, 1, 70m, now));
+            await db.SaveChangesAsync();
+            var expected = new OrderReviewExpectation([new(variant.Id, 1, 70m, "BRL")], 70m, 0m, null);
+            var request = new CreateOrderRequest(Guid.NewGuid(), owner,
+                new CheckoutDraftInput(new("Cliente Teste", "cliente@example.com", "11999998888"),
+                    new(null, "Cliente Teste", "01310100", "Avenida Paulista", "1000", null, "Bela Vista", "São Paulo", "SP")),
+                new("Melhor Envio", "Correios", "SEDEX", "quote-review", 18.50m, "BRL", 2, 4, now, now.AddMinutes(10)), expected);
+            var orderOptions = Microsoft.Extensions.Options.Options.Create(new OrderOptions());
+            foreach (var changed in new[]
+            {
+                expected with { ItemsSubtotal = 69m }, expected with { DiscountTotal = 1m },
+                expected with { CouponId = 123 }, expected with { Lines = [new(variant.Id, 2, 70m, "BRL")] },
+                expected with { Lines = [new(variant.Id, 1, 69m, "BRL")] },
+            })
+            {
+                await using var isolated = new SallvatDbContext(options);
+                Assert.Equal(OrderCreationStatus.Invalid, (await new OrderService(isolated, new FixedClock(), orderOptions)
+                    .CreateAsync(request with { ExpectedReview = changed })).Status);
+            }
+            Assert.Empty(await db.Orders.ToListAsync());
+            Assert.Empty(await db.StockReservations.ToListAsync());
+            var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(async _ =>
+            {
+                await using var isolated = new SallvatDbContext(options);
+                return await new OrderService(isolated, new FixedClock(), orderOptions).CreateAsync(request);
+            }));
+            Assert.Contains(results, result => result.Succeeded);
+            Assert.All(results, result => Assert.Contains(result.Status,
+                new[] { OrderCreationStatus.Succeeded, OrderCreationStatus.ConcurrencyConflict }));
+            db.ChangeTracker.Clear();
+            Assert.Equal(88.50m, (await db.Orders.SingleAsync()).GrandTotal);
+            Assert.Single(await db.OrderItems.ToListAsync());
+            Assert.Single(await db.StockReservations.ToListAsync());
+            Assert.Equal(1, (await db.ProductVariants.SingleAsync()).Reserved);
+            Assert.Equal(4, (await db.ProductVariants.SingleAsync()).OnHand);
+            Assert.Single(await db.InventoryMovements.ToListAsync());
+            Assert.Single(await db.Customers.ToListAsync());
+            Assert.Empty(await db.CartItems.ToListAsync());
+            Assert.True((await new OrderService(db, new FixedClock(), orderOptions).CreateAsync(request)).WasAlreadyCreated);
         }
         finally
         {

@@ -168,6 +168,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
+**Checkout em 30/09/2026 (`F7-S1`):** revisão MVC criptografada e vinculada ao dono; revalidação de frete e condições comerciais antes da criação serializável; confirmação separada para abrir o pagamento Orders de teste. Retornos exibem estado local autorizado, sem confiar em parâmetros do navegador ou chamar gateway. `CheckoutEnabled=false`, exige dependências Sandbox e não altera as demais flags. Testes simulados e criação concorrente em PostgreSQL isolado; homologação real, exceções financeiras, reembolso e políticas comerciais continuam pendentes. Os registros abaixo descrevem incrementos anteriores.
+
 **Fila operacional em 29/09/2026 (`F7-S3`):** filtro `RecoveryFollowUp` e fila padrão destacam orçamento esgotado/janela encerrada, com motivo tipado e orientação no detalhe. Consultas vigentes suprimem o aviso; consultas manuais não resetam orçamento. GETs locais sem mutation, migration ou flags novas. Homologação real e resolução auditada de divergências permanecem pendentes.
 
 **Job limitado em 29/09/2026 (`F7-S3`):** recuperação automática de pendentes com ID conhecido, lotes de até 20, três execuções persistidas e intervalos mínimos de 2/5/15 minutos dentro de 24 horas do início do envio. Origem/resultado duráveis sem identidade administrativa fictícia; disputa protegida com ação manual e webhook. Configuração desligada e migration explícita. Homologação real e operação das pendências após limite ainda são tarefas abertas no backlog.

@@ -17,15 +17,18 @@ public sealed class AccountWebApplicationFactory :
     private readonly string databaseName = $"sallvat-{Guid.NewGuid():N}";
     private readonly IClock? clock;
     private readonly IFreightService? freightService;
+    private readonly Action<IServiceCollection>? configureServices;
 
     public AccountWebApplicationFactory(
         long? maximumPixelCount = null,
         IClock? clock = null,
-        IFreightService? freightService = null)
+        IFreightService? freightService = null,
+        Action<IServiceCollection>? configureServices = null)
         : base(maximumPixelCount: maximumPixelCount)
     {
         this.clock = clock;
         this.freightService = freightService;
+        this.configureServices = configureServices;
     }
 
     public FakeAccountEmailSender EmailSender { get; } = new();
@@ -56,6 +59,7 @@ public sealed class AccountWebApplicationFactory :
 
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(EmailSender);
+            configureServices?.Invoke(services);
         });
     }
 

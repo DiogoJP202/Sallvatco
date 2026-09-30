@@ -1,6 +1,7 @@
 @model CheckoutPageViewModel
 @{
     ViewData["Title"] = "Checkout";
+    ViewData["ForceNoIndex"] = true;
     ViewData["Description"] = "Informe contato e endereço para revisar a entrega do pedido.";
 }
 
@@ -15,6 +16,10 @@
 <section class="bg-paper">
     <div class="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_22rem] lg:items-start lg:px-10 lg:py-16">
         <form class="grid gap-8" asp-action="Review" method="post" novalidate>
+            @if (TempData["CheckoutError"] is string checkoutError)
+            {
+                <p class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950" role="alert">@checkoutError</p>
+            }
             <div asp-validation-summary="ModelOnly" class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900 empty:hidden" role="alert"></div>
 
             <fieldset class="rounded-[2rem] border border-stone-300 bg-white p-6 shadow-sm sm:p-8">

@@ -246,7 +246,7 @@ internal sealed class PaymentDispatchService(
 
         return lines.Count is > 0 and <= 100 && lines.Sum(line => line.UnitAmount * line.Quantity) == payment.Amount
             ? new(payment.IdempotencyKey, payment.Environment, payment.ExternalReference, payment.Amount,
-                payment.Currency, payment.ExpiresAtUtc, lines) : null;
+                payment.Currency, payment.ExpiresAtUtc, lines, order.CheckoutAttemptId) : null;
     }
 
     private static bool ValidCreatedResponse(PaymentOrderResult response) =>

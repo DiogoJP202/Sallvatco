@@ -36,6 +36,8 @@ internal sealed partial class MercadoPagoPaymentGateway
         }
 
         var origin = new Uri(options.PublicOrigin, UriKind.Absolute);
+        var returnQuery = request.CheckoutAttemptId is Guid attemptId && attemptId != Guid.Empty
+            ? "?tentativa=" + attemptId.ToString("D") : string.Empty;
         // Round down; never extend the local reservation to accommodate provider expiration.
         var duration = TimeSpan.FromSeconds(Math.Floor((request.ExpiresAtUtc - now).TotalSeconds));
         using var message = new HttpRequestMessage(HttpMethod.Post, OrderEndpoint)
@@ -58,9 +60,9 @@ internal sealed partial class MercadoPagoPaymentGateway
                 {
                     online = new
                     {
-                        success_url = new Uri(origin, "pagamentos/retorno/sucesso").AbsoluteUri,
-                        pending_url = new Uri(origin, "pagamentos/retorno/pendente").AbsoluteUri,
-                        failure_url = new Uri(origin, "pagamentos/retorno/falha").AbsoluteUri,
+                        success_url = new Uri(origin, "pagamentos/retorno/sucesso" + returnQuery).AbsoluteUri,
+                        pending_url = new Uri(origin, "pagamentos/retorno/pendente" + returnQuery).AbsoluteUri,
+                        failure_url = new Uri(origin, "pagamentos/retorno/falha" + returnQuery).AbsoluteUri,
                         auto_return = "approved",
                     },
                 },

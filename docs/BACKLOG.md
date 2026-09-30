@@ -295,9 +295,11 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Montar linhas Orders a partir dos snapshots, conservando centavos do desconto e incluindo frete uma vez.
 - [ ] Implementar consulta/reconciliação de envios abandonados e notificações antes de conectar a tela.
 - [x] Persistir uma tentativa Sandbox por pedido com autorização, snapshots, reservas e concorrência, sem acionar gateway.
-- [ ] Integrar ao checkout a persistência da chave idempotente, preferência e falhas sanitizadas (modelo local disponível).
+- [x] Conectar revisão e pedido local ao dispatcher Orders Sandbox com duas confirmações, proteção Data Protection por dono, revalidação de valores/frete e falhas sanitizadas; desativado por padrão, sem fallback para Preferences.
 - [ ] Implementar retry seguro e consulta após timeout ambíguo.
-- [ ] Criar páginas de retorno não autoritativas.
+- [x] Criar páginas de retorno não autoritativas, autorizadas por conta/sessão guest, sem gateway ou efeitos financeiros em GET.
+- [x] Testar fluxo MVC simulado, replay, token expirado/adulterado/alheio, antiforgery, mudança de preço/cupom/frete, limites e retorno falso; acrescentar criação concorrente revisada em PostgreSQL isolado.
+- [ ] Homologar revisão, duas confirmações, retorno e perda de sessão no servidor Staging com contas de teste; aprovar políticas comerciais antes de qualquer compra real.
 - [x] Testar payload, ambiente, timeout, cancelamento, ausência de retry automático e URL no adapter isolado.
 - [ ] Testar retry/recuperação do fluxo persistido ponta a ponta antes de habilitar o checkout.
 

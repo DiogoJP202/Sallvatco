@@ -4,6 +4,23 @@
 
 ## Implementação atual — fundação local
 
+### Checkout e retorno protegidos — 30/09/2026
+
+`ICheckoutPaymentService` conecta a revisão MVC, o pedido local, a preparação e o dispatcher Orders. O fluxo é exclusivo de homologação e **não foi habilitado**: `CheckoutEnabled=false` por padrão, além das demais flags já desligadas. Para habilitação futura em Staging, exige configuração Sandbox válida, vendedor de teste confirmado, Orders, webhook, recuperação manual/automática e Melhor Envio habilitado no endereço sandbox. Não basta ativar o botão; conta, credenciais, origem HTTPS e notificações precisam ser homologadas. A confirmação de vendedor é uma declaração operacional, não prova de que a credencial seja de teste.
+
+O fluxo possui duas confirmações explícitas, sem JavaScript obrigatório:
+
+1. `POST /checkout/revisar` apresenta itens, preço, desconto, contato, entrega e cotações. Cada opção recebe uma revisão criptografada/autenticada por Data Protection, vinculada à identidade da conta ou ao token guest. As opções compartilham o mesmo `CheckoutAttemptId`; validade máxima de dez minutos, limitada pela cotação. Dados pessoais permanecem dentro do token protegido no corpo do formulário, nunca na URL.
+2. `POST /checkout/confirmar` exige checkbox de homologação, antiforgery, revisão íntegra/vigente e dono atual. Reconsulta o frete, compara transportadora, serviço, moeda, preço e prazo; mudanças exigem nova revisão. O `OrderService` compara variantes, quantidades, preços, moeda, subtotal, desconto e cupom com os valores revisados dentro da transação serializável, antes de reservar. Cria somente o pedido local e a reserva, sem HTTP de pagamento. Replay da mesma tentativa retorna o pedido existente sem repetir efeitos.
+3. `GET /pagamentos/{attemptId}` mostra número, total e estado local, sem contato/endereço/IDs do provedor. Confirmação adicional antecede `POST /pagamentos/{attemptId}/continuar`: prepara a tentativa e usa o dispatcher existente. Reabrir uma tentativa já enviada reutiliza o mesmo destino; resultado incerto não autoriza reenvio. Falhas usam mensagens sanitizadas e redirecionamento local.
+4. As URLs `/pagamentos/retorno/sucesso`, `/pendente` e `/falha` recebem `tentativa=<CheckoutAttemptId>` gerado pelo servidor. Esse GUID é apenas localizador, **não credencial de acesso**. Todos os retornos leem a mesma situação local; `status`, `payment_id`, `collection_status` e o nome da rota não aprovam nem rejeitam pagamento. GET não consulta gateway, não cria tentativa e não altera estoque. Confirmação vem somente do processamento canônico existente (webhook/recuperação).
+
+Ambos os POSTs de confirmação compartilham limite de cinco requisições por minuto por IP/processo, sem fila, e corpo máximo de 32 KiB. Sem antiforgery/formulário válido: 400; fluxo desligado: 503; recurso alheio/ausente: 404; limite excedido: 429. O token de revisão é limitado a 24.000 caracteres. Páginas usam `no-store` e `noindex`. Não logar formulários, tokens de revisão, cookies ou parâmetros de retorno; manter chaves Data Protection fora do web root e isoladas por ambiente.
+
+O cliente autenticado precisa ser dono do pedido. Guest precisa conservar a sessão original, com carrinho não expirado e sem vinculação a outra conta; acesso por e-mail e histórico guest **não foram implementados**. Retorno sem localizador ou sem sessão válida não expõe dados. O botão não permite nova tentativa após encerramento/revisão. A expiração local não garante cancelamento/reembolso externo; aprovação tardia continua exigindo conferência. Os checkboxes são confirmações técnicas de teste, não aceite de políticas comerciais ainda pendentes.
+
+Sem nova migration, seed produtivo, credenciais ou chamadas reais. GitHub Pages continua sendo vitrine, sem estes endpoints. Testes usam gateway/frete simulados e PostgreSQL isolado no CI; ainda faltam homologação externa, resolução financeira de exceções, reembolso, política de reserva, meios comerciais e infraestrutura de produção. As seções cronológicas abaixo preservam os limites de cada incremento à época.
+
 ### Fila de conferência após limites automáticos — 29/09/2026
 
 `/Admin/Pagamentos?filter=RecoveryFollowUp` reúne tentativas Sandbox `Pending/Completed` com ID Orders conhecido, sem preferência/captura, que atingiram três execuções automáticas ou passaram de 24 horas desde o início do envio. A fila padrão `Attention` também inclui esses casos junto de revisão/envios sem conclusão. O filtro de pendentes continua incluindo-os: os filtros são visões operacionais, não estados financeiros exclusivos.

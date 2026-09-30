@@ -10,6 +10,7 @@ public sealed record PaymentOrderRequest(
     decimal Amount,
     string Currency,
     DateTimeOffset ExpiresAtUtc,
-    IReadOnlyList<PaymentOrderItem> Items);
+    IReadOnlyList<PaymentOrderItem> Items,
+    Guid? CheckoutAttemptId = null);
 
 public sealed record PaymentOrderItem(string Id, string Title, int Quantity, decimal UnitAmount);

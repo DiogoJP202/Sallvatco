@@ -1,8 +1,10 @@
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Checkout;
 using Sallvat.Application.Orders;
@@ -116,7 +118,7 @@ internal sealed class OrderService(
         }
 
         await using var transaction = await BeginTransactionAsync(
-            cancellationToken);
+            request.ExpectedReview is not null, cancellationToken);
         try
         {
             existing = await FindCreatedOrderAsync(
@@ -167,6 +169,17 @@ internal sealed class OrderService(
             var totals = OrderTotalsCalculator.Calculate(
                 amountLines,
                 request.Shipping.Price);
+            if (request.ExpectedReview is { } expected
+                && (expected.ItemsSubtotal != totals.ItemsSubtotal
+                    || expected.DiscountTotal != totals.DiscountTotal
+                    || expected.CouponId != couponResult.Coupon?.Id
+                    || !expected.Lines.OrderBy(line => line.VariantId).SequenceEqual(
+                        lines.Select(line => new OrderReviewLine(line.ProductVariantId,
+                            line.Quantity, line.UnitPrice, line.Currency)).OrderBy(line => line.VariantId))))
+            {
+                return Invalid("A sacola, o preço ou o cupom mudou. Revise antes de confirmar novamente.");
+            }
+
             var orderId = await NextOrderIdAsync(cancellationToken);
             var expiration = now.AddMinutes(
                 options.Value.ReservationMinutes);
@@ -269,6 +282,13 @@ internal sealed class OrderService(
             return OrderCreationResult.Failure(
                 OrderCreationStatus.ConcurrencyConflict,
                 "Preço, estoque ou cupom mudou. Revise e tente novamente.");
+        }
+        catch (Exception exception) when (exception.GetBaseException() is PostgresException { SqlState: "40001" or "40P01" })
+        {
+            await RollbackAsync(transaction, CancellationToken.None);
+            dbContext.ChangeTracker.Clear();
+            return OrderCreationResult.Failure(OrderCreationStatus.ConcurrencyConflict,
+                "A sacola mudou durante a confirmação. Revise e tente novamente.");
         }
         catch (DbUpdateException)
         {
@@ -612,9 +632,10 @@ internal sealed class OrderService(
     }
 
     private async Task<IDbContextTransaction?> BeginTransactionAsync(
-        CancellationToken cancellationToken) =>
+        bool reviewed, CancellationToken cancellationToken) =>
         dbContext.Database.IsRelational()
             ? await dbContext.Database.BeginTransactionAsync(
+                reviewed ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted,
                 cancellationToken)
             : null;
 
