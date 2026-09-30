@@ -168,6 +168,8 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 ## Fase 7 — Pagamento e webhooks
 
+**Progresso do reembolso em 30/09/2026 (`F7-S3`):** intenção local de reembolso total Sandbox persistida com unicidade, versões e auditoria atômica, acionável por Admin com motivo e confirmação. Fila e detalhe distinguem preparação de envio. Flag desligada, sem HTTP, efeito financeiro ou reposição de estoque. Migration explícita preserva histórico no downgrade. Próximas tarefas: dispatcher idempotente com revalidação canônica, confirmação, exceções financeiras e homologação. Reembolso parcial do valor permanece fora do escopo.
+
 **Checkout em 30/09/2026 (`F7-S1`):** revisão MVC criptografada e vinculada ao dono; revalidação de frete e condições comerciais antes da criação serializável; confirmação separada para abrir o pagamento Orders de teste. Retornos exibem estado local autorizado, sem confiar em parâmetros do navegador ou chamar gateway. `CheckoutEnabled=false`, exige dependências Sandbox e não altera as demais flags. Testes simulados e criação concorrente em PostgreSQL isolado; homologação real, exceções financeiras, reembolso e políticas comerciais continuam pendentes. Os registros abaixo descrevem incrementos anteriores.
 
 **Fila operacional em 29/09/2026 (`F7-S3`):** filtro `RecoveryFollowUp` e fila padrão destacam orçamento esgotado/janela encerrada, com motivo tipado e orientação no detalhe. Consultas vigentes suprimem o aviso; consultas manuais não resetam orçamento. GETs locais sem mutation, migration ou flags novas. Homologação real e resolução auditada de divergências permanecem pendentes.

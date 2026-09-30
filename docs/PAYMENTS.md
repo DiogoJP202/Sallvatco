@@ -4,6 +4,18 @@
 
 ## Implementação atual — fundação local
 
+### Intenção local de reembolso total — 30/09/2026
+
+`IPaymentRefundPreparationService` registra uma intenção durável `PaymentRefundRequest`, não um reembolso executado. Somente captura integral Sandbox, confirmada em Orders, com IDs externos conhecidos e pedido `Paid`, `Preparing`, `Shipped` ou `Delivered`, é elegível. Moeda BRL, valor total e referência precisam coincidir. Capturas tardias, divergências, pedidos cancelados/em revisão e tentativas sem ID continuam bloqueados; não existe resolução financeira manual nesta etapa.
+
+O Admin confirma `POST /Admin/Pagamentos/{id}/PrepararReembolso` com antiforgery, versões do pagamento/pedido e motivo fechado (`CustomerRequest`, `FulfillmentUnavailable`, `OperationalCorrection`). Valor, ator e IDs externos vêm do servidor. A permissão Admin é revalidada no banco, mesmo quando o cookie ainda contém a role antiga. O limite compartilhado com recuperação manual é de cinco requisições por minuto por Admin/processo; não representa proteção distribuída entre réplicas.
+
+Uma transação serializável persiste intenção e `payment.refund.prepared`. Guarda UUID estável para idempotência futura, captura/valor/moeda, versões, ator, motivo e UTC; a auditoria não contém dados pessoais, payload ou segredos. Índice único por pagamento impede outra intenção total para a mesma captura. Replay retorna a original, sem substituir motivo, ator ou snapshots. Conflito concorrente pede recarregar/repetir a mesma operação; falha de auditoria desfaz a intenção. Não há HTTP nem alteração em pagamento, pedido, cupom, reservas ou estoque.
+
+O filtro `RefundPrepared` e o detalhe mostram **preparado — não enviado ao provedor**. O registro permanece como evidência caso a situação mude posteriormente; não congela expedição nem comprova saldo reembolsável. O futuro dispatcher deverá revalidar situação local/canônica, operações externas, valor e posse antes do envio, com proteção a timeout/retry; somente confirmação canônica poderá marcar `Refunded`. Reembolso parcial e políticas comerciais continuam em `PBD-006`.
+
+`RefundPreparationEnabled=false` é o padrão e exige configuração Sandbox/Orders/webhook válida se ativado futuramente. Nenhuma flag ou credencial foi habilitada. `AddPaymentRefundRequests` deve ser aplicada explicitamente no deploy; `Down` recusa apagar qualquer intenção existente. Testes usam banco descartável e provedor simulado, sem operação financeira real. Esta é uma entrega parcial de `F7-S3`; envio, confirmação, conciliação de exceções e homologação externa seguem pendentes. O recurso não existe no GitHub Pages.
+
 ### Checkout e retorno protegidos — 30/09/2026
 
 `ICheckoutPaymentService` conecta a revisão MVC, o pedido local, a preparação e o dispatcher Orders. O fluxo é exclusivo de homologação e **não foi habilitado**: `CheckoutEnabled=false` por padrão, além das demais flags já desligadas. Para habilitação futura em Staging, exige configuração Sandbox válida, vendedor de teste confirmado, Orders, webhook, recuperação manual/automática e Melhor Envio habilitado no endereço sandbox. Não basta ativar o botão; conta, credenciais, origem HTTPS e notificações precisam ser homologadas. A confirmação de vendedor é uma declaração operacional, não prova de que a credencial seja de teste.

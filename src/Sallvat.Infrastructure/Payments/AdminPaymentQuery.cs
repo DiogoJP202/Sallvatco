@@ -26,6 +26,7 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
             AdminPaymentFilter.Attention => payments.Where(p => p.Status == PaymentStatus.RequiresAttention
                 || p.DispatchState == PaymentDispatchState.RequiresAttention || p.DispatchState == PaymentDispatchState.Sending || followUps.Contains(p.Id)),
             AdminPaymentFilter.RecoveryFollowUp => payments.Where(p => followUps.Contains(p.Id)),
+            AdminPaymentFilter.RefundPrepared => payments.Where(p => db.PaymentRefundRequests.Any(r => r.PaymentId == p.Id && r.State == PaymentRefundRequestState.Prepared)),
             AdminPaymentFilter.Pending => payments.Where(p => (p.Status == PaymentStatus.Created || p.Status == PaymentStatus.Pending)
                 && p.DispatchState != PaymentDispatchState.Sending && p.DispatchState != PaymentDispatchState.RequiresAttention),
             AdminPaymentFilter.Approved => payments.Where(p => p.Status == PaymentStatus.Approved),
@@ -41,7 +42,8 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
                            join o in db.Orders.AsNoTracking() on p.OrderId equals o.Id
                            orderby p.Id descending
                            select new AdminPaymentSummary(p.Id, o.OrderNumber, o.Status, p.Environment,
-                               p.Status, p.DispatchState, p.AttentionReason, p.Amount, p.Currency, p.CreatedAtUtc, p.UpdatedAtUtc))
+                               p.Status, p.DispatchState, p.AttentionReason, p.Amount, p.Currency, p.CreatedAtUtc, p.UpdatedAtUtc)
+                           { HasPreparedRefund = db.PaymentRefundRequests.Any(r => r.PaymentId == p.Id && r.State == PaymentRefundRequestState.Prepared) })
             .Take(26).ToListAsync(cancellationToken);
         var visible = items.Take(25).ToArray();
         var reasons = await FollowUpReasonsAsync(visible.Select(p => p.Id).ToArray(), now, cancellationToken);
@@ -67,6 +69,8 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
                                 p.ConcurrencyVersion,
                                 p.Provider,
                                 p.PreferenceId,
+                                PaymentEntity = p,
+                                OrderEntity = o,
                             }).SingleOrDefaultAsync(cancellationToken);
         if (detail is null)
         {
@@ -94,13 +98,22 @@ internal sealed class AdminPaymentQuery(SallvatDbContext db, IOptions<MercadoPag
             && detail.Summary.Status == PaymentStatus.Pending && detail.Summary.DispatchState == PaymentDispatchState.Completed
             && detail.ExternalOrderId is not null && detail.PreferenceId is null && detail.ExternalPaymentId is null;
         var reasons = await FollowUpReasonsAsync([id], now, cancellationToken);
-        return new(detail.Summary with { RecoveryFollowUp = reasons.GetValueOrDefault(id) }, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
+        var refund = await db.PaymentRefundRequests.AsNoTracking().Where(r => r.PaymentId == id)
+            .Select(r => new AdminRefundRequest(r.Id, r.State, r.Amount, r.Currency, r.Reason, r.CreatedAtUtc)).SingleOrDefaultAsync(cancellationToken);
+        var refundEnabled = options.Value.RefundPreparationEnabled && MercadoPagoOptions.IsValid(options.Value);
+        return new(detail.Summary with { RecoveryFollowUp = reasons.GetValueOrDefault(id), HasPreparedRefund = refund is not null }, detail.ExternalOrderId, detail.ExternalPaymentId, detail.DispatchStartedAtUtc,
             detail.ExpiresAtUtc, detail.ConfirmedAtUtc, detail.ProviderUpdatedAtUtc, receipts.Take(50).ToArray(), receipts.Count > 50,
             detail.ConcurrencyVersion, enabled, enabled && eligible && blockedUntil is null,
             history.Take(50).Select(a => ReadEntry(a.CreatedAtUtc, a.Action, a.ChangesJson)).ToArray(), history.Count > 50,
             executions.Take(20).ToArray(), executions.Count > 20, blockedUntil,
             enabled && options.Value.AutomaticRecoveryEnabled,
-            await db.PaymentRecoveryExecutions.CountAsync(e => e.PaymentId == id && e.Source == PaymentRecoverySource.Automatic, cancellationToken));
+            await db.PaymentRecoveryExecutions.CountAsync(e => e.PaymentId == id && e.Source == PaymentRecoverySource.Automatic, cancellationToken))
+        {
+            OrderVersion = detail.OrderEntity.ConcurrencyVersion,
+            RefundPreparationEnabled = refundEnabled,
+            CanPrepareRefund = refundEnabled && refund is null && PaymentRefundRequest.CanPrepare(detail.PaymentEntity, detail.OrderEntity),
+            RefundRequest = refund,
+        };
     }
 
     private async Task<Dictionary<long, AdminRecoveryFollowUp>> FollowUpReasonsAsync(long[] ids, DateTimeOffset now, CancellationToken cancellationToken)

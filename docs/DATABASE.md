@@ -32,6 +32,7 @@
 | `StockReservation` | Pedido, variante, quantidade, expiração e estado da reserva. |
 | `InventoryMovement` | Variante, tipo, quantidade assinada, saldo resultante, origem, ator e motivo. |
 | `Payment` | Tentativa/preferência, provedor, IDs externos, status, valor, idempotency key e timestamps. |
+| `PaymentRefundRequest` | Intenção local de reembolso total Sandbox, captura/valor/versões, ator, motivo e UTC; `Prepared` não significa dinheiro devolvido. |
 | `Shipment` | Cotação escolhida, transportadora, serviço, valor/prazo snapshots, IDs externos, etiqueta e rastreio. |
 | `Coupon` | Código normalizado, tipo/valor, janela, limites, mínimo, usos reivindicados, ativo e versionamento. |
 | `CouponRedemption` | Reserva idempotente do cupom, pedido opcional até o consumo, cliente/e-mail normalizado, valor, expiração e estado. |
@@ -147,6 +148,14 @@ A migration `AddPaymentFoundation` cria somente `payment`: FK restritiva para pe
 `AddAutomaticPaymentRecovery` acrescenta `source` (`Manual`/`Automatic`), `outcome` tipado e índice pagamento/origem/início. Migra histórico prévio para `Manual` sem inventar resultado; resultados nulos em estados terminais são tolerados somente para legado manual. Novas conclusões sempre registram resultado. Constraints recusam resultado enquanto `Running`, resultado inválido ou conclusão automática sem resultado. Contagem automática e último início são consultados dentro do claim serializável; não há contador volátil para reinícios apagarem. Origem e resultado automáticos são evidência de sistema, não registros atribuídos a usuário em `audit_log`. Downgrade com execução automática ou resultado não nulo é recusado.
 
 ## Soft delete e retenção
+
+### Intenção de reembolso total
+
+`AddPaymentRefundRequests` cria `payment_refund_request`. Cada `Payment` possui no máximo uma intenção total (`ux_refund_request_payment`); FKs restritivas referenciam pagamento e usuário Admin. O registro guarda UUID estável, estado `Prepared`, ambiente Sandbox, valor `numeric(18,2)` positivo em BRL, IDs externos da captura, versões do pedido/pagamento, ator, motivo fechado, UTC e token de concorrência. Constraints rejeitam IDs vazios, outros estados/ambientes, moeda/valor inválidos e identificadores externos malformados. A elegibilidade financeira e a role atual são revalidadas no serviço dentro da transação serializável, não deduzidas apenas das FKs.
+
+Intenção e auditoria são gravadas atomicamente; pedido, pagamento e estoque permanecem intactos. Não existe exclusão operacional ou envio automático. `Down` recusa remover a tabela se contiver registros: rollback de imagem deve manter schema compatível, nunca apagar evidência financeira. Mudanças posteriores de estado não invalidam silenciosamente o histórico; o futuro envio deverá revalidar a captura.
+
+### Política geral
 
 - produto, variante, cupom e endereço usam inativação/arquivamento quando há histórico;
 - pedidos, pagamentos, webhooks, movimentos e auditoria não têm exclusão operacional comum;

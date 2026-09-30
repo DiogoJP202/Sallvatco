@@ -12,6 +12,8 @@ O checkout coleta e normaliza somente contato e entrega, atende guest e cliente,
 
 A Fase 7 possui tentativas persistidas, envio Orders exclusivo, consulta canônica, webhook assinado e recuperação limitada. Em 30/09, o checkout MVC ganhou revisão protegida, confirmação do pedido com revalidação de valores/frete e segunda confirmação para abrir pagamento de teste. Retornos exibem apenas o estado local do pedido autorizado e ignoram alegações de aprovação na URL. `CheckoutEnabled=false` e as demais integrações permanecem desligadas; não há credenciais nem compras reais. Homologação externa, exceções financeiras, reembolso e produção continuam pendentes; veja [Pagamentos](docs/PAYMENTS.md).
 
+O painel também permite preparar uma intenção local de reembolso total Sandbox, com Admin atual, confirmação, motivo, versões e auditoria atômica. Repetições reutilizam o registro original; a fila distingue “preparado — não enviado”. `RefundPreparationEnabled=false`: nenhuma chamada de reembolso, alteração financeira ou reposição de estoque foi habilitada. A migration `AddPaymentRefundRequests` é explícita e protege o histórico contra downgrade destrutivo. Envio ao provedor e confirmação canônica continuam pendentes.
+
 ### Histórico dos incrementos
 
 Os registros abaixo descrevem entregas e pendências na data de cada incremento. Para o estado atual do checkout, vale o resumo acima e a seção mais recente de [Pagamentos](docs/PAYMENTS.md).

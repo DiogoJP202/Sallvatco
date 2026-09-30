@@ -6,6 +6,24 @@ namespace Sallvat.Web.Models.Payments;
 
 public static class PaymentLabels
 {
+    public static string RefundReason(PaymentRefundReason value) => value switch
+    {
+        PaymentRefundReason.CustomerRequest => "Solicitação do cliente",
+        PaymentRefundReason.FulfillmentUnavailable => "Impossibilidade de atender o pedido",
+        PaymentRefundReason.OperationalCorrection => "Correção operacional",
+        _ => "Motivo indisponível",
+    };
+
+    public static string RefundPreparation(PaymentRefundPreparationStatus value) => value switch
+    {
+        PaymentRefundPreparationStatus.Prepared => "Intenção de reembolso total registrada. Nenhum envio ao provedor ou devolução de dinheiro foi realizado.",
+        PaymentRefundPreparationStatus.AlreadyPrepared => "Já existe uma intenção registrada para esta captura. Nenhum novo registro ou envio foi realizado.",
+        PaymentRefundPreparationStatus.Disabled => "Preparação de reembolso desativada neste ambiente.",
+        PaymentRefundPreparationStatus.Conflict => "Os registros mudaram ou outra solicitação está em andamento. Recarregue o detalhe antes de continuar.",
+        PaymentRefundPreparationStatus.NotEligible => "Captura não elegível para esta preparação. Mantenha a pendência para conferência; não informe reembolso concluído.",
+        _ => "Não foi possível registrar a intenção. Recarregue o detalhe e confira o histórico antes de tentar novamente.",
+    };
+
     public static string RecoveryFollowUp(AdminRecoveryFollowUp reason) => reason switch
     {
         AdminRecoveryFollowUp.AttemptsExhausted => "Limite de três consultas automáticas atingido; conferir manualmente.",

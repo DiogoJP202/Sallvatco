@@ -49,6 +49,7 @@ public sealed class SallvatDbContextTests
                 "order_item",
                 "payment",
                 "payment_recovery_execution",
+                "payment_refund_request",
                 "payment_webhook_event",
                 "product",
                 "product_image",

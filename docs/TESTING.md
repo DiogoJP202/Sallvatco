@@ -6,6 +6,14 @@
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.
 
+## Preparação local de reembolso — 30/09/2026
+
+`PaymentRefundPreparationTests` cobre snapshot imutável, replay com motivo diferente, auditoria sanitizada, valor capturado, versões, ausência de efeitos financeiros/estoque, flag/configuração inválida, Admin revogado/desconhecido, motivo/correlation ID inválidos, relógio anterior, captura pendente/em revisão/produtiva/divergente, falta de ID/confirmação, pedido cancelado/reembolsado, cancelamento e contexto com alterações pendentes. Oito chamadas simultâneas InMemory produzem uma intenção e uma auditoria; consultas administrativas não deixam entidades rastreadas.
+
+`PaymentRefundWebTests` atravessa MVC, antiforgery e DI: confirmação explícita, ausência de campos obrigatórios, tentativa de impor valor/ator pelo formulário, replay, fila, `no-store`, ocultação quando desativado, acesso Customer/revogação de Admin, versão antiga, GET incapaz de mutar e limite de cinco POSTs/minuto. Não há chamada ao gateway durante preparação ou leitura.
+
+`RefundIntentIsAtomicUniqueQueryableAndCannotBeDroppedWithHistory` usa PostgreSQL descartável no CI: falha forçada na auditoria desfaz toda a intenção, seis conexões disputam um registro, unicidade e constraint monetária são impostas pelo banco, fila/detalhe traduzem para SQL e downgrade com histórico é recusado. Migrations não são aplicadas no banco operacional. Estes testes não comprovam devolução de dinheiro: dispatcher, confirmação externa e homologação continuam pendentes.
+
 ## Checkout e retorno — 30/09/2026
 
 `CheckoutPaymentFlowTests` atravessa controllers, antiforgery, Data Protection, serviços e persistência InMemory com gateways de pagamento/frete simulados. Cobre criação após revisão, replay sem duplicidade, segunda confirmação, redirecionamento reutilizado sem novo POST externo, confirmação por webhook canônico e estoque consumido. Retornos de sucesso/pendência/falha com `status=approved` falso permanecem pendentes; GET não consulta o provedor. Confere `no-store`, `noindex` e ausência de dados pessoais na página de situação.

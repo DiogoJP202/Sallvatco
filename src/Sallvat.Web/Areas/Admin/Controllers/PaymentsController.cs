@@ -13,7 +13,7 @@ namespace Sallvat.Web.Areas.Admin.Controllers;
 [Authorize(Policy = RoleNames.Admin)]
 [Route("Admin/Pagamentos")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentRecoveryService recovery) : Controller
+public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentRecoveryService recovery, IPaymentRefundPreparationService refunds) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(AdminPaymentFilter filter = AdminPaymentFilter.Attention,
@@ -64,6 +64,27 @@ public sealed class PaymentsController(IAdminPaymentQuery payments, IPaymentReco
         }
 
         TempData["RecoveryMessage"] = PaymentLabels.RecoveryResult(result);
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost("{id:long}/PrepararReembolso")]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting(RateLimitPolicyNames.PaymentRecovery)]
+    [RequestSizeLimit(8192)]
+    [RequestFormLimits(ValueCountLimit = 8, ValueLengthLimit = 512)]
+    public async Task<IActionResult> PrepareRefund(long id, PaymentRefundViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || id <= 0 || model.ExpectedVersion == Guid.Empty || model.ExpectedOrderVersion == Guid.Empty
+            || model.Reason is null || !model.Confirm)
+        {
+            return BadRequest("Confirme o registro local e informe versões e motivo válidos.");
+        }
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor) || actor == Guid.Empty) { return Forbid(); }
+        var result = await refunds.PrepareAsync(id, model.ExpectedVersion, model.ExpectedOrderVersion,
+            new(actor, model.Reason.Value, HttpContext.TraceIdentifier), cancellationToken);
+        if (result.Status == PaymentRefundPreparationStatus.Forbidden) { return Forbid(); }
+        if (result.Status == PaymentRefundPreparationStatus.NotFound) { return NotFound(); }
+        TempData["RefundMessage"] = PaymentLabels.RefundPreparation(result.Status);
         return RedirectToAction(nameof(Details), new { id });
     }
 }

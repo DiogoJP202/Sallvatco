@@ -335,7 +335,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Conectar recuperação à interface administrativa com antiforgery, limite de requisições e histórico de resultados, sem permitir reenvio de cobrança; desabilitada por padrão.
 - [x] Implementar diagnóstico interno somente leitura de tentativas com ID, titularidade e releitura após HTTP, sem efeitos financeiros.
 - [ ] Recuperar claims sem ID com evidência de associação e auditoria, sem busca por referência seguida de vínculo automático.
-- [ ] Implementar solicitação de reembolso total idempotente.
+- [x] Preparar intenção local de reembolso total Sandbox com Admin, motivo, confirmação, versões, auditoria transacional e unicidade por captura; exibir fila sem envio externo, desabilitada por padrão.
+- [ ] Implementar envio de reembolso total idempotente ao provedor a partir da intenção preparada, com revalidação canônica, controle de execução e recuperação de resultado incerto.
 - [ ] Implementar confirmação do reembolso e transição.
 - [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
 - [x] Criar consulta Admin local de tentativas/divergências, filtros, detalhe e recibos, sem dados pessoais ou efeitos financeiros.

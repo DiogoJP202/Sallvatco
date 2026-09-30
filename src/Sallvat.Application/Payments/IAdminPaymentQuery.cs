@@ -10,7 +10,7 @@ public interface IAdminPaymentQuery
     Task<AdminPaymentDetails?> FindAsync(long id, CancellationToken cancellationToken = default);
 }
 
-public enum AdminPaymentFilter { Attention, All, Pending, Approved, RecoveryFollowUp }
+public enum AdminPaymentFilter { Attention, All, Pending, Approved, RecoveryFollowUp, RefundPrepared }
 
 [Flags]
 public enum AdminRecoveryFollowUp { None = 0, AttemptsExhausted = 1, WindowExpired = 2 }
@@ -21,6 +21,7 @@ public sealed record AdminPaymentSummary(
     decimal Amount, string Currency, DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc)
 {
     public AdminRecoveryFollowUp RecoveryFollowUp { get; init; }
+    public bool HasPreparedRefund { get; init; }
 }
 
 public sealed record AdminPaymentPage(AdminPaymentFilter Filter, IReadOnlyList<AdminPaymentSummary> Items, long? NextBeforeId);
@@ -42,4 +43,10 @@ public sealed record AdminPaymentDetails(
     Guid ConcurrencyVersion, bool RecoveryEnabled, bool CanRecover,
     IReadOnlyList<AdminRecoveryEntry> RecoveryEntries, bool HasOlderRecoveryEntries,
     IReadOnlyList<AdminRecoveryExecution> Executions, bool HasOlderExecutions, DateTimeOffset? RecoveryBlockedUntilUtc,
-    bool AutomaticRecoveryEnabled, int AutomaticRecoveryCount);
+    bool AutomaticRecoveryEnabled, int AutomaticRecoveryCount)
+{
+    public Guid OrderVersion { get; init; }
+    public bool RefundPreparationEnabled { get; init; }
+    public bool CanPrepareRefund { get; init; }
+    public AdminRefundRequest? RefundRequest { get; init; }
+}
