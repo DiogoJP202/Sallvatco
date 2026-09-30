@@ -487,6 +487,10 @@ public sealed class PostgreSqlPaymentTests
             var downgrade = await Assert.ThrowsAsync<PostgresException>(() => db.GetService<IMigrator>()
                 .MigrateAsync("20260929113017_AddPaymentRecoveryExecutions"));
             Assert.Equal(PostgresErrorCodes.RaiseException, downgrade.SqlState);
+            Assert.Equal(2, await db.PaymentRecoveryExecutions.CountAsync(e => e.Source == PaymentRecoverySource.Automatic));
+            // Later empty tables may already have been removed before an older migration's guard fails.
+            // Restore the current schema before exercising the current application's read model.
+            await db.Database.MigrateAsync();
             var detail = Assert.IsType<AdminPaymentDetails>(await new AdminPaymentQuery(db,
                 Microsoft.Extensions.Options.Options.Create(AutomaticPaymentRecoveryTests.Configuration()), clock).FindAsync(payment.Id));
             Assert.Equal(2, detail.AutomaticRecoveryCount);

@@ -12,7 +12,7 @@ Testar riscos de negócio, segurança e integração, não perseguir 100% de cob
 
 `PaymentRefundWebTests` atravessa MVC, antiforgery e DI: confirmação explícita, ausência de campos obrigatórios, tentativa de impor valor/ator pelo formulário, replay, fila, `no-store`, ocultação quando desativado, acesso Customer/revogação de Admin, versão antiga, GET incapaz de mutar e limite de cinco POSTs/minuto. Não há chamada ao gateway durante preparação ou leitura.
 
-`RefundIntentIsAtomicUniqueQueryableAndCannotBeDroppedWithHistory` usa PostgreSQL descartável no CI: falha forçada na auditoria desfaz toda a intenção, seis conexões disputam um registro, unicidade e constraint monetária são impostas pelo banco, fila/detalhe traduzem para SQL e downgrade com histórico é recusado. Migrations não são aplicadas no banco operacional. Estes testes não comprovam devolução de dinheiro: dispatcher, confirmação externa e homologação continuam pendentes.
+`RefundIntentIsAtomicUniqueQueryableAndCannotBeDroppedWithHistory` usa PostgreSQL descartável no CI: falha forçada na auditoria desfaz toda a intenção, seis conexões disputam um registro, unicidade e constraint monetária são impostas pelo banco, fila/detalhe traduzem para SQL e downgrade com histórico é recusado. O teste legado de recuperação reaplica o schema atual após ensaiar downgrade: migrations posteriores vazias podem ter sido revertidas antes de uma proteção mais antiga recusar o restante. Migrations não são aplicadas no banco operacional. Estes testes não comprovam devolução de dinheiro: dispatcher, confirmação externa e homologação continuam pendentes.
 
 ## Checkout e retorno — 30/09/2026
 
