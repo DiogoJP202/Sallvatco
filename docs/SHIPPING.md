@@ -19,7 +19,7 @@ A fundação de cotação da Fase 6 está disponível, mas permanece desabilitad
 - `400/422`, `401/403`, `429`, timeout, transporte e resposta inválida possuem resultados distintos e seguros;
 - sucesso é mantido em cache de memória por hash de origem, destino, serviços e itens; falhas não são cacheadas;
 - a revalidação ignora o cache, procura a mesma opção e exige nova confirmação se o preço mudar;
-- a tela de revisão mostra opções apenas quando há resultado válido e não habilita criação de pedido ou pagamento.
+- a tela de revisão mostra opções apenas quando há resultado válido; desde 30/09 o checkout pode confirmar pedido e abrir pagamento de teste em etapas distintas se todas as dependências estiverem habilitadas/homologadas. Por padrão, as flags continuam falsas.
 
 Em 21/09/2026, a segunda fatia passou a aplicar as confirmações comerciais sem depender da caixa maior:
 
@@ -31,7 +31,7 @@ Em 21/09/2026, a segunda fatia passou a aplicar as confirmações comerciais sem
 - uma cotação anterior de uma unidade não é aceita após aumento de quantidade; a revalidação usa a sacola atual. Voltar para uma unidade permite nova consulta;
 - pesos e dimensões de uma unidade continuam vindo da variante cadastrada no servidor. Esta entrega não sobrescreve variantes existentes nem transforma dados demonstrativos em cadastro produtivo.
 
-O usuário autorizou prosseguir sem as medidas da caixa maior. Isso adia a homologação de múltiplos itens, não autoriza medidas estimadas, envio em várias caixas ou frete grátis. A futura criação do pedido ainda deverá guardar o prazo de preparo junto ao snapshot de transporte; a tela atual não cria pedidos nem captura pagamentos.
+O usuário autorizou prosseguir sem as medidas da caixa maior. Isso adia a homologação de múltiplos itens, não autoriza medidas estimadas, envio em várias caixas ou frete grátis. O pedido já guarda serviço, preço e prazo de transporte. Guardar o prazo de preparo separadamente no snapshot ainda é pendência; hoje ele é apresentado a partir da configuração. Nenhuma integração está habilitada por esta documentação.
 
 O adapter atual recebe um access token por configuração protegida. Renovação OAuth, persistência protegida de tokens e controle de corrida no refresh serão implementados somente após a estratégia de credenciais ser aprovada. Os itens físicos atuais já formam a requisição, mas o uso produtivo ainda depende da homologação das embalagens e da configuração real. As confirmações comerciais abaixo não habilitam automaticamente a integração nem alteram o catálogo de produção.
 

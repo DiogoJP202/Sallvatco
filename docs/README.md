@@ -2,9 +2,16 @@
 
 # Documentação do Sallvat & Co
 
-Esta pasta é a fonte de verdade do projeto. Código, migrations, infraestrutura e operação deverão permanecer coerentes com estes documentos. Quando uma decisão mudar, a documentação e o ADR correspondente devem ser atualizados no mesmo pull request da mudança.
+Esta pasta é a fonte de verdade documental do projeto. Código, migrations, infraestrutura e operação devem permanecer coerentes com estes documentos. Quando uma decisão mudar, atualizar documentação e ADR na mesma entrega (commit ou pull request). O fluxo atual autorizado usa commits incrementais em `main`.
 
 ## Ordem de leitura
+
+### Situação e continuidade
+
+- [STATUS.md](STATUS.md) — estágio real, arquivos, entregas, lacunas, pendências comerciais e próximos passos;
+- [DEVELOPMENT.md](DEVELOPMENT.md) — setup complementar, testes, revisão, commits, push e aceite do CI/Pages;
+- [CONFIGURATION.md](CONFIGURATION.md) — configuração existente, flags desativadas, dependências e gaps de implantação;
+- [OPERATIONS.md](OPERATIONS.md) — checklist ainda não executado de Staging, homologação e tratamento seguro de exceções.
 
 ### Produto e escopo
 
@@ -45,12 +52,15 @@ Esta pasta é a fonte de verdade do projeto. Código, migrations, infraestrutura
 - Valores recomendados são padrões técnicos configuráveis, não regras comerciais definitivas.
 - Datas e horários persistidos usam UTC; valores exibidos ao usuário usam o fuso e o formato definidos para a operação brasileira.
 - Diagramas Mermaid representam a intenção arquitetural; o código continua sujeito às dependências descritas em texto.
+- A seção atual de cada documento e [STATUS.md](STATUS.md) prevalecem sobre registros históricos datados. Planejado não significa implementado; implementado não significa homologado ou produtivo.
+- Revisão de código/documentação não é auditoria completa de segurança ou validação jurídica. Evidências devem informar ambiente, data, SHA e limitações.
 
 ## Estado
 
 | Área | Estado |
 |---|---|
-| Descoberta e documentação | Documentação concluída; aguardando aprovação da Sallvat |
-| Desenvolvimento | Fase 1 iniciada: solution e projetos-base criados |
-| Homologação | Não iniciado |
-| Produção | Não iniciado |
+| Descoberta e documentação | Revisada em 01/10/2026; decisões comerciais/aprovação final ainda abertas |
+| Desenvolvimento | Núcleo de conta/catálogo/carrinho/pedido implementado; frete e pagamento Sandbox parciais; ver STATUS |
+| Demonstração | GitHub Pages publicado, sem backend ou compras |
+| Homologação externa | Pendente de Staging, acessos, configuração e trabalho técnico restante |
+| Produção transacional | Não liberada; flags externas desligadas e infraestrutura ainda planejada |

@@ -4,6 +4,12 @@
 
 O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar tarefas da seguinte, mas não é considerada pronta sem seus critérios. Decisões `PBD` devem ser resolvidas antes da fase indicada em [REQUIREMENTS.md](REQUIREMENTS.md#pending-business-decisions).
 
+## Consolidação de 01/10/2026
+
+Consultar a matriz por fase em [STATUS.md](STATUS.md). Fundação técnica entregue; F2–F5 têm núcleo implementado e pendências comerciais/operacionais; F6/F7 em andamento e desativadas; F8–F10 ainda exigem implementação e homologação. GitHub Pages é apresentação, não produção. Registros datados da F7 abaixo preservam o histórico: não usar pendências antigas como status atual nem checkbox técnico como aprovação comercial.
+
+Na próxima frente, separar preparação de Staging (pode começar antes do MVP completo) de go-live (exige todos os critérios). [OPERATIONS.md](OPERATIONS.md) lista entradas e evidências; [DEVELOPMENT.md](DEVELOPMENT.md) define validação/commit/push por incremento. Revisão desta documentação não executou deploy.
+
 ## Fase 0 — Descoberta e documentação
 
 **Objetivo:** estabelecer fonte de verdade suficiente para implementação consistente.
@@ -204,7 +210,7 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 **Tarefas:**
 
-- implementar `IPaymentGateway` e preferência Checkout Pro;
+- implementar `IPaymentGateway` e fluxo Orders Checkout Pro Sandbox; manter adapter Preferences isolado e desativado;
 - persistir tentativas com chave idempotente e homologar unicidade sob concorrência em PostgreSQL;
 - criar retorno seguro e estados de tentativa;
 - implementar webhook assinado, consulta canônica e deduplicação;
@@ -214,7 +220,7 @@ O roadmap ordena trabalho por dependência e risco. Uma fase pode preparar taref
 
 **Entregáveis:** checkout financeiro completo em sandbox.
 
-**Critérios de aceite:** retorno não confirma; duplicata tem um efeito; valor/referência divergente bloqueia transição; retry usa idempotency key; nenhum dado de cartão é armazenado.
+**Critérios de aceite:** retorno não confirma; duplicata tem um efeito; valor/referência divergente bloqueia transição; posse durável impede novo POST e recuperação só consulta; nenhum dado de cartão é armazenado.
 
 **Riscos:** evento fora de ordem, aprovação tardia, timeout ambíguo e configuração cruzada de ambientes.
 

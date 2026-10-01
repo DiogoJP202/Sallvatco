@@ -2,6 +2,14 @@
 
 # Estratégia de testes
 
+## Evidência e execução — revisão de 01/10/2026
+
+Base `d347a68`: CI registrou 66 testes unitários e 510 de integração (576 aprovados), incluindo 10 cenários em PostgreSQL efêmero. Referências de runs em [STATUS.md](STATUS.md). Sem `SALLVAT_TEST_POSTGRES`, esses dez cenários são pulados localmente; não descrevê-los como aprovados nessa execução. Comandos e cuidados do servidor descartável em [DEVELOPMENT.md](DEVELOPMENT.md).
+
+Testes HTTP usam provedores simulados. Não demonstram conta Mercado Pago homologada, cotação real, e-mail entregue, VPS configurada, restore operacional, conformidade jurídica ou nota Lighthouse. A revisão documental não substitui essas validações. [OPERATIONS.md](OPERATIONS.md) contém a matriz e o registro ainda a preencher em Staging.
+
+Para documentação: executar Markdown lint, verificar links/âncoras, índice completo, numeração única dos ADRs, coerência de backlog/status e `git diff --check`. Para alterações no comportamento, executar build/test/formatação e cenários específicos, conforme a definição de pronto. Diagramas conceituais devem ser identificados como alvo quando incluírem componentes não implementados.
+
 ## Objetivo
 
 Testar riscos de negócio, segurança e integração, não perseguir 100% de cobertura. Uma regra crítica deve ter teste rápido quando possível e teste integrado quando depende de transação, banco, autorização ou pipeline HTTP.

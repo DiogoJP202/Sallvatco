@@ -2,6 +2,10 @@
 
 # Infraestrutura
 
+## Estado em 01/10/2026
+
+Somente `compose.yaml` de PostgreSQL Development e workflows CI/Pages estão versionados. Não há Dockerfile da aplicação, imagem publicada, Nginx, stacks Staging/Production, rotina externa de backup ou restore operacional comprovado. A topologia abaixo é **alvo planejado**, sujeita a PBD-014/PBD-015, não descrição de servidor existente. Ver [STATUS.md](STATUS.md), [CONFIGURATION.md](CONFIGURATION.md) e [OPERATIONS.md](OPERATIONS.md).
+
 ## Topologia de produção
 
 ```mermaid

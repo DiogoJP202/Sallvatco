@@ -2,6 +2,8 @@
 
 # Architecture Decision Records
 
+Estado consolidado em 01/10/2026: ADRs são decisões e histórico, não certificado de implantação. A evolução vigente do ADR-015 está registrada ao final; [STATUS.md](STATUS.md) distingue código, demonstração, homologação e produção.
+
 ADRs 001–014 têm status **Aceita** em 2026-08-27. Registros posteriores informam sua data e status. Mudança relevante cria novo ADR que substitui o anterior; histórico não é apagado.
 
 ## ADR-001 — ASP.NET Core MVC com Razor Views
@@ -165,3 +167,5 @@ ADRs 001–014 têm status **Aceita** em 2026-08-27. Registros posteriores infor
 **Evolução em 28/09/2026:** webhook Orders usa ID assinado, consulta canônica e recibo único pelo manifesto autenticado, pois o ID do evento no corpo não é assinado. Captura integral de transação única, pedido e estoque são confirmados na mesma transação serializável. Demais resultados exigem revisão; não há reabertura de pedido cancelado, estorno automático ou associação de claim por referência. A migration recusa remoção de evidências. Flags permanecem desligadas até homologação real e recuperação operacional.
 
 **Recuperação interna:** um Admin atual poderá solicitar reconsulta de tentativa pendente com ID Orders já persistido, versão esperada e motivo tipado. O GET canônico é a evidência financeira; o comando administrativo não declara pagamento aprovado. A recuperação compartilha `PaymentObservationProcessor` com o webhook e grava conclusão auditada na mesma transação financeira, sem criar assinatura/recibo fictício. Intenção fica salva antes do HTTP. Sem retry de POST, associação por referência ou remoção de revisão. Caso de uso implementado com flag desligada; endpoint, fila de recuperação, resolução e homologação seguem pendentes.
+
+**Consolidação em 01/10/2026:** desde os incrementos de 28–30/09, recuperação possui endpoint/painel, execução durável e job limitado com orçamento persistido; checkout MVC está ligado ao dispatcher Orders por duas confirmações; reembolso total possui intenção, envio exclusivo e confirmação canônica compartilhada. Nenhum POST financeiro é repetido após posse, inclusive em timeout/crash; ID ausente exige resolução ainda pendente, não busca/vínculo automático. `Refunded` só ocorre após evidência canônica e não repõe estoque/cupom. Todas as flags permanecem falsas, Preferences não é fallback, produção permanece recusada. Homologação externa, resolução auditada de exceções e operação produtiva continuam pendentes. Não houve mudança para outro provedor nem habilitação financeira nesta revisão documental.

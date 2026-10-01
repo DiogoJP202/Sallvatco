@@ -4,6 +4,8 @@
 
 Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/resultado, `STORY` descreve valor verificável e `TASK` é unidade de execução. Itens da Fase 0 já materializados estão marcados; aprovação comercial permanece aberta.
 
+Revisão em 01/10/2026: `[x]` indica entrega técnica verificável, não homologação comercial/produtiva. [STATUS.md](STATUS.md) consolida fases, limitações e prioridades. Tarefas compostas foram separadas quando implementação e validação externa tinham estados diferentes.
+
 ## EPIC F0 — Descoberta e documentação
 
 ### STORY F0-S1 — Equipe possui uma fonte de verdade técnica
@@ -19,6 +21,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Definir pedidos, pagamento, frete e autenticação.
 - [x] Definir segurança, LGPD, observabilidade, infraestrutura e deploy.
 - [x] Criar roadmap, backlog, testes, SEO e ADRs.
+- [x] Revisar documentação contra código, flags, migrations e workflows; consolidar estágio, pendências e guias de desenvolvimento/configuração/operação em 01/10/2026.
 - [ ] Revisar e aprovar a documentação com a Sallvat.
 - [ ] Atribuir responsável e prazo às PBDs que bloqueiam as próximas fases.
 
@@ -157,7 +160,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 - [x] Implementar query paginada de catálogo e filtros essenciais.
 - [x] Implementar página `/perfumes/{slug}` com seleção de variante.
-- [x] Implementar home e destaques conforme conteúdo aprovado.
+- [x] Implementar home e destaques com conteúdo demonstrativo.
+- [ ] Aprovar conteúdo definitivo, preços, notas e imagens antes de cadastrar/publicar catálogo produtivo (PBD-002).
 - [x] Gerar title, description, canonical, Open Graph e JSON-LD.
 - [x] Implementar 404 e histórico/redirect 301 de slug.
 - [x] Aplicar imagens responsivas e acessibilidade básica.
@@ -206,7 +210,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar validação e normalização de contato/CEP/endereço.
 - [x] Pré-preencher dados autenticados sem exigir salvamento.
 - [x] Não coletar CPF enquanto `PBD-003` não exigir.
-- [x] Implementar confirmação das políticas aplicáveis sem checkbox abusivo.
+- [x] Evitar coleta de CPF e aceite genérico enquanto políticas estão pendentes; confirmar explicitamente a operação de checkout de teste.
+- [ ] Publicar políticas aprovadas e integrar confirmação/informação aplicável ao checkout, sem checkbox abusivo (PBD-006/PBD-012).
 - [x] Testar overposting, campos ausentes, endereço de outro cliente e guest.
 
 ### STORY F5-S2 — Sistema cria pedido e reserva estoque atomicamente
@@ -235,7 +240,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar job de expiração em lotes.
 - [x] Liberar reserva/cupom idempotentemente.
 - [x] Criar casos de uso Admin com versão e justificativa.
-- [x] Criar `RequiresAttention` e fila de resolução.
+- [x] Criar `RequiresAttention` e fila mínima de sinalização; resolução guiada permanece em F8-S1.
 - [x] Auditar transições manuais.
 - [x] Testar todas as arestas válidas e inválidas.
 
@@ -257,8 +262,10 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Revalidar opção no checkout e tratar mudança de preço.
 - [x] Configurar origem/contato confirmados, apresentar preparo médio de 2 dias úteis separado do transporte e validar limites da configuração.
 - [x] Bloquear cotação/revalidação automática de múltiplas unidades sem caixa consolidada validada, preservando a sacola e impedindo fallback para frete zero.
-- [ ] Persistir snapshot no pedido/shipment.
-- [ ] Testar CEP, nenhuma cotação, timeout, 401/429 e sandbox.
+- [x] Persistir snapshot de opção, preço e prazo de transporte no pedido.
+- [ ] Persistir prazo de preparo separado e integrar futuro snapshot de shipment.
+- [x] Testar CEP, nenhuma cotação, timeout e 401/429 com HTTP simulado.
+- [ ] Homologar cotação no sandbox real com embalagem/serviços aprovados.
 
 ### STORY F6-S2 — Operação prepara integração de envio e rastreio
 
@@ -275,7 +282,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 
 ## EPIC F7 — Mercado Pago
 
-### STORY F7-S1 — Cliente é redirecionado para uma preferência idempotente
+### STORY F7-S1 — Cliente abre checkout Orders com envio exclusivo
 
 **Aceite:** pedido local existe antes do gateway e timeout não cria cobrança duplicada.
 
@@ -293,15 +300,16 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar contrato de criação Orders isolado, com tipos separados, flags exclusivas, validação e HTTP simulado, sem fallback entre APIs.
 - [x] Persistir ID externo Orders e posse exclusiva do envio, revalidar reservas antes do HTTP e bloquear reenvio ambíguo.
 - [x] Montar linhas Orders a partir dos snapshots, conservando centavos do desconto e incluindo frete uma vez.
-- [ ] Implementar consulta/reconciliação de envios abandonados e notificações antes de conectar a tela.
+- [x] Implementar consulta/reconciliação com ID conhecido e notificações; envios sem ID permanecem pendentes em F7-S3.
 - [x] Persistir uma tentativa Sandbox por pedido com autorização, snapshots, reservas e concorrência, sem acionar gateway.
 - [x] Conectar revisão e pedido local ao dispatcher Orders Sandbox com duas confirmações, proteção Data Protection por dono, revalidação de valores/frete e falhas sanitizadas; desativado por padrão, sem fallback para Preferences.
-- [ ] Implementar retry seguro e consulta após timeout ambíguo.
+- [x] Bloquear retry de POST após posse durável e consultar resultado incerto quando houver ID conhecido.
 - [x] Criar páginas de retorno não autoritativas, autorizadas por conta/sessão guest, sem gateway ou efeitos financeiros em GET.
 - [x] Testar fluxo MVC simulado, replay, token expirado/adulterado/alheio, antiforgery, mudança de preço/cupom/frete, limites e retorno falso; acrescentar criação concorrente revisada em PostgreSQL isolado.
 - [ ] Homologar revisão, duas confirmações, retorno e perda de sessão no servidor Staging com contas de teste; aprovar políticas comerciais antes de qualquer compra real.
 - [x] Testar payload, ambiente, timeout, cancelamento, ausência de retry automático e URL no adapter isolado.
-- [ ] Testar retry/recuperação do fluxo persistido ponta a ponta antes de habilitar o checkout.
+- [x] Testar ausência de re-POST e recuperação persistida com fakes/PostgreSQL isolado.
+- [ ] Homologar interrupções do fluxo financeiro ponta a ponta em Staging antes de habilitar compras.
 
 ### STORY F7-S2 — Webhook confirma pagamento uma única vez
 
@@ -313,13 +321,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar endpoint com limite de corpo e sem antiforgery.
 - [x] Validar `x-signature` e segredo no ambiente Sandbox; produção permanece recusada.
 - [x] Deduplicar entrega assinada antes de efeitos, sem confiar no ID não assinado do corpo.
-- [ ] Consultar pagamento e validar referência, valor, moeda e ambiente.
+- [x] Consultar Orders e validar referência, valor, moeda e ambiente com snapshots locais.
 - [x] Implementar GET canônico Orders com validação de identidade/snapshots, resposta sanitizada, limites e HTTP fake.
 - [x] Conectar a consulta ao webhook e validar captura integral de transação única; outros cenários exigem revisão.
 - [x] Aplicar `PaymentStatus`, `OrderStatus` e estoque na mesma transação.
 - [x] Responder corretamente a duplicata, falha transitória e payload inválido em testes simulados.
 - [ ] Homologar assinatura, timestamps/reenvios, proxy HTTPS e captura real em conta de teste antes de ativar.
-- [ ] Testar concorrência, ordem de eventos e ausência de segredo nos logs.
+- [x] Testar concorrência e ordem de eventos com fakes/PostgreSQL isolado.
+- [ ] Validar logs reais do proxy/aplicação/provedor sem segredos durante homologação.
 
 ### STORY F7-S3 — Operação concilia e reembolsa pagamento
 
@@ -339,11 +348,14 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [x] Implementar envio total Sandbox a partir da intenção, com consulta prévia, claim durável auditado, chave estável e nenhum re-POST após início; resultado incerto permite somente consulta, desativado por padrão.
 - [x] Implementar confirmação total por webhook/consulta Admin com captura/valor/versões, evidência atômica e transição de pedido/pagamento, sem reposição automática de estoque/cupom.
 - [ ] Homologar envio/consulta de reembolso em conta real de teste, payloads, notificações atrasadas e operação de claims que podem não ter chegado ao provedor; não habilitar produção automaticamente.
-- [ ] Tratar aprovação tardia com nova reserva ou `RequiresAttention`.
+- [x] Encaminhar aprovação tardia/divergência para `RequiresAttention`, sem nova reserva automática.
+- [ ] Implementar resolução auditada de aprovação tardia conforme PBD-005, sem transição silenciosa.
 - [x] Criar consulta Admin local de tentativas/divergências, filtros, detalhe e recibos, sem dados pessoais ou efeitos financeiros.
 - [ ] Homologar recuperação no painel e acrescentar resolução auditada de divergências, sem retry de POST financeiro.
-- [ ] Auditar reembolso e resolução manual.
-- [ ] Testar falha/retry, valor divergente e estoque indisponível.
+- [x] Auditar preparação, início e conclusão/consulta humana de reembolso atomicamente; webhook mantém recibo próprio.
+- [ ] Auditar a futura resolução manual de divergências financeiras.
+- [x] Testar falha/timeout sem re-POST, valor divergente e aprovação tardia sem recompor estoque, com provedores simulados.
+- [ ] Homologar esses cenários com contas reais de teste e responsáveis operacionais.
 
 ## EPIC F8 — Operação e comunicação
 
@@ -376,6 +388,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Testar link expirado/adulterado, duplicata e indisponibilidade do provedor.
 
 ## EPIC F9 — Segurança, LGPD e hardening
+
+Gaps confirmados na revisão documental: middleware/proxy confiável, headers globais, duração menor de sessão Admin, limiter dedicado de cotação e health de storage ainda não entregues. Políticas descritas em SECURITY não são garantia de implementação.
 
 ### STORY F9-S1 — Aplicação resiste aos abusos prioritários
 
@@ -417,6 +431,8 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 - [ ] Provisionar Ubuntu, usuário, SSH, firewall, Docker e sincronização de tempo.
 - [ ] Configurar stacks, redes, bancos, volumes e Data Protection separados.
 - [ ] Configurar Nginx, Cloudflare Full strict e origem restrita.
+- [ ] Implementar/homologar ForwardedHeaders confiáveis, HTTPS/HSTS, CSP/headers e AllowedHosts por ambiente.
+- [ ] Verificar armazenamento persistente no smoke/health sem expor caminhos ou segredos.
 - [ ] Proteger Staging por Cloudflare Access e `noindex`.
 - [ ] Instalar secrets com permissões mínimas.
 - [ ] Configurar limites de recursos, health checks e restart policies.
@@ -429,6 +445,7 @@ Este backlog segue o [ROADMAP.md](ROADMAP.md). `EPIC` corresponde a uma fase/res
 #### TASK
 
 - [ ] Publicar imagem OCI por SHA/digest no CI.
+- [ ] Encadear publicação ao CI aprovado; hoje Pages e CI executam independentemente no mesmo push.
 - [ ] Implementar deploy de Staging e promoção manual/aprovada.
 - [ ] Implementar validação de options e readiness.
 - [ ] Implementar etapa explícita de migration.

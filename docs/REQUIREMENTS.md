@@ -2,6 +2,8 @@
 
 # Requisitos
 
+Este documento define requisitos e decisões de negócio, não comprova que todas as capacidades estejam entregues. Para a situação verificada em 01/10/2026, consultar [STATUS.md](STATUS.md) e [BACKLOG.md](BACKLOG.md). As 17 PBDs abaixo permanecem abertas ou parcialmente confirmadas; nenhuma aprovação adicional foi presumida nesta revisão.
+
 ## Requisitos funcionais
 
 | ID | Requisito | MVP |

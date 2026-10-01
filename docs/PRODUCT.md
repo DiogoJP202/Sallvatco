@@ -2,6 +2,8 @@
 
 # Produto
 
+Estado em 01/10/2026: esta é a visão alvo do produto. Há demonstração publicada e núcleo MVC implementado, não loja produtiva liberada. Conteúdo editorial, preços demonstrativos e linha corporal ainda exigem aprovação/cadastro comercial. Jornadas/rotas abaixo podem ser planejadas; comparar com [STATUS.md](STATUS.md) antes de apresentar uma funcionalidade como entregue.
+
 ## Visão
 
 O Sallvat & Co. será o canal digital oficial de uma marca de perfumes artesanais. A experiência deve transmitir identidade, origem e características olfativas dos produtos, ao mesmo tempo em que oferece uma compra confiável, simples e operável por uma equipe pequena.

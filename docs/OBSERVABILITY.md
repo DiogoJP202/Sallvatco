@@ -2,6 +2,10 @@
 
 # Observabilidade
 
+## Estado conferido — 01/10/2026
+
+Serilog JSON/stdout, correlation ID, health checks e auditoria em banco estão implementados. Rotação/retenção no runtime produtivo, alertas externos e monitoramento da VPS ainda dependem da implantação. O campo `Version` atual vem da versão do assembly, não comprova SHA do deploy; registrar SHA/digest separadamente até instrumentar a versão de release. Jobs de carrinho, expiração e recuperação existem; job de rastreio não. `AuditLog` registra ator, ação, alvo, JSON sanitizado, correlação e UTC, sem colunas próprias de IP/role. O restante deste documento inclui requisitos operacionais alvo.
+
 ## Objetivos
 
 Permitir diagnosticar falhas, acompanhar integrações, operar pedidos e investigar ações administrativas sem expor dados sensíveis. Observabilidade técnica não substitui `AuditLog`, que é trilha de responsabilidade de negócio.
@@ -83,7 +87,7 @@ Auditar alteração de preço, estoque, publicação, imagem, cupom, pedido, sta
 | Endpoint | Conteúdo | Uso |
 |---|---|---|
 | `/health/live` | Processo responde, sem consultar dependências. | Restart/orquestração. |
-| `/health/ready` | PostgreSQL e storage local disponíveis; integrações externas não bloqueiam readiness por falha momentânea. | Deploy e Nginx. |
+| `/health/ready` | Atual: conexão PostgreSQL. Storage e integrações externas não são verificados por esse endpoint. | Diagnóstico local e futuro deploy/proxy. |
 
 Respostas públicas não expõem connection string, caminho, versão de pacote ou detalhes de exceção. Nginx restringe detalhes a rede administrativa.
 

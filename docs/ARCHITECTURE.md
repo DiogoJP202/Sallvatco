@@ -2,6 +2,12 @@
 
 # Arquitetura
 
+## Estado da implementação — 01/10/2026
+
+As quatro camadas e testes existem. `Application` concentra contratos/DTOs e regras puras; os casos de uso que precisam de EF são implementados em `Infrastructure` usando `SallvatDbContext` diretamente. Não existe `IApplicationDbContext` implementado nem repositório genérico. As referências são verificadas por testes; Web registra Infrastructure no composition root. `tools/Sallvat.Showcase` é ferramenta de demonstração, não nova camada de produção.
+
+Os diagramas abaixo descrevem também componentes planejados. Frete ainda só cota/revalida; `Shipment`, etiquetas e tracking não existem. E-mail real, implantação Nginx/Cloudflare e produção financeira não estão entregues. Ver [estado consolidado](STATUS.md) e [configuração](CONFIGURATION.md).
+
 ## Visão geral
 
 O Sallvat será um monólito modular ASP.NET Core MVC. Um único processo hospedará páginas públicas, área do cliente, área administrativa e endpoints de integração. Os módulos serão separados por responsabilidade dentro das camadas, preservando a opção de extração futura apenas se volume ou organização justificarem.
@@ -123,7 +129,7 @@ sequenceDiagram
 
 - exceções de validação e conflito são convertidas em mensagens seguras e códigos adequados;
 - exceções inesperadas recebem correlation ID e página genérica;
-- timeouts externos têm política curta de retry apenas quando a operação é idempotente;
+- retry depende do contrato concreto: criação Orders e envio de reembolso não repetem POST após posse durável; apenas consulta controlada pode recuperar resultado incerto, conforme [PAYMENTS.md](PAYMENTS.md);
 - `ProblemDetails` pode ser usado nos endpoints técnicos; páginas MVC usam view de erro;
 - stack trace aparece apenas em Development.
 

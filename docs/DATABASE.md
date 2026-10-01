@@ -2,6 +2,10 @@
 
 # Banco de dados
 
+## Modelo vigente e modelo alvo — 01/10/2026
+
+O schema vigente é definido pelas 13 migrations e por `SallvatDbContextModelSnapshot`. A lista/ERD abaixo também contém entidades planejadas: `Shipment` ainda não existe; transporte selecionado está em campos snapshot de `Order`, mas o prazo de preparo ainda não está persistido separadamente. Pedido guest pode ter `CustomerId` nulo e snapshot próprio. Reembolso total e execuções de recuperação já possuem tabelas/migrations descritas neste documento. Não interpretar o ERD conceitual como inventário de tabelas aplicadas em um servidor. Ver [STATUS.md](STATUS.md).
+
 ## Convenções
 
 - PostgreSQL com Entity Framework Core e Npgsql;
@@ -18,7 +22,7 @@
 | Entidade | Propósito e campos essenciais |
 |---|---|
 | `ApplicationUser` | Identity com `Guid`, e-mail confirmado, lockout e credenciais. |
-| `Customer` | Nome, e-mail normalizado, telefone e `ApplicationUserId` opcional/único. Existe também para guest. |
+| `Customer` | Nome, e-mail normalizado, telefone e `ApplicationUserId` opcional/único. Associação guest é planejada, não automática hoje. |
 | `Address` | Endereço reutilizável do cliente; nunca substitui snapshot do pedido. |
 | `Product` | Nome, slug, descrições, família e pirâmide olfativa, concentração, projeção, fixação, ocasiões, estação, período e status. |
 | `ProductSlugHistory` | Slug antigo único e produto atual, para redirect 301 após mudança editorial. |
@@ -33,11 +37,12 @@
 | `InventoryMovement` | Variante, tipo, quantidade assinada, saldo resultante, origem, ator e motivo. |
 | `Payment` | Tentativa/preferência, provedor, IDs externos, status, valor, idempotency key e timestamps. |
 | `PaymentRefundRequest` | Intenção local de reembolso total Sandbox, captura/valor/versões, ator, motivo e UTC; `Prepared` não significa dinheiro devolvido. |
-| `Shipment` | Cotação escolhida, transportadora, serviço, valor/prazo snapshots, IDs externos, etiqueta e rastreio. |
+| `PaymentRecoveryExecution` | Posse temporal de consulta, origem manual/automática, resultado e versão, sem atribuir job a Admin fictício. |
+| `Shipment` (planejado) | Cotação escolhida, transportadora, serviço, valor/prazo snapshots, IDs externos, etiqueta e rastreio. |
 | `Coupon` | Código normalizado, tipo/valor, janela, limites, mínimo, usos reivindicados, ativo e versionamento. |
 | `CouponRedemption` | Reserva idempotente do cupom, pedido opcional até o consumo, cliente/e-mail normalizado, valor, expiração e estado. |
-| `WebhookEvent` | Provedor, ID externo, tipo, hash/payload sanitizado, recebimento, processamento e resultado. |
-| `AuditLog` | Ator, ação, entidade, chave, antes/depois sanitizados, IP, correlation ID e instante. |
+| `WebhookEvent` | Identidade deduplicada da entrega assinada, pagamento/recurso, resultado e UTC; sem payload bruto ou assinatura. |
+| `AuditLog` | Ator, ação, entidade, chave, alterações sanitizadas, correlation ID e UTC; não há coluna de IP/role no modelo atual. |
 
 `ProductCategory` não integra o MVP. Família olfativa e demais atributos atendem a descoberta inicial; uma taxonomia administrável só será adicionada com requisito de navegação ou merchandising.
 
@@ -58,6 +63,9 @@ erDiagram
     ORDER ||--|{ ORDER_ITEM : snapshots
     ORDER ||--|| ORDER_ADDRESS : ships_to
     ORDER ||--o{ PAYMENT : attempts
+    PAYMENT ||--o| PAYMENT_REFUND_REQUEST : refunds
+    PAYMENT ||--o{ PAYMENT_RECOVERY_EXECUTION : reconciles
+    PAYMENT ||--o{ WEBHOOK_EVENT : receives
     ORDER ||--o| SHIPMENT : fulfills
     ORDER ||--o{ STOCK_RESERVATION : reserves
     PRODUCT_VARIANT ||--o{ STOCK_RESERVATION : allocated
@@ -166,5 +174,23 @@ Intenção e auditoria são gravadas atomicamente; pedido, pagamento e estoque p
 - arquivos de imagem sem referência seguem limpeza controlada e auditável, nunca cascade cego.
 
 ## Migrations
+
+Inventário versionado, na ordem de aplicação (não comprova aplicação em Staging/Production):
+
+| ID | Alteração principal |
+|---|---|
+| `20260902133721_InitialIdentityAndCustomers` | Identity, roles, clientes e endereços. |
+| `20260902192057_AddCatalogAndInventory` | Catálogo, imagens, estoque e auditoria. |
+| `20260908123340_AddShoppingCarts` | Carrinhos e itens. |
+| `20260908164950_AddCoupons` | Cupons e resgates. |
+| `20260910133334_AddOrdersAndReservations` | Pedidos, snapshots e reservas. |
+| `20260910174859_AddOrderLifecycle` | Ocorrências, ciclo de vida e histórico do cupom. |
+| `20260921131953_AddPaymentFoundation` | Tentativas de pagamento. |
+| `20260922130251_AddPaymentOrderDispatch` | Posse de envio e IDs Orders. |
+| `20260928110452_AddPaymentWebhookConfirmation` | Evidência de captura e recibos de webhook. |
+| `20260929113017_AddPaymentRecoveryExecutions` | Execuções duráveis de recuperação. |
+| `20260929114848_AddAutomaticPaymentRecovery` | Origem/resultado e orçamento automático. |
+| `20260930175435_AddPaymentRefundRequests` | Intenção de reembolso total. |
+| `20260930183351_AddPaymentRefundDispatch` | Envio/confirmação total e evidências. |
 
 Migrations ficarão em `Sallvat.Infrastructure`, serão revisadas e aplicadas explicitamente no deploy. Startup não executa migration. Mudanças destrutivas usam estratégia expand-and-contract, backup prévio e verificação de compatibilidade com rollback descrita em [DEPLOYMENT.md](DEPLOYMENT.md).

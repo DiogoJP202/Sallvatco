@@ -2,6 +2,14 @@
 
 # Deploy, rollback e restauração
 
+## Estado e pré-requisitos — 01/10/2026
+
+CI e Pages publicam apenas a apresentação; não há deploy do backend implementado. Os procedimentos de Staging/Production abaixo são runbook alvo, ainda não executado. VPS/domínios, imagem OCI, proxy/headers, e-mail, primeiro Admin, volumes e backup precisam ser preparados. Consulte [OPERATIONS.md](OPERATIONS.md) antes de usar este roteiro e [CONFIGURATION.md](CONFIGURATION.md) para flags/dependências reais.
+
+### Schema financeiro atual
+
+Há 13 migrations, incluindo `AddPaymentRefundRequests` e `AddPaymentRefundDispatch`. Aplicar a sequência completa explicitamente em banco isolado de homologação antes de usar o painel atual. Ambas as flags de reembolso permanecem falsas. Downgrades que apagariam intenções/envios/confirmações são recusados; flags falsas não autorizam remover evidências. Uma recusa não garante que migrations vazias anteriores no downgrade não tenham sido revertidas: conferir schema real e compatibilidade antes de executar outra imagem. Nunca editar registros para vencer a guarda.
+
 ## Princípios
 
 - o mesmo artefato imutável aprovado em Staging é promovido para Production;
@@ -23,13 +31,13 @@ Para suspender novas consultas, desabilitar a flag e reiniciar o processo com a 
 
 ### Infraestrutura versionada
 
-Já estão versionados o Compose de Development, o pipeline de validação e os assets Tailwind compilados em build reprodutível.
+Já estão versionados o Compose de Development, o pipeline de validação, 13 migrations de Infrastructure e os assets Tailwind compilados em build reprodutível.
 
 Ainda serão adicionados:
 
 - imagem OCI de `sallvat-web` identificada por commit SHA e digest;
 - stacks Compose de Staging/Production e configuração Nginx;
-- migrations dentro do assembly de `Infrastructure` quando houver schema real;
+- executor/etapa de migrations no deploy da imagem (as migrations já existem);
 - checklist/release notes com mudanças e decisões operacionais.
 
 ## Pipeline de validação

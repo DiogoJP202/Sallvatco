@@ -2,6 +2,8 @@
 
 # LGPD e privacidade
 
+Estado em 01/10/2026: plano técnico sujeito a validação jurídica/comercial. Minimização e parte dos controles técnicos estão no código, mas política final, inventário aprovado, retenção, exportação/anonimização e processo operacional de titulares ainda não estão concluídos. Não afirmar conformidade integral com base neste documento; pendências em [STATUS.md](STATUS.md) e F9-S2 do [backlog](BACKLOG.md).
+
 ## Princípios
 
 O sistema aplica finalidade, adequação, necessidade, segurança, prevenção, transparência e responsabilização. Este documento é plano técnico e não substitui revisão jurídica. Dados só serão coletados quando necessários a compra, entrega, segurança, atendimento ou obrigação legal.

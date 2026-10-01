@@ -2,6 +2,8 @@
 
 # Armazenamento de imagens
 
+Estado em 01/10/2026: upload/validação/recodificação e storage local estão implementados. Volume de VPS, backup/restore operacional, relatório periódico de órfãos e migração R2/S3 permanecem planejamento. O health atual não verifica storage. `/media` serve arquivos estáticos por chave; não há autorização por objeto privado. Chaves não enumeráveis reduzem descoberta, mas não tornam o arquivo privado para quem conhece a URL.
+
 ## Estratégia
 
 O MVP usa volume persistente da VPS, fora do web root e fora do PostgreSQL. `IImageStorage` separa a aplicação do meio físico e permite migração para Cloudflare R2, Amazon S3 ou serviço compatível.

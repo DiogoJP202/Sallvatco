@@ -2,6 +2,14 @@
 
 # Segurança
 
+## Implementado versus requerido — 01/10/2026
+
+Existem Identity/lockout, rate limiting de conta e ações financeiras, antiforgery MVC, autorização, validação de upload, logs sanitizados e testes. Esta especificação também contém controles ainda **planejados**: CSP/headers globais, HSTS/redirect HTTPS, ForwardedHeaders com proxies confiáveis, sessão Admin mais curta, infraestrutura e ciclo completo de acesso. Não há esses middlewares globais nem Nginx versionado em `Program.cs`/repositório. Não expor o backend antes de implementar e homologar a camada de transporte/proxy.
+
+Limites efetivos atuais: login 10/10 minutos/IP, cadastro 5/hora/IP, recuperação 3/hora/IP e por hash de e-mail; confirmação de checkout/continuação de pagamento 5/minuto/IP; ações financeiras Admin compartilham 5/minuto/usuário/processo; webhook 120/minuto/processo. Cotação/revisão não possui ainda o limiter dedicado de 30/minuto proposto abaixo. Esses gaps pertencem a F9/F10. Testes automatizados não constituem pentest ou aprovação de produção.
+
+Preparação/envio/consulta de reembolso exigem antiforgery, Admin atual, versão e confirmação, com limite de corpo e auditoria. Permanecem desligados. Ver [CONFIGURATION.md](CONFIGURATION.md) e [OPERATIONS.md](OPERATIONS.md).
+
 ## Recuperação administrativa de pagamentos
 
 `POST /Admin/Pagamentos/{id}/Recuperar` exige policy Admin e antiforgery, versão esperada, motivo tipado e confirmação explícita. Ator vem dos claims; o serviço confere a role atual no banco antes/depois do HTTP. A ação permanece bloqueada com `RecoveryEnabled=false`. Rate limiting nativo após autenticação/autorização: cinco requisições/minuto por usuário/processo, sem fila, 429 na rejeição. Limites de corpo de 8 KiB e de campos do formulário complementam a validação. Não confiar em ID externo, ator, valores ou status enviados pelo navegador.
@@ -58,8 +66,8 @@ Valores iniciais, ajustáveis após teste de carga:
 | Login | 10 POST por IP a cada 10 minutos; lockout da conta após 5 falhas por 15 minutos. |
 | Cadastro | 5 tentativas por IP por hora. |
 | Recuperação de senha | 3 por IP e 3 por e-mail normalizado por hora, sem revelar existência. |
-| Cotação de frete | 30 por IP por minuto com cache curto. |
-| Checkout/criação de pedido | 10 por IP por 10 minutos e idempotência por tentativa. |
+| Cotação de frete | Proposta pendente: 30 por IP por minuto; cache curto já implementado. |
+| Checkout/criação de pedido | Atual: 5 por IP por minuto na confirmação e continuação de pagamento; idempotência por tentativa. |
 | Upload administrativo | 11 MB por multipart, 10 MB por arquivo, 25 megapixels, 10.000 px por dimensão e 10 imagens por produto. |
 
 Rate limiting complementa, mas não substitui Cloudflare, lockout, autorização e idempotência. Webhooks válidos podem chegar em rajada; aplicar limite de corpo e concorrência sem bloquear retries legítimos do provedor.

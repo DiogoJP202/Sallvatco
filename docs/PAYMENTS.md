@@ -2,7 +2,9 @@
 
 # Pagamentos
 
-## Implementação atual — fundação local
+## Estado atual e histórico de incrementos
+
+Consolidação em 01/10/2026: o fluxo MVC usa Orders Sandbox com preparação, envio durável, webhook, recuperação e reembolso total. Todas as flags permanecem falsas. Preferences é adapter isolado, não fallback. Produção é recusada pelo validador atual. As subseções datadas preservam o estado de cada incremento: frases como “dispatcher futuro” ou “sem endpoint” não descrevem a versão final de 30/09. Para situação operacional, configuração e lacunas, consultar [STATUS.md](STATUS.md), [CONFIGURATION.md](CONFIGURATION.md) e [OPERATIONS.md](OPERATIONS.md).
 
 ### Envio e confirmação de reembolso total — 30/09/2026
 
@@ -244,11 +246,11 @@ Status de pagamento não substitui `OrderStatus`.
 
 ## Contrato interno
 
-`IPaymentGateway` implementa a criação da preferência. Consulta canônica e reembolso abaixo são capacidades planejadas e serão acrescentadas com seus casos de uso:
+`IPaymentGateway` implementa criação de preferência isolada, criação Orders, consulta canônica Orders e envio de reembolso total Orders. São capacidades distintas; não misturar IDs ou ativar ambas as APIs:
 
 - criar preferência a partir de pedido e URLs de retorno;
-- consultar o estado canônico de um pagamento externo;
-- solicitar reembolso total ou, se aprovado em `PBD-006`, parcial.
+- criar Orders a partir dos snapshots e consultar seu estado canônico;
+- solicitar reembolso total Sandbox; parcial depende de `PBD-006` e ainda não existe.
 
 O contrato retorna IDs, estado normalizado, valor, moeda e timestamps. Payloads do Mercado Pago ficam em `Infrastructure`.
 
@@ -262,29 +264,32 @@ sequenceDiagram
     participant MP as Mercado Pago
     C->>S: confirmar checkout
     S->>DB: pedido + snapshots + reserva
-    S->>MP: criar preferência com external_reference
-    MP-->>S: preference_id e init_point
+    C->>S: confirmar abertura do pagamento de teste
+    S->>DB: tentativa e posse durável de envio
+    S->>MP: criar Orders com external_reference
+    MP-->>S: ExternalOrderId e checkout_url
+    S->>DB: persistir ID e resultado
     S-->>C: redirecionar para Checkout Pro
     C->>MP: concluir tentativa
     MP-->>C: back_url
     C->>S: página de retorno
-    S-->>C: estado local ainda não autoritativo
+    S-->>C: estado local autorizado, sem confiar na URL
     MP->>S: webhook assinado
-    S->>MP: consultar pagamento pelo ID
+    S->>MP: consultar Orders pelo ID assinado
     MP-->>S: estado, valor e referência canônicos
     S->>DB: deduplicar e aplicar transição atômica
     S-->>MP: 200/204
 ```
 
-## Criar preferência
+## Criar recurso externo
 
 - criar o pedido local antes da chamada externa;
 - usar `OrderNumber`/ID opaco como `external_reference` e nunca dados pessoais;
 - enviar itens e valor recalculados pelo servidor;
 - configurar HTTPS nas URLs de sucesso, pendência e falha;
-- alinhar expiração da preferência à reserva quando o meio de pagamento permitir;
-- armazenar uma chave idempotente estável por operação e reutilizá-la em retry;
-- timeouts não autorizam criar uma segunda preferência sem antes consultar ou repetir idempotentemente.
+- alinhar expiração do recurso à reserva quando o meio de pagamento permitir;
+- armazenar uma chave idempotente estável por operação antes do envio;
+- no fluxo persistido atual, timeout ou posse já iniciada não autoriza repetir POST, mesmo com a mesma chave; consultar quando houver ID conhecido e encaminhar ambiguidades para revisão.
 
 ## URLs de retorno
 
@@ -308,25 +313,25 @@ Assinatura válida não elimina a consulta ao provedor. Evento inválido recebe 
 
 ## Idempotência e duplicatas
 
-- unique constraint em `(Provider, ExternalEventId)` para eventos;
-- unique constraint em `(Provider, Environment, IdempotencyKey)` para comandos externos;
+- recibo de webhook deduplicado pela identidade do manifesto assinado, não pelo ID não assinado do corpo;
+- constraints de chave idempotente, IDs externos e intenção por pagamento conforme [DATABASE.md](DATABASE.md) e mappings EF;
 - transição usa estado de origem e ID externo como condição;
 - webhook repetido não consome estoque, cupom ou envia comunicação duas vezes;
-- refund retry usa a mesma chave para a mesma intenção;
-- uma nova intenção recebe nova chave.
+- uma intenção total possui uma chave estável e no máximo um POST local após claim; consultas repetidas não reenviam reembolso;
+- não criar outra intenção/chave para contornar resultado incerto; só existe uma intenção total por pagamento no modelo atual.
 
 ## Mapeamento para pedido
 
 - aprovado e conciliado: `PendingPayment → Paid` e consumo da reserva;
 - pendente: pedido permanece `PendingPayment`;
-- rejeitado: tentativa é marcada, mas pedido pode aceitar outra tentativa até expirar;
+- rejeitado: resultado é registrado; não existe liberação automática de reenvio ou nova cobrança para contornar a tentativa;
 - cancelado/expirado sem captura: pedido pode ser cancelado e reserva liberada;
 - aprovado após expiração, valor divergente ou referência desconhecida: `RequiresAttention`;
 - reembolso confirmado: `Refunded`, sem reposição automática de estoque.
 
 ## Cancelamento e reembolso
 
-Cancelar pedido sem captura é operação local e, se necessário, cancela a preferência. Com valor capturado, o administrador solicita reembolso; o pedido só vira `Refunded` após confirmação canônica. Falha mantém o estado anterior e expõe ação de retry segura. Reembolso parcial será implementado somente após `PBD-006`.
+Cancelamento local só ocorre sob as guardas do ciclo de pedidos, sem captura conhecida ou revisão financeira. Não há cancelamento remoto de preferência/Orders implementado. Com valor capturado, o Admin prepara e envia intenção total Sandbox; o pedido só vira `Refunded` após confirmação canônica. Falha/timeout após claim permite apenas consulta, não retry de POST; divergência exige revisão. Reembolso parcial depende de `PBD-006` e de implementação própria.
 
 ## Conciliação
 

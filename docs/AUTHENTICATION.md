@@ -4,12 +4,12 @@
 
 ## Modelo
 
-ASP.NET Core Identity será usado com `ApplicationUser : IdentityUser<Guid>`. Credencial e perfil comercial são responsabilidades distintas:
+ASP.NET Core Identity é usado com `ApplicationUser : IdentityUser<Guid>`. Credencial e perfil comercial são responsabilidades distintas:
 
 - `ApplicationUser` contém dados necessários à autenticação, confirmação, lockout e roles;
 - `Customer` contém nome, telefone, e-mail comercial e endereços;
 - `Customer.ApplicationUserId` é opcional e único;
-- um guest possui `Customer` e pedidos, mas não possui `ApplicationUser`.
+- no modelo alvo, um guest pode possuir `Customer` sem `ApplicationUser`; na implementação atual o pedido guest guarda snapshot do comprador com `CustomerId` nulo, sem criar perfil ou credencial automaticamente.
 
 Essa separação evita criar senha ou conta implicitamente durante o checkout.
 
@@ -25,7 +25,9 @@ Essa separação evita criar senha ou conta implicitamente durante o checkout.
 - login, cadastro e recuperação usam as políticas de rate limiting descritas em [SECURITY.md](SECURITY.md); recuperação também limita o hash do e-mail normalizado;
 - `/Admin` já exige a policy `Admin`, mas nenhuma conta administrativa é criada automaticamente.
 
-O contrato `IAccountEmailSender` está integrado. Development grava mensagens em `.local/emails`, fora do web root e do Git, para homologação local; nenhum token ou URL é registrado em log. Staging e Production não simulam entrega: permanecem sem envio até `PBD-010` definir e configurar o provedor real.
+O contrato `IEmailSender` está integrado. Development grava mensagens em `.local/emails`, fora do web root e do Git, para homologação local; nenhum token ou URL é registrado em log. Staging e Production não simulam entrega: permanecem sem envio até `PBD-010` definir e configurar o provedor real.
+
+Pendências em 01/10/2026: bootstrap do primeiro Admin, concessão/revogação operacional, vínculo guest, histórico de pedidos e acompanhamento por link. `/conta/pedidos` ainda é uma tela contratada sem listagem real. O cookie atual é compartilhado por papéis com duração de 8 horas; sessão administrativa reduzida abaixo é requisito futuro. Fluxos descritos a seguir incluem comportamento alvo, não prova de homologação. Ver [STATUS.md](STATUS.md).
 
 ## Fluxos de conta
 
@@ -65,7 +67,7 @@ O contrato `IAccountEmailSender` está integrado. Development grava mensagens em
 
 ## Guest checkout
 
-- o e-mail informado pertence ao snapshot do pedido e ao `Customer` guest;
+- o e-mail informado pertence ao snapshot do pedido; a associação a `Customer` guest está planejada;
 - nenhuma credencial é criada e nenhum e-mail é considerado verificado;
 - a página de confirmação não concede acesso permanente ao pedido;
 - acompanhamento posterior usa link assinado, aleatório, expirável e enviado ao e-mail, sujeito a `PBD-011`;

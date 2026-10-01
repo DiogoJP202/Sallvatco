@@ -2,59 +2,32 @@
 
 # Sallvat & Co
 
-Sallvat & Co. é o projeto de um e-commerce para uma marca de perfumes artesanais. A aplicação deverá unir uma experiência institucional de marca a uma operação completa de catálogo, estoque, carrinho, checkout, pagamento, frete e administração.
+E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, catálogo, estoque, carrinho, pedidos e administração em um monólito modular ASP.NET Core MVC.
 
-## Estado atual
+## Estado atual — 01/10/2026
 
-O planejamento da Fase 0 e as **Fases 1 a 5** estão concluídos. A Fase 6 tem a fundação de cotação e as proteções de embalagem implementadas: `/checkout` pode consultar opções no Melhor Envio a partir do CEP e dos dados físicos atuais, mostrar preço/prazo e revalidar a seleção sem aceitar frete zero ou valor enviado pelo navegador. CEP de origem e contato confirmados já estão configurados, com preparo médio de dois dias úteis apresentado separadamente do transporte. Pedidos com mais de uma unidade não recebem cotação automática enquanto a caixa consolidada não for validada; a sacola permanece intacta. A integração fica desabilitada por padrão; credenciais, renovação OAuth e homologação das embalagens ainda estão pendentes. Nenhum pedido ou cobrança é criado pela tela enquanto essas decisões e a Fase 7 não estiverem prontas.
+**Vitrine publicada; loja transacional ainda não liberada para produção.** O núcleo do MVP está implementado em boa parte e coberto por testes, mas homologação externa, logística, comunicações, segurança de implantação e decisões comerciais continuam pendentes. Não considerar as fases 1–5 integralmente homologadas.
 
-O checkout coleta e normaliza somente contato e entrega, atende guest e cliente, pré-preenche endereços sem alterar a conta e impede acesso a endereço alheio. O caso de uso interno cria `Order`, snapshots comerciais e de frete, consumo de cupom e reservas de estoque na mesma transação, com idempotência por tentativa e proteção contra overselling. A máquina de estados rejeita arestas inválidas; um job cancela pedidos vencidos em lotes e libera estoque e cupom uma única vez. A fila `/Admin/Pedidos` permite sinalizar revisão ou cancelar pedidos ainda sem captura, sempre com versão, justificativa e auditoria. CPF e aceite genérico não são solicitados. A aplicação também mantém sacola guest por token seguro, recalcula preço, estoque e descontos, mescla o conteúdo após login e elimina carrinhos expirados. Os fluxos de e-mail usam caixa de saída local apenas em Development; o provedor real permanece pendente em `PBD-010`. Vínculo de pedidos guest e provisionamento do primeiro Admin dependem das próximas entidades e decisões comerciais. A documentação em [`docs/`](docs/README.md) é a fonte de verdade do desenvolvimento.
+- [Apresentação no GitHub Pages](https://diogojp202.github.io/Sallvatco/): home, Sobre, quatro perfumes e nove apresentações de body splash, com filtros/galerias/variantes demonstrativos. Sem login, compra ou backend nesse endereço.
+- Aplicação MVC: contas, endereços, CRUD de catálogo/imagens/estoque, carrinho, cupons, pedido transacional e reservas. Ainda faltam provedor de e-mail, primeiro Admin seguro e histórico/vínculo guest completos.
+- Frete: cotação/revalidação Melhor Envio, desativada. Uma unidade por cotação enquanto a caixa maior não for validada; não há compra de etiqueta ou rastreio implementados.
+- Pagamentos: Orders Sandbox, webhook, recuperação e reembolso total auditados; **todas as flags externas permanecem desligadas**. Testes não representam compras reais. Produção do Mercado Pago é recusada pela configuração atual.
+- Infraestrutura: CI e Pages operacionais; apenas PostgreSQL de Development em Compose. VPS, imagem da aplicação, proxy, Staging, backups externos e restore operacional ainda não foram entregues.
 
-A Fase 7 possui tentativas persistidas, envio Orders exclusivo, consulta canônica, webhook assinado e recuperação limitada. Em 30/09, o checkout MVC ganhou revisão protegida, confirmação do pedido com revalidação de valores/frete e segunda confirmação para abrir pagamento de teste. Retornos exibem apenas o estado local do pedido autorizado e ignoram alegações de aprovação na URL. `CheckoutEnabled=false` e as demais integrações permanecem desligadas; não há credenciais nem compras reais. Homologação externa, exceções financeiras, reembolso e produção continuam pendentes; veja [Pagamentos](docs/PAYMENTS.md).
+O [relatório de situação](docs/STATUS.md) consolida entregas, evidências, limitações, todas as pendências comerciais e ordem de continuidade. A documentação não habilita serviços nem aprova go-live.
 
-O painel permite preparar, enviar e consultar reembolso total Sandbox com Admin atual, confirmação, motivo, versões e auditoria atômica. O envio consulta a captura antes de registrar posse durável; depois do início, nunca repete o POST. Timeout permite apenas consulta, e confirmação canônica por webhook ou ação Admin altera pedido/pagamento juntos, sem repor estoque ou cupom. `RefundPreparationEnabled=false` e `RefundEnabled=false`: nenhuma operação real foi habilitada. As migrations são explícitas e preservam histórico em downgrade. Homologação externa, reembolsos parciais e resolução de divergências continuam pendentes; detalhes em [Pagamentos](docs/PAYMENTS.md).
+## Documentação para começar
 
-### Histórico dos incrementos
+- [Índice e convenções](docs/README.md).
+- [Estado, mapa do código e o que falta](docs/STATUS.md).
+- [Desenvolvimento, revisão e commits](docs/DEVELOPMENT.md).
+- [Configuração e flags por ambiente](docs/CONFIGURATION.md).
+- [Checklist de homologação e operação](docs/OPERATIONS.md).
+- [Roadmap](docs/ROADMAP.md), [backlog](docs/BACKLOG.md) e [decisões comerciais](docs/REQUIREMENTS.md#pending-business-decisions).
 
-Os registros abaixo descrevem entregas e pendências na data de cada incremento. Para o estado atual do checkout, vale o resumo acima e a seção mais recente de [Pagamentos](docs/PAYMENTS.md).
+## Stack e arquitetura
 
-O fluxo interno de preparação de pagamento também está disponível: valida dono do pedido, snapshots e reservas e persiste uma única tentativa Sandbox, sem HTTP. O CI testa migration e concorrência em PostgreSQL temporário. O dispatcher consome essa tentativa preparada; a integração à tela ainda está pendente. A avaliação de Orders está registrada no [ADR-015](docs/DECISIONS.md#adr-015--preparação-local-independente-da-api-de-checkout).
-
-O gateway também possui contrato Orders separado (`CreateOrderAsync`), com total em string, ID externo próprio e validação de resposta. `IPaymentDispatchService` registra posse exclusiva antes do HTTP, monta valores dos snapshots e persiste ID/resultado independentemente do cancelamento do navegador. A migration `AddPaymentOrderDispatch` inclui constraints e bloqueia rollback se houver envios iniciados. `OrdersEnabled` e `Enabled` (Preferences) são desligados por padrão e não podem ser habilitados juntos. Conciliação operacional, homologação externa e integração à tela ainda estão pendentes. Essa entrega não habilita compras.
-
-O incremento de 25/09 acrescenta consulta canônica Orders e diagnóstico interno de conciliação somente leitura. Confere a resposta contra os snapshots e detecta mudança concorrente; não aprova pagamentos, não altera estoque e não libera reenvio. Tentativas sem ID externo continuam bloqueadas para revisão. Recuperação auditada, webhook, conciliação financeira e homologação permanecem pendentes; as compras continuam desabilitadas.
-
-O incremento de 28/09 implementa webhook Orders assinado e confirmação atômica de pagamento, pedido, reservas e movimento de estoque, com recibo deduplicado. Aprovação tardia/divergência exige revisão, sem reabrir pedido ou gerar nova cobrança. `WebhookEnabled=false`; testes usam provedor simulado. Homologação, recuperação operacional, reembolso e integração à tela ainda bloqueiam compras reais. A vitrine estática não recebe webhooks.
-
-A consulta interna `/Admin/Pagamentos` permite ao Admin filtrar tentativas, ver divergências mesmo em pedidos cancelados e consultar detalhes/recibos. A abertura das páginas só lê dados locais; a recuperação exige ação explícita e configuração habilitada, conforme descrito abaixo. Dados pessoais e segredos não são exibidos. Essa área requer o servidor ASP.NET e não está disponível no GitHub Pages.
-
-O caso de uso de recuperação com ID conhecido está conectado ao painel: exige Admin atual, antiforgery, versão, motivo e confirmação explícita; consulta o provedor e registra auditoria junto de pagamento/estoque. Há limite de requisições e histórico sanitizado. `RecoveryEnabled=false` mantém a ação oculta e bloqueada por padrão. Job, claims sem ID, resolução de revisão, reembolso e homologação real seguem pendentes. A recuperação não cria outra cobrança nem fabrica webhooks.
-
-O incremento de 29/09 protege consultas de recuperação simultâneas e interrompidas: registra execução durável com janela técnica de dois minutos, bloqueia resposta antiga após expiração/substituição e conclui execução, auditoria e efeitos financeiros atomicamente. O painel mostra histórico e bloqueio vigente. A nova migration é explícita e não apaga histórico no rollback; nenhuma integração foi habilitada. Job/backoff e homologação permanecem pendentes.
-
-O job de recuperação com ID conhecido já está implementado, desativado por padrão: até três consultas automáticas com esperas mínimas de 2, 5 e 15 minutos, orçamento persistido e janela de seleção de 24 horas. Origem/resultado do sistema aparecem no painel sem simular ações humanas. Ele compartilha as proteções transacionais de recuperação manual/webhooks. Homologação real, claims sem ID, resolução de revisão e reembolso ainda estão pendentes.
-
-O painel agora destaca tentativas com limite automático atingido ou janela de recuperação encerrada, inclusive na fila padrão. O filtro `RecoveryFollowUp` preserva paginação e sinaliza o motivo; o detalhe orienta a conferência manual. Consulta em andamento suspende o alerta. Nenhuma leitura consulta o provedor ou aprova/cancela pagamentos; integrações continuam desabilitadas.
-
-## Demonstração visual
-
-A apresentação estática é publicada pelo [GitHub Pages](https://diogojp202.github.io/Sallvatco/) a cada atualização da branch `main`. Ela demonstra home, página Sobre, catálogo com quatro fragrâncias, filtros, galerias, variantes, detalhe de produto e uma página de linha corporal com nove produtos. As treze imagens principais foram tratadas com IA a partir dos materiais enviados pela marca, com fundo limpo e enquadramento consistente; não são fotografias originais sem alteração. Rótulos e embalagens precisam de aprovação antes do uso comercial. O [registro das imagens](docs/IMAGES.md) documenta arquivos, limites e prompts. Os dados do catálogo de perfumes continuam descartáveis e são gerados durante o workflow; nomes, textos, preços, estoques e disponibilidade ainda dependem da aprovação comercial. Cadastro, login, carrinho e compra permanecem desabilitados nessa apresentação; a aplicação completa depende do backend ASP.NET Core e será hospedada no VPS.
-
-## Stack definida
-
-- .NET 10 LTS e ASP.NET Core 10;
-- ASP.NET Core MVC com Razor Views;
-- Entity Framework Core, Npgsql e PostgreSQL;
-- ASP.NET Core Identity;
-- Tailwind CSS e JavaScript apenas onde necessário;
-- Mercado Pago Checkout Pro;
-- Melhor Envio;
-- Docker Compose, Nginx, Ubuntu, Cloudflare e Hostinger VPS;
-- Serilog, health checks, Git e GitHub.
-
-## Arquitetura
-
-O sistema começa como um **monólito modular**, sem microserviços, SPA separada, CQRS framework ou event sourcing. A estrutura inicial da solution é:
+.NET 10, MVC/Razor, Identity Guid, EF Core/Npgsql/PostgreSQL, Tailwind CSS e JavaScript nativo. Serilog em stdout e testes unitários/de integração. Mercado Pago Checkout Pro via Orders como fluxo Sandbox em desenvolvimento; adapter Preferences isolado e mutuamente exclusivo. Melhor Envio para cotação. Docker/Nginx/Cloudflare no VPS são a topologia planejada, não um deploy já disponível.
 
 ```text
 Sallvat.sln
@@ -66,115 +39,70 @@ src/
 tests/
 ├── Sallvat.UnitTests/
 └── Sallvat.IntegrationTests/
+tools/
+└── Sallvat.Showcase/
+docs/
+.github/workflows/
+compose.yaml
 ```
 
-As responsabilidades, limites de módulos e dependências permitidas estão em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## Documentação
-
-Comece pelo [índice da documentação](docs/README.md). Os documentos cobrem produto, requisitos, banco de dados, autenticação, pedidos, pagamentos, frete, segurança, LGPD, infraestrutura, deploy, testes, SEO, roadmap, backlog e decisões arquiteturais.
+Application depende de Domain; Infrastructure implementa serviços persistentes e adapters; Web usa Application e registra Infrastructure no composition root. Não há microserviços, SPA separada, repositório genérico ou event bus. Ver [arquitetura](docs/ARCHITECTURE.md).
 
 ## Desenvolvimento local
 
-Pré-requisitos atuais:
+Pré-requisitos: SDK conforme [`global.json`](global.json), Node conforme [`.nvmrc`](.nvmrc), npm conforme [`package.json`](package.json) e Docker Compose v2 para PostgreSQL. Os arquivos fixados no repositório prevalecem sobre versões citadas em registros antigos.
 
-- .NET SDK 10.0.400 ou patch posterior da mesma feature band, conforme [`global.json`](global.json);
-- Node.js 24.19 e npm 11.17, conforme [`.nvmrc`](.nvmrc) e [`package.json`](package.json);
-- Docker com Compose v2 para executar o PostgreSQL de Development.
-
-Crie o arquivo local de ambiente e inicie o banco:
+Na raiz, criar `.env` **somente se não existir** e definir senha local antes de iniciar o banco:
 
 ```powershell
 Copy-Item .env.example .env
-# Edite SALLVAT_POSTGRES_PASSWORD no arquivo .env.
 docker compose up -d postgres
 docker compose ps
 ```
 
-O PostgreSQL fica acessível somente em `127.0.0.1:5432` por padrão. `docker compose down` preserva o volume. `docker compose down --volumes` apaga permanentemente o banco local.
+O banco publica apenas `127.0.0.1:5432`. `docker compose down` preserva dados; a opção `--volumes` os apaga e não deve ser usada como limpeza rotineira.
 
-Configure a mesma credencial para a aplicação, sem gravá-la no Git:
-
-```powershell
-dotnet user-secrets --project src/Sallvat.Web set `
-  "ConnectionStrings:SallvatDatabase" `
-  "Host=127.0.0.1;Port=5432;Database=sallvat;Username=sallvat;Password=replace-with-the-same-local-password"
-```
-
-Restaure o frontend e compile o CSS:
+Configurar a mesma senha local fora do Git; o valor abaixo é apenas placeholder:
 
 ```powershell
-npm ci
+dotnet user-secrets --project src/Sallvat.Web set "ConnectionStrings:SallvatDatabase" "Host=127.0.0.1;Port=5432;Database=sallvat;Username=sallvat;Password=SUBSTITUIR_LOCALMENTE"
+npm ci --ignore-scripts
 npm run css:build
-```
-
-Durante ajustes nas views, `npm run css:watch` recompila o asset automaticamente. O build .NET detecta alterações nas fontes Razor e exige que as dependências npm estejam restauradas antes de recompilar o CSS.
-
-Restaure, compile e teste a solution:
-
-```powershell
 dotnet tool restore
 dotnet restore Sallvat.sln --locked-mode
-dotnet build Sallvat.sln --no-restore
-dotnet test Sallvat.sln --no-build
+dotnet build Sallvat.sln -c Release --no-restore
+dotnet test Sallvat.sln -c Release --no-build
 ```
 
-Warnings e analyzers são tratados como erros pelo build. Formatação e estilos básicos são definidos no `.editorconfig`, versões NuGet são centralizadas e cada projeto possui lock file reproduzível.
+Warnings/analyzers são erros. Dependências possuem lock files. Os testes PostgreSQL exigem servidor **isolado de testes** via `SALLVAT_TEST_POSTGRES`; sem isso, são pulados localmente e executados no CI. Detalhes em [desenvolvimento](docs/DEVELOPMENT.md) e [testes](docs/TESTING.md).
 
-Em Development, as chaves de Data Protection são persistidas em `.local/data-protection-keys/development`, fora do web root e do Git. Staging e Production devem fornecer um caminho absoluto montado em volume próprio:
+## Migrations e execução
 
-```text
-DataProtection__KeysPath=/var/lib/sallvat/data-protection-keys
-```
-
-Links de confirmação e recuperação não usam o host recebido na requisição. Cada ambiente deve definir sua origem pública canônica; Development já usa `http://localhost:5170`:
-
-```text
-AccountLinks__PublicOrigin=https://dominio-do-ambiente.example
-```
-
-Enquanto `PBD-010` não define o provedor transacional, Development grava as mensagens em `.local/emails`. Esses arquivos podem conter links temporários e nunca são versionados ou registrados nos logs. Fora de Development, o envio permanece indisponível de forma explícita.
-
-A cotação do Melhor Envio também permanece desligada até que os dados de homologação sejam aprovados. Para um teste sandbox, configure por user-secrets — nunca em `appsettings.json` ou no Git — os valores abaixo e só então altere `Enabled`:
+Há 13 migrations versionadas até `AddPaymentRefundDispatch`; startup nunca as executa. Com banco local saudável e conexão apontando para Development, aplicar explicitamente:
 
 ```powershell
-dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:OriginPostalCode" "CEP_DE_ORIGEM"
-dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:AccessToken" "TOKEN_SANDBOX"
-dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:SupportEmail" "EMAIL_DE_SUPORTE"
-dotnet user-secrets --project src/Sallvat.Web set "Shipping:MelhorEnvio:Enabled" "true"
-```
-
-O ambiente padrão usa `https://sandbox.melhorenvio.com.br/`, timeout de 10 segundos, cache de 120 segundos e cotação válida por 10 minutos. O token estático serve apenas para a homologação técnica inicial; armazenamento e renovação segura do OAuth ainda não estão concluídos.
-
-Inicie a aplicação:
-
-```powershell
+dotnet ef database update --project src/Sallvat.Infrastructure --startup-project src/Sallvat.Web -- --environment Development
 dotnet run --project src/Sallvat.Web
 ```
 
-## Migrations
+Perfil padrão: `http://localhost:5170`; portas usadas em previews anteriores não alteram esse default. Não há conta Admin, senha ou catálogo de produção criados automaticamente. Development guarda e-mails, imagens e chaves em `.local/`, fora do Git; e-mails contêm links temporários e exigem cuidado. Fora de Development o envio de e-mail está indisponível até integrar provedor.
 
-`AddPaymentFoundation` acrescenta a fundação local de tentativas de pagamento: snapshot comercial, chave idempotente, preferência opcional, revisão de resultado incerto e índices de proteção contra duplicatas. A Fase 7 está apenas iniciada: não há cobrança ou webhook ativo; o adapter Mercado Pago isolado está desabilitado. Consulte [Pagamentos](docs/PAYMENTS.md) para os limites desta entrega e a homologação pendente em PostgreSQL.
+`/health/live` verifica o processo; `/health/ready` verifica PostgreSQL, não todas as integrações/storage. Para alterar views/styles: `npm run css:watch`. Ver opções obrigatórias e limites em [CONFIGURATION.md](docs/CONFIGURATION.md).
 
-As migrations `InitialIdentityAndCustomers`, `AddCatalogAndInventory`, `AddShoppingCarts`, `AddCoupons`, `AddOrdersAndReservations` e `AddOrderLifecycle` criam a base de identidade/clientes, catálogo, imagens, estoque, auditoria, carrinhos, promoções, pedidos, snapshots, reservas e controle de ocorrências. Elas não são executadas automaticamente no startup. Para criar uma próxima migration, use a ferramenta local fixada no repositório:
+Novas migrations usam a ferramenta local e precisam de revisão de SQL, testes e plano de compatibilidade. Nunca editar migrations já aplicadas nem executar downgrade destrutivo para contornar guardas financeiras. Staging/Production exigem backup e etapa explícita de deploy.
+
+## Apresentação estática
 
 ```powershell
-dotnet ef migrations add NomeDaMudanca `
-  --project src/Sallvat.Infrastructure `
-  --startup-project src/Sallvat.Web `
-  --output-dir Persistence/Migrations
-
-dotnet ef database update `
-  --project src/Sallvat.Infrastructure `
-  --startup-project src/Sallvat.Web
+dotnet run --project tools/Sallvat.Showcase/Sallvat.Showcase.csproj -c Release -- --output .local/showcase-review --site-url https://diogojp202.github.io/Sallvatco/
 ```
 
-O banco local precisa estar saudável antes de `database update`. Em Staging e Production, migrations serão aplicadas por uma etapa explícita de deploy, com backup prévio, nunca pelo processo Web no startup.
+O exportador cria dados descartáveis e verifica rotas/assets. Os perfumes ainda usam preços, notas e disponibilidade demonstrativos; não são seed de produção. A linha corporal é editorial. Imagens tratadas e aprovação comercial estão documentadas em [IMAGES.md](docs/IMAGES.md). Lumiere mantém o slug legado `cumiere`.
 
-## Diagnóstico local
+## Commits, CI e publicação
 
-Com a aplicação em execução, `GET /health/live` confirma que o processo responde e `GET /health/ready` também verifica a conexão com o PostgreSQL. As respostas contêm apenas o estado agregado e o header `X-Correlation-ID`, sem detalhes internos. Logs estruturados são escritos como JSON em stdout.
+O fluxo acordado trabalha em `main`, com revisão do diff, testes, commit e push por etapa, sem force push. Antes de adicionar arquivos, conferir segredos/dados locais e alterações alheias. Procedimento completo em [DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-## Integração contínua
+O [CI](.github/workflows/ci.yml) verifica dependências, CSS, Markdown, build, testes (inclusive PostgreSQL efêmero) e formatação. O [Pages](.github/workflows/pages.yml) exporta/publica a apresentação. São workflows independentes: **ambos devem passar no mesmo SHA** antes de declarar a etapa pronta. Não existe deploy automatizado do backend.
 
-O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) restaura dependências bloqueadas, audita npm/NuGet, recompila e confere o CSS, valida Markdown e formatação, compila em Release e executa todos os testes. O workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) gera uma demonstração estática reproduzível e a publica no GitHub Pages. As actions externas estão fixadas por commit SHA.
+Próxima frente: preparar Staging e seus pré-requisitos, homologar integrações com contas de teste e completar as pendências de [STATUS.md](docs/STATUS.md). Nenhuma compra real, ativação financeira ou abertura de produção está autorizada implicitamente por um push.

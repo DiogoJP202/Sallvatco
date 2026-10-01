@@ -2,6 +2,8 @@
 
 # Pedidos
 
+Estado conferido em 01/10/2026: criação/reservas/expiração, fila mínima e confirmação financeira Sandbox existem; fulfillment completo, acompanhamento guest por e-mail e resolução guiada ainda não. A máquina de estados do domínio não significa que toda transição já tenha uma ação administrativa disponível. Ver [STATUS.md](STATUS.md).
+
 ## Princípios
 
 - pedido é o registro histórico da intenção comercial aceita pelo servidor;
@@ -16,7 +18,7 @@
 
 Antes da criação do pedido, `/checkout` monta um draft somente em memória. Nome, e-mail, telefone, CEP e endereço são normalizados no servidor; endereços salvos são pré-preenchimento editável para aquela compra e nunca são atualizados implicitamente. O ID de endereço enviado só é aceito quando pertence ao usuário autenticado. Guest informa os mesmos dados necessários sem criar credencial. CPF permanece ausente conforme `PBD-003`.
 
-A tela de revisão não persiste PII, não reserva estoque e não representa aceite comercial. O caso de uso transacional de criação já existe, mas a ação pública continuará bloqueada até a Fase 6 fornecer e revalidar uma cotação real de frete. Quando liberada, a ação exibirá as políticas oficiais aprovadas e registrará suas versões por consequência explícita do botão, sem checkbox genérico ou pré-marcado.
+A revisão não grava pedido/reserva no banco; seu token protegido temporário contém o draft e exige o mesmo dono para confirmação. A ação pública de criação existe, mas fica bloqueada com `CheckoutEnabled=false` ou dependências inválidas. A revisão expira e frete/condições comerciais são revalidados antes da criação. Políticas oficiais e registro de suas versões ainda dependem de aprovação/implementação; a confirmação atual autoriza apenas o fluxo de teste, não representa aceite legal de políticas finais.
 
 Nenhum total enviado pelo navegador é aceito. O cálculo central segue a fórmula registrada em [DATABASE.md](DATABASE.md#order).
 
@@ -72,16 +74,16 @@ A máquina está implementada no domínio e atualiza um token de concorrência a
 7. consumir logicamente o limite do cupom por `CouponRedemption` ligado ao pedido;
 8. gravar pedido, snapshots e expiração;
 9. confirmar transação;
-10. criar preferência de pagamento fora da transação, com chave idempotente;
+10. após confirmação separada, preparar/enviar Orders de teste fora da transação de criação, com chave idempotente e posse durável;
 11. persistir resultado e redirecionar.
 
-Falha ao criar a preferência mantém o pedido pendente e permite retry com a mesma chave. Se não for recuperado antes da expiração, um job libera a reserva e cancela o pedido.
+Falha de envio externo não autoriza retry de POST, troca de chave ou nova cobrança. Após posse durável, recuperar por consulta com ID conhecido ou encaminhar para revisão. O job de expiração aplica guardas locais, não consulta o gateway nem comprova ausência de pagamento externo; uma aprovação tardia exige revisão.
 
 O comando usa `CheckoutAttemptId` e o carrinho de origem como identidade da tentativa. Repetir a mesma tentativa retorna o pedido existente sem duplicar estoque, cupom ou itens. O número público vem da sequence `order_number_sequence` e segue `SVT-aaaammdd-########`; a expiração inicial é configurável e começa em 30 minutos enquanto `PBD-005` não for decidida. O carrinho só é esvaziado depois que pedido, snapshots, resgates e reservas foram gravados com sucesso.
 
 ## Transições inválidas relevantes
 
-- `Cancelled → Paid`: aprovação tardia vai para `RequiresAttention`;
+- `Cancelled → Paid`: proibida; aprovação tardia coloca o pagamento em `RequiresAttention` e preserva pedido cancelado quando o domínio não permite transição;
 - `Refunded → Preparing/Shipped`: pedido reembolsado não volta à operação normal;
 - `Delivered → Preparing/Shipped`: entrega é terminal para logística normal;
 - `Paid/Preparing → Cancelled`: se houve captura, o fluxo correto é reembolso;
@@ -94,7 +96,7 @@ O comando usa `CheckoutAttemptId` e o carrinho de origem como identidade da tent
 - `Cancelled` libera reserva apenas uma vez;
 - reembolso não repõe estoque automaticamente, porque devolução física pode não ter ocorrido;
 - reposição por devolução é movimento administrativo separado e auditado;
-- aprovação depois da reserva liberada tenta uma nova reserva apenas pelo caso de conciliação. Sem disponibilidade, permanece `RequiresAttention`.
+- aprovação depois da reserva liberada exige `RequiresAttention`; não há nova reserva automática. Resolução posterior precisa de caso de uso auditado ainda pendente.
 
 ## Cupom
 
@@ -106,7 +108,7 @@ Cada comando exige estado de origem, versão de concorrência, ator e motivo qua
 
 ## Expiração e jobs
 
-O serviço hospedado inicia após dois minutos e, a cada minuto, busca até 100 pedidos `PendingPayment` vencidos em ordem de expiração. Cada pedido é processado isoladamente: a reserva passa de `Reserved` para `Released`, o saldo `Reserved` da variante diminui, um movimento `ReservationRelease` é gravado e eventual consumo de cupom é liberado preservando o vínculo histórico com o pedido. Repetição não duplica nenhum efeito. Quando a Fase 7 introduzir preferências de pagamento, a expiração consultará o provedor antes de cancelar nos casos com risco de evento atrasado.
+O serviço hospedado inicia após dois minutos e, a cada minuto, busca até 100 pedidos `PendingPayment` vencidos em ordem de expiração. Exclui pagamentos com `ExternalPaymentId` ou `RequiresAttention`, revalidando antes da mutação. Cada pedido elegível é processado isoladamente: reserva passa a `Released`, saldo reservado diminui, movimento `ReservationRelease` é gravado e consumo de cupom é liberado preservando histórico. Repetição não duplica efeitos. Não há HTTP nesse job; consulta financeira é responsabilidade da recuperação/webhook, e pagamento tardio não reabre pedido automaticamente.
 
 ## Implementação administrativa atual
 

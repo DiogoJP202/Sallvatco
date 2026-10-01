@@ -36,6 +36,8 @@ Os arquivos principais têm 1120 × 1400 pixels, proporção 4:5, WebP com quali
 
 ## Verificação desta entrega
 
+Registro histórico do incremento de imagens, não contagem atual da suíte nem nova auditoria visual de 01/10/2026. O estado atual e as evidências mais recentes estão em [STATUS.md](STATUS.md) e [TESTING.md](TESTING.md).
+
 - Build Release sem avisos ou erros; 40 testes unitários e 94 de integração aprovados.
 - Regressões de `srcset` cobrem originais 399 × 501, 335 × 597 e 1120 × 1400, conferindo os arquivos WebP realmente servidos.
 - Exportação estática validada, incluindo os candidatos de imagem responsiva; lint de Markdown e `git diff --check` sem problemas.

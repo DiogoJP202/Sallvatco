@@ -2,6 +2,8 @@
 
 # SEO e descoberta
 
+Estado em 01/10/2026: metadados iniciais existem e a demonstração Pages mantém noindex. A tabela abaixo é a política alvo, não inventário de rotas prontas. Sitemap/robots produtivos, páginas legais/contato finais, Search Console e auditoria final continuam pendentes. Não declarar notas Lighthouse sem nova medição e evidência. Ver [STATUS.md](STATUS.md).
+
 ## Objetivo
 
 Tornar marca, páginas institucionais e produtos ativos compreensíveis para pessoas e mecanismos de busca, preservando performance e veracidade. SEO técnico não substitui conteúdo aprovado pela Sallvat.
