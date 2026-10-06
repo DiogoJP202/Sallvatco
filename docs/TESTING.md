@@ -14,7 +14,11 @@ O [run 37521653797](https://github.com/DiogoJP202/Sallvatco/actions/runs/3752165
 
 Após a correção de tooling em 06/10: instalação limpa `npm ci --ignore-scripts`, auditoria npm com zero vulnerabilidades reportadas, 26 documentos sem erros e CSS gerado sem diferença. O runner tem sete testes: escopo/ordenação, violação com diagnóstico, exceções inline, status de sucesso, README ausente, docs ausente e parsing de fórmulas/tabelas/blocos Mermaid. Um oitavo teste verifica notificação do watcher nativo, usado pelo Tailwind. Esses testes rodam em `npm run test:tooling` no CI; não validam a sintaxe do conteúdo de diagramas Mermaid.
 
-Suíte .NET local: **70 unitários + 500 de integração aprovados; 10 PostgreSQL pulados**, total de 580 casos. Build Release com zero avisos/erros e formatação sem diferenças. O CI ainda precisa executar os dez casos com banco real e concluir publicação para satisfazer o aceite deste incremento. Nenhum teste usa credenciais financeiras ou libera integrações produtivas.
+Suíte .NET local: **70 unitários + 500 de integração aprovados; 10 PostgreSQL pulados**, total de 580 casos. Build Release com zero avisos/erros e formatação sem diferenças. Nenhum teste usa credenciais financeiras ou libera integrações produtivas.
+
+Validação remota da correção `ced9b04`: [CI 37522819596](https://github.com/DiogoJP202/Sallvatco/actions/runs/37522819596) verde, com **70 unitários + 510 de integração aprovados, sem skips**, além dos oito testes Node. PostgreSQL foi efêmero; provedores externos permaneceram simulados. Auditoria npm reportou zero vulnerabilidades, build não gerou avisos/erros e formatação passou. Exportação e deploy concluíram depois da validação no mesmo run e SHA, comprovando o caminho de sucesso do gate.
+
+Após o deploy, home, catálogo, detalhes Sea Salt/Hibernum/Corium/Cumiere, Sobre e linha corporal responderam HTTP 200 com `noindex`. Exportação local em `.local/security-gate-20261006` validou assets/rotas; 130 links relativos da documentação foram conferidos sem falhas. Não houve nova revisão visual em navegador, Lighthouse, homologação de APIs externas, mudança de schema ou ativação de integrações. Estes números descrevem a execução de 06/10/2026, não substituem repetir a validação a cada entrega.
 
 ## Evidência e execução — revisão de 01/10/2026
 
