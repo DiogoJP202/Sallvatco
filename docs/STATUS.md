@@ -8,6 +8,8 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 ## Resumo executivo
 
+**Validação de 06/10:** o primeiro run do gate (`24a0d57`, [CI 37521653797](https://github.com/DiogoJP202/Sallvatco/actions/runs/37521653797)) detectou dependências vulneráveis e impediu corretamente a publicação. Correção subsequente remove a cadeia vulnerável do CLI Markdown, atualiza dependências auxiliares e acrescenta testes de tooling; auditoria local zerada, sem alterar a loja. A conclusão remota exige CI/exportação/deploy verdes no novo SHA; acompanhar o run desse commit, não tratar o run bloqueado como entrega publicada. Evidências e limites em [TESTING.md](TESTING.md#bloqueio-real-e-correção-de-dependências).
+
 A vitrine está publicada no [GitHub Pages](https://diogojp202.github.io/Sallvatco/). O backend já possui contas, catálogo administrativo, imagens, estoque, carrinho, cupons, criação de pedidos e fluxos financeiros de teste. **A loja ainda não está pronta para vender em produção.** Pagamentos, reembolsos, recuperação financeira e cotação externa estão desligados na configuração versionada.
 
 O estágio é de **desenvolvimento avançado do núcleo do MVP, com homologação e operação ainda pendentes**. Não usar percentual de conclusão: tarefas têm pesos diferentes e testes simulados não equivalem a operação real. Não declarar as fases 2–5 integralmente homologadas somente porque seus casos de uso principais existem.

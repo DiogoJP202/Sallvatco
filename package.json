@@ -10,14 +10,20 @@
   "scripts": {
     "css:build": "tailwindcss -i ./src/Sallvat.Web/Styles/app.css -o ./src/Sallvat.Web/wwwroot/css/app.css --minify",
     "css:watch": "tailwindcss -i ./src/Sallvat.Web/Styles/app.css -o ./src/Sallvat.Web/wwwroot/css/app.css --watch",
-    "lint:markdown": "markdownlint-cli2 \"README.md\" \"docs/*.md\""
+    "lint:markdown": "node tools/lint-markdown.mjs",
+    "test:tooling": "node --test tools/tests/*.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.3",
-    "markdownlint-cli2": "0.23.2",
+    "markdownlint": "0.41.1",
     "tailwindcss": "4.3.3"
   },
   "overrides": {
-    "smol-toml": "1.7.1"
+    "@tailwindcss/cli": {
+      "@parcel/watcher": "2.6.0"
+    },
+    "micromark-extension-math": {
+      "katex": "0.18.2"
+    }
   }
 }

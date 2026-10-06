@@ -74,6 +74,9 @@ jobs:
       - name: Lint Markdown
         run: npm run lint:markdown
 
+      - name: Test documentation tooling
+        run: npm run test:tooling
+
       - name: Restore .NET tools and packages
         run: |
           dotnet tool restore

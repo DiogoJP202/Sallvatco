@@ -15,9 +15,11 @@ Executar na raiz, com SDK/Node compatíveis:
 ```powershell
 dotnet tool restore
 npm ci --ignore-scripts
+npm audit --audit-level=high
 dotnet restore Sallvat.sln --locked-mode
 npm run css:build
 npm run lint:markdown
+npm run test:tooling
 dotnet build Sallvat.sln -c Release --no-restore
 dotnet test Sallvat.sln -c Release --no-build
 dotnet format Sallvat.sln --verify-no-changes --no-restore
@@ -25,6 +27,14 @@ git diff --check
 ```
 
 Se formatar intencionalmente, usar `dotnet format Sallvat.sln --no-restore` e revisar o diff. CSS compilado é versionado; mudança de view/style requer reconstrução e inspeção de `wwwroot/css/app.css`. Não editar o CSS minificado manualmente. Não atualizar lock files/pacotes sem necessidade da tarefa.
+
+### Ferramentas de documentação e overrides de segurança
+
+Desde 06/10/2026, `lint:markdown` usa a API pública de `markdownlint` por `tools/lint-markdown.mjs`, mantendo a versão do motor, regras padrão, exceções inline e o escopo `README.md` + arquivos `.md` diretamente em `docs/`. O comando falha em violações, arquivos obrigatórios ausentes e erros de leitura; não altera documentos. Não carrega configuração externa de CLI, plugins, YAML/TOML ou padrões arbitrários. Os testes Node em `tools/tests/` verificam seleção de arquivos, diagnósticos, códigos de saída, exceções inline, parsing e watcher. Não confundir lint Markdown com validação de links ou renderização Mermaid.
+
+A substituição de `markdownlint-cli2` removeu `micromatch`/`braces`, cujo [alerta de DoS](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) não tinha versão corrigida disponível na data. Também eliminou dependências não utilizadas de YAML/TOML e o override antigo de `smol-toml`. Não há supressão de auditoria.
+
+Overrides deliberados em `package.json`: `@parcel/watcher` **2.6.0**, somente sob o CLI Tailwind, remove a outra cadeia `micromatch`/`braces`; `katex` **0.18.2**, somente sob `micromark-extension-math`, aplica a [correção de trust](https://github.com/advisories/GHSA-238p-pmpm-9mq7). São desvios das versões/faixas upstream e exigem revalidação ao atualizar dependências. O linter apenas analisa Markdown; não publica HTML de KaTeX. `source-map-js` **1.2.2** ficou fixado no lock dentro da faixa compatível do Tailwind. Remover cada override quando o pacote pai trouxer a correção, depois de `npm ci`, auditoria, testes de tooling e comparação do CSS. Não usar `npm audit fix --force` indiscriminadamente. Resultado de auditoria é datado, não garantia permanente de ausência de falhas.
 
 Os testes `[PostgreSqlFact]` são pulados sem `SALLVAT_TEST_POSTGRES`. Isso deve aparecer no relato: sucesso local com skips **não** comprova constraints/concorrência reais. O CI fornece PostgreSQL isolado e executa esses cenários. Para executá-los localmente, fornecer conexão de um servidor **exclusivo de testes**, com permissão para criar/remover bancos efêmeros `sallvat_payment_tests_*`; nunca apontar para servidor produtivo. Não imprimir a variável nem versionar a senha.
 

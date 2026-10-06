@@ -8,6 +8,14 @@
 
 Critério da entrega: validação e jobs de exportação/deploy verdes no mesmo run CI; PR/manual fora de `main` não podem alcançar publicação pelas condições versionadas. Validar sintaxe YAML, formatação, suíte completa e páginas públicas depois do deploy. O comportamento operacional está em [DEVELOPMENT.md](DEVELOPMENT.md#push-e-aceite-da-etapa).
 
+### Bloqueio real e correção de dependências
+
+O [run 37521653797](https://github.com/DiogoJP202/Sallvatco/actions/runs/37521653797), commit `24a0d57`, falhou legitimamente em `npm audit --audit-level=high`; a publicação foi pulada. É evidência real do bloqueio por falha, não teste intencional nem publicação concluída. O histórico foi preservado e a correção usa novo commit, sem diminuir o nível da auditoria.
+
+Após a correção de tooling em 06/10: instalação limpa `npm ci --ignore-scripts`, auditoria npm com zero vulnerabilidades reportadas, 26 documentos sem erros e CSS gerado sem diferença. O runner tem sete testes: escopo/ordenação, violação com diagnóstico, exceções inline, status de sucesso, README ausente, docs ausente e parsing de fórmulas/tabelas/blocos Mermaid. Um oitavo teste verifica notificação do watcher nativo, usado pelo Tailwind. Esses testes rodam em `npm run test:tooling` no CI; não validam a sintaxe do conteúdo de diagramas Mermaid.
+
+Suíte .NET local: **70 unitários + 500 de integração aprovados; 10 PostgreSQL pulados**, total de 580 casos. Build Release com zero avisos/erros e formatação sem diferenças. O CI ainda precisa executar os dez casos com banco real e concluir publicação para satisfazer o aceite deste incremento. Nenhum teste usa credenciais financeiras ou libera integrações produtivas.
+
 ## Evidência e execução — revisão de 01/10/2026
 
 Base `d347a68`: CI registrou 66 testes unitários e 510 de integração (576 aprovados), incluindo 10 cenários em PostgreSQL efêmero. Referências de runs em [STATUS.md](STATUS.md). Sem `SALLVAT_TEST_POSTGRES`, esses dez cenários são pulados localmente; não descrevê-los como aprovados nessa execução. Comandos e cuidados do servidor descartável em [DEVELOPMENT.md](DEVELOPMENT.md).

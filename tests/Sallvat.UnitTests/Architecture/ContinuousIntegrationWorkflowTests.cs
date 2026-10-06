@@ -22,6 +22,9 @@ public sealed partial class ContinuousIntegrationWorkflowTests
             workflow);
         Assert.Contains("npm ci --ignore-scripts", workflow);
         Assert.Contains("npm run css:build", workflow);
+        Assert.Contains("npm audit --audit-level=high", workflow);
+        Assert.Contains("npm run lint:markdown", workflow);
+        Assert.Contains("npm run test:tooling", workflow);
         Assert.Contains("dotnet restore Sallvat.sln --locked-mode", workflow);
         Assert.Contains("dotnet build Sallvat.sln --configuration Release", workflow);
         Assert.Contains("dotnet test Sallvat.sln --configuration Release", workflow);
