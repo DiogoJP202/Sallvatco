@@ -2,6 +2,12 @@
 
 # Estratégia de testes
 
+## Gate de publicação — 06/10/2026
+
+`ContinuousIntegrationWorkflowTests` verifica estruturalmente dependência `pages → validate`, Pages somente reutilizável, guards de evento/branch, ausência de bypass por `always()`, checkout pelo mesmo SHA, permissões separadas, revalidação manual e concorrência sem cancelar automaticamente `main`. Os testes não simulam o scheduler GitHub; a execução no remoto comprova o caminho de sucesso e a ordem dos jobs. Não se introduz falha intencional em `main` apenas para testar o bloqueio.
+
+Critério da entrega: validação e jobs de exportação/deploy verdes no mesmo run CI; PR/manual fora de `main` não podem alcançar publicação pelas condições versionadas. Validar sintaxe YAML, formatação, suíte completa e páginas públicas depois do deploy. O comportamento operacional está em [DEVELOPMENT.md](DEVELOPMENT.md#push-e-aceite-da-etapa).
+
 ## Evidência e execução — revisão de 01/10/2026
 
 Base `d347a68`: CI registrou 66 testes unitários e 510 de integração (576 aprovados), incluindo 10 cenários em PostgreSQL efêmero. Referências de runs em [STATUS.md](STATUS.md). Sem `SALLVAT_TEST_POSTGRES`, esses dez cenários são pulados localmente; não descrevê-los como aprovados nessa execução. Comandos e cuidados do servidor descartável em [DEVELOPMENT.md](DEVELOPMENT.md).

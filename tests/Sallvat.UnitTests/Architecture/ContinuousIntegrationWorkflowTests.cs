@@ -50,6 +50,96 @@ public sealed partial class ContinuousIntegrationWorkflowTests
         Assert.DoesNotMatch(FloatingActionVersionPattern(), workflow);
     }
 
+    [Fact]
+    public void PagesCanOnlyBeCalledAfterSuccessfulValidationOfMain()
+    {
+        var ci = ReadWorkflow("ci.yml");
+        var pages = ReadWorkflow("pages.yml");
+        var publish = Job(ci, "pages");
+
+        Assert.Contains("    needs: validate\n", publish);
+        Assert.Contains("    uses: ./.github/workflows/pages.yml\n", publish);
+        Assert.Contains(MainPublicationCondition, publish);
+        Assert.DoesNotContain("always()", publish);
+        Assert.DoesNotContain("!cancelled()", publish);
+        Assert.Contains("on:\n  workflow_call:\n", pages);
+        Assert.DoesNotContain("  push:", pages);
+        Assert.DoesNotContain("  workflow_dispatch:", pages);
+        Assert.DoesNotContain("  workflow_run:", pages);
+        Assert.DoesNotContain("pull_request_target", ci + pages);
+        Assert.DoesNotContain("continue-on-error", ci + pages);
+        Assert.Contains(MainPublicationCondition, Job(pages, "build"));
+        Assert.Contains("    needs: build\n", Job(pages, "deploy"));
+    }
+
+    [Fact]
+    public void ValidationAndPublicationCheckoutTheSameImmutableSha()
+    {
+        foreach (var file in new[] { "ci.yml", "pages.yml" })
+        {
+            var workflow = ReadWorkflow(file);
+            Assert.Contains(
+                "with:\n          ref: ${{ github.sha }}\n          persist-credentials: false",
+                workflow);
+            Assert.DoesNotContain("ref: main", workflow);
+            Assert.DoesNotContain("secrets: inherit", workflow);
+        }
+    }
+
+    [Fact]
+    public void OnlyPublicationReceivesPagesWriteAndOidcPermissions()
+    {
+        var ci = ReadWorkflow("ci.yml");
+        var pages = ReadWorkflow("pages.yml");
+
+        Assert.Contains("permissions:\n  contents: read\n", ci);
+        Assert.Contains("permissions:\n  contents: read\n", pages);
+        Assert.DoesNotContain("pages: write", Job(ci, "validate"));
+        Assert.DoesNotContain("id-token: write", Job(ci, "validate"));
+        Assert.Contains("pages: write", Job(ci, "pages"));
+        Assert.Contains("id-token: write", Job(ci, "pages"));
+        Assert.Contains("pages: read", Job(pages, "build"));
+        Assert.DoesNotContain("pages: write", Job(pages, "build"));
+        Assert.DoesNotContain("id-token: write", Job(pages, "build"));
+        Assert.Contains("pages: write", Job(pages, "deploy"));
+        Assert.Contains("id-token: write", Job(pages, "deploy"));
+        Assert.DoesNotContain("contents: write", ci + pages);
+    }
+
+    [Fact]
+    public void ManualPublicationRunsValidationAndDoesNotCancelMainDeployments()
+    {
+        var ci = ReadWorkflow("ci.yml");
+        var pages = ReadWorkflow("pages.yml");
+
+        Assert.Contains("  workflow_dispatch:\n", ci);
+        Assert.Contains("group: ci-${{ github.ref }}", ci);
+        Assert.Contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", ci);
+        Assert.Contains("group: pages\n  cancel-in-progress: false", pages);
+        Assert.Contains("name: github-pages", Job(pages, "deploy"));
+    }
+
+    private const string MainPublicationCondition =
+        "github.ref == 'refs/heads/main' &&\n" +
+        "      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')";
+
+    private static string ReadWorkflow(string file) =>
+        File.ReadAllText(Path.Combine(RepositoryRoot.Find(), ".github", "workflows", file))
+            .ReplaceLineEndings("\n");
+
+    private static string Job(string workflow, string id)
+    {
+        var marker = $"\n  {id}:\n";
+        var start = workflow.IndexOf(marker, workflow.IndexOf("\njobs:\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.True(start >= 0, $"Missing workflow job: {id}");
+        var remainder = workflow[(start + marker.Length)..];
+        var nextJob = NextJobPattern().Match(remainder);
+        return nextJob.Success ? remainder[..nextJob.Index] : remainder;
+    }
+
+    [GeneratedRegex(@"^  [a-zA-Z][a-zA-Z0-9_-]*:\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant)]
+    private static partial Regex NextJobPattern();
+
     [GeneratedRegex(@"uses:\s+[^@\s]+@v\d", RegexOptions.CultureInvariant)]
     private static partial Regex FloatingActionVersionPattern();
 }

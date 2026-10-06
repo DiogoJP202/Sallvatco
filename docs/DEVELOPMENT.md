@@ -78,9 +78,15 @@ Texto de intenção deve dizer “planejado”; registros de incrementos antigos
 git push origin main
 ```
 
-O push autorizado dispara **dois workflows independentes**. Pages verde não comprova CI verde, e o workflow de Pages atual não espera o CI para publicar. A entrega só pode ser declarada concluída após ambos passarem no **mesmo SHA**. Se falhar: investigar, corrigir, validar e criar novo commit normal; nunca force push ou apagar histórico para esconder falha. Uma dependência explícita entre validação e publicação fica como melhoria futura de pipeline.
+Desde 06/10/2026, o push inicia o CI, cujo job `pages` depende de `validate` com sucesso. O workflow Pages é reutilizável (`workflow_call`), sem gatilho independente. Validação e exportação fazem checkout de `github.sha`; a chamada relativa reutiliza o arquivo do mesmo commit. Falha/cancelamento da validação impede exportação/deploy. Pull requests só validam; publicação exige `main` e evento `push` ou `workflow_dispatch`. Não há `pull_request_target`, herança de secrets ou checkout de branch mutável.
 
-Depois de Pages verde, conferir home, catálogo, quatro detalhes, Sobre e linha corporal no endereço publicado. Mudanças somente documentais ainda acionam os workflows atuais. O Pages não é deploy do backend.
+Na interface Actions, acompanhar **CI → Build, test and lint → Publish validated showcase / Export static showcase → Deploy static showcase**. Não esperar um segundo run chamado GitHub Pages. Para republicar manualmente, executar **CI / Run workflow / main**, que repete todas as validações. Não reexecutar workflows de commits anteriores à proteção para contorná-la; reaplicar uma mudança em novo commit é o caminho seguro.
+
+Execuções de `main` não são canceladas automaticamente por outro push enquanto publicam; o grupo de concorrência serializa o trabalho ativo, podendo substituir uma execução ainda pendente por uma mais nova. Não há promessa de publicar todo commit intermediário. Pull requests mantêm cancelamento de execuções substituídas. O grupo de publicação tem nome diferente do grupo do CI, evitando autocancelamento entre chamador e workflow reutilizado.
+
+Se falhar: investigar, corrigir, validar e criar novo commit normal; nunca force push ou apagar histórico para esconder falha. Validação verde isolada ainda não conclui publicação: exportação/deploy também precisam passar no mesmo SHA. O job de validação recebe apenas leitura; escrita Pages/OIDC fica restrita ao caminho de publicação, e o job de exportação usa leitura de Pages.
+
+Depois do job de deploy verde, conferir home, catálogo, quatro detalhes, Sobre e linha corporal no endereço publicado. Mudanças somente documentais ainda acionam o pipeline. O Pages não é deploy do backend.
 
 ## Relato da entrega
 

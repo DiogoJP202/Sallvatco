@@ -4,7 +4,7 @@
 
 E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, catálogo, estoque, carrinho, pedidos e administração em um monólito modular ASP.NET Core MVC.
 
-## Estado atual — 01/10/2026
+## Estado atual — 06/10/2026
 
 **Vitrine publicada; loja transacional ainda não liberada para produção.** O núcleo do MVP está implementado em boa parte e coberto por testes, mas homologação externa, logística, comunicações, segurança de implantação e decisões comerciais continuam pendentes. Não considerar as fases 1–5 integralmente homologadas.
 
@@ -103,6 +103,6 @@ O exportador cria dados descartáveis e verifica rotas/assets. Os perfumes ainda
 
 O fluxo acordado trabalha em `main`, com revisão do diff, testes, commit e push por etapa, sem force push. Antes de adicionar arquivos, conferir segredos/dados locais e alterações alheias. Procedimento completo em [DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-O [CI](.github/workflows/ci.yml) verifica dependências, CSS, Markdown, build, testes (inclusive PostgreSQL efêmero) e formatação. O [Pages](.github/workflows/pages.yml) exporta/publica a apresentação. São workflows independentes: **ambos devem passar no mesmo SHA** antes de declarar a etapa pronta. Não existe deploy automatizado do backend.
+O [CI](.github/workflows/ci.yml) verifica dependências, CSS, Markdown, build, testes (inclusive PostgreSQL efêmero) e formatação. Desde 06/10, ele chama o [Pages reutilizável](.github/workflows/pages.yml) **somente após a validação passar**, no mesmo SHA. Pull requests apenas validam; push em `main` ou execução manual do CI em `main` podem publicar. Exportação e deploy aparecem como jobs da execução do CI, não como dois runs independentes. A etapa só termina com validação e publicação verdes. Não existe deploy automatizado do backend.
 
 Próxima frente: preparar Staging e seus pré-requisitos, homologar integrações com contas de teste e completar as pendências de [STATUS.md](docs/STATUS.md). Nenhuma compra real, ativação financeira ou abertura de produção está autorizada implicitamente por um push.

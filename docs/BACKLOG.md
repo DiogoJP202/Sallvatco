@@ -445,7 +445,7 @@ Gaps confirmados na revisão documental: middleware/proxy confiável, headers gl
 #### TASK
 
 - [ ] Publicar imagem OCI por SHA/digest no CI.
-- [ ] Encadear publicação ao CI aprovado; hoje Pages e CI executam independentemente no mesmo push.
+- [x] Encadear Pages ao CI aprovado do mesmo SHA, via workflow reutilizável; publicar somente push/manual em `main`, sem publicação em PR, com permissões por job (06/10/2026).
 - [ ] Implementar deploy de Staging e promoção manual/aprovada.
 - [ ] Implementar validação de options e readiness.
 - [ ] Implementar etapa explícita de migration.

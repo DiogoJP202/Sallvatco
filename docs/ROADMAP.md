@@ -274,6 +274,8 @@ Na próxima frente, separar preparação de Staging (pode começar antes do MVP 
 
 ## Fase 10 — Staging, deploy e go-live
 
+**Incremento em 06/10/2026 (F10-S2):** publicação da apresentação depende do CI aprovado e reutiliza o mesmo SHA; PRs não publicam e execução manual revalida. Esta proteção do Pages não equivale a deploy de backend, preparação de Staging ou aprovação de go-live.
+
 **Objetivo:** colocar o MVP em produção com rollback e restore praticáveis.
 
 **Dependências:** Fases 1–9 e todas as decisões de go-live listadas em [DEPLOYMENT.md](DEPLOYMENT.md#critérios-de-go-live).

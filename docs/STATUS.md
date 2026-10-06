@@ -4,6 +4,8 @@
 
 Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github.com/DiogoJP202/Sallvatco/commit/d347a68). Este relatório descreve arquivos versionados e evidências de testes; não certifica um ambiente produtivo nem substitui homologação externa.
 
+**Incremento de 06/10/2026:** Pages agora é chamado pelo CI somente após validação bem-sucedida do mesmo SHA em `main`. Execução manual passa pelo CI; PRs não publicam. Exportação/deploy aparecem dentro do run CI. Não houve alteração de funcionalidade da loja, schema ou flags. O restante da matriz mantém as pendências da revisão anterior; próximo passo continua sendo a preparação técnica de Staging. Ver [procedimento de publicação](DEVELOPMENT.md#push-e-aceite-da-etapa).
+
 ## Resumo executivo
 
 A vitrine está publicada no [GitHub Pages](https://diogojp202.github.io/Sallvatco/). O backend já possui contas, catálogo administrativo, imagens, estoque, carrinho, cupons, criação de pedidos e fluxos financeiros de teste. **A loja ainda não está pronta para vender em produção.** Pagamentos, reembolsos, recuperação financeira e cotação externa estão desligados na configuração versionada.
@@ -66,7 +68,7 @@ As imagens tratadas, sua origem e seus limites estão em [IMAGES.md](IMAGES.md).
 | `src/Sallvat.Web/Models/Catalog/BodySplashPresentation.cs` | Dados editoriais da linha corporal, fora das entidades comerciais. |
 | `tools/Sallvat.Showcase` | Perfumes demonstrativos, exportação e validação de links/assets. |
 | `tests/Sallvat.UnitTests`, `tests/Sallvat.IntegrationTests` | Domínio, arquitetura, MVC, serviços, HTTP fake e PostgreSQL efêmero. |
-| `.github/workflows/ci.yml`, `pages.yml` | Validação e publicação estática independentes. |
+| `.github/workflows/ci.yml`, `pages.yml` | CI valida e chama publicação estática reutilizável do mesmo SHA; desde 06/10 não há publicação independente. |
 | `compose.yaml` | Apenas PostgreSQL de Development; não há Dockerfile da aplicação nem stack produtiva. |
 | `.local/` | Saídas locais ignoradas: e-mails, chaves, imagens e validações; nunca publicar. |
 

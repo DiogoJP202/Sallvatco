@@ -42,6 +42,18 @@ Ainda serão adicionados:
 
 ## Pipeline de validação
 
+### Publicação estática encadeada — 06/10/2026
+
+`ci.yml` é o ponto de entrada para push em `main`, pull requests e execução manual. Depois do job `validate`, o job `pages` usa `./.github/workflows/pages.yml` do mesmo commit, apenas em `main` para push/manual. `pages.yml` aceita somente `workflow_call`: não tem push/manual próprio nem acesso via `workflow_run`. Ambos os checkouts usam `github.sha` e não persistem credenciais. Não há seleção manual de outro SHA para pular testes.
+
+O exportador usa somente leitura de conteúdo/Pages. Deploy mantém ambiente `github-pages`, `pages: write`, `id-token: write` e depende do exportador. O chamador concede essas permissões apenas ao job de publicação, nunca ao de validação. Não são usados tokens pessoais nem secrets herdados. A configuração de source do site continua **GitHub Actions**.
+
+Falha ou cancelamento em validação impede publicação. Falha em exportação impede deploy. Uma execução completa aparece em **CI**, incluindo os jobs do Pages; verificar todos e o SHA antes do aceite. Execução manual é feita no CI em `main` e também valida antes de publicar. `main` não cancela um pipeline já em execução automaticamente; commits pendentes intermediários podem ser substituídos pelo mais novo. Isso não elimina a necessidade de inspecionar a versão publicada antes de uma republicação deliberada.
+
+Esta mudança não configura VPS, backend, credenciais, migrações operacionais ou compra real. Base técnica: [reutilização de workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows) e [workflow customizado de Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+### Validações do código
+
 O workflow versionado do GitHub Actions já:
 
 1. restaurar dependências com lock files;
