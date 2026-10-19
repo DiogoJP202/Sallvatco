@@ -21,6 +21,12 @@ coverage.*
 !.env.example
 appsettings.*.local.json
 .local/
+deploy/staging/secrets/
+*.key
+*.pem
+*.pfx
+*.p12
+*.htpasswd
 
 # Frontend dependencies and output
 node_modules/

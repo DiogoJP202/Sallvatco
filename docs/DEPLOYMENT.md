@@ -4,7 +4,7 @@
 
 ## Estado e pré-requisitos — 19/10/2026
 
-CI e Pages publicam apenas a apresentação; não há deploy do backend implementado. O CI agora constrói e testa uma imagem local no runner, sem enviá-la a registry, conforme [CONTAINERS.md](CONTAINERS.md). Os procedimentos de Staging/Production abaixo são runbook alvo, ainda não executado. VPS/domínios, registry, proxy/headers, e-mail, primeiro Admin, volumes operacionais e backup precisam ser preparados. Consulte [OPERATIONS.md](OPERATIONS.md) antes de usar este roteiro e [CONFIGURATION.md](CONFIGURATION.md) para flags/dependências reais.
+CI e Pages publicam apenas a apresentação; não há deploy operacional do backend. O CI constrói e testa uma imagem local e uma [stack privada Nginx/TLS](STAGING.md), sem enviar imagem a registry. Os procedimentos de Staging/Production abaixo são runbook alvo, ainda não executado. VPS/domínios, registry, Cloudflare, hardening restante, e-mail, primeiro Admin, volumes operacionais e backup precisam ser preparados. Consulte [OPERATIONS.md](OPERATIONS.md) antes de usar este roteiro e [CONFIGURATION.md](CONFIGURATION.md) para flags/dependências reais.
 
 ### Schema financeiro atual
 
@@ -31,12 +31,12 @@ Para suspender novas consultas, desabilitar a flag e reiniciar o processo com a 
 
 ### Infraestrutura versionada
 
-Já estão versionados o Compose de Development, o pipeline de validação, Dockerfile/contexto restrito/smoke de container, 13 migrations de Infrastructure e os assets Tailwind compilados em build reprodutível.
+Já estão versionados os Composes de Development e ensaio privado Staging, Nginx/TLS, pipeline de validação, Dockerfile/contexto restrito/smokes, 13 migrations de Infrastructure e os assets Tailwind compilados em build reprodutível.
 
 Ainda serão adicionados:
 
 - imagem OCI de `sallvat-web` identificada por commit SHA e digest;
-- stacks Compose de Staging/Production e configuração Nginx;
+- configuração operacional de Staging e stack de Production, com Cloudflare/firewall e TLS reais;
 - executor/etapa de migrations no deploy da imagem (as migrations já existem);
 - checklist/release notes com mudanças e decisões operacionais.
 

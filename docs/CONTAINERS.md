@@ -39,7 +39,7 @@ O CSS é recompilado no estágio Node e copiado para o estágio SDK. `PrebuiltTa
 
 Volumes novos podem herdar ownership do diretório da imagem. Bind mounts e volumes já existentes precisam de provisionamento de permissões compatíveis com o UID; não resolver erro de acesso executando a aplicação como root ou usando `chmod 777`. Não compartilhar key ring entre ambientes. As chaves XML ainda não recebem criptografia por certificado/KMS: proteger volume, acesso e backups; essa limitação permanece para hardening.
 
-Não executar a imagem diretamente na Internet. Faltam proxy confiável, TLS/headers, Cloudflare Access/noindex de Staging, stacks isoladas e limites ajustados à VPS. O HTTP privado do smoke é exclusivamente técnico, sem sessão de negócio ou credenciais reais; não comprova cookies/redirects sob HTTPS.
+Não executar a imagem diretamente na Internet. O incremento seguinte fornece [proxy confiável, TLS/headers e composição privada](STAGING.md); faltam implantação, Cloudflare Access, hardening completo e limites ajustados à VPS. O HTTP privado deste smoke é exclusivamente técnico, sem sessão de negócio ou credenciais reais; não comprova cookies/redirects sob HTTPS. O smoke de Staging separado verifica transporte e redirect, não toda a autenticação de negócio.
 
 ## Smoke reproduzível em Linux
 
@@ -65,6 +65,6 @@ O trap remove apenas containers/volumes/rede criados pelo script e seu diretóri
 
 O job `validate` executa build da imagem por SHA e smoke depois dos testes/lints/auditorias existentes. Sem credenciais de registry e sem `packages: write`. Falha impede Pages através do gate já existente. A imagem é descartada com o runner; a vitrine publicada continua sendo exportação estática, não execução do backend.
 
-Ainda pendentes: registry e promoção por digest; Compose Staging/Production, Nginx/TLS/proxies conhecidos; configuração segura de secrets e volumes; executor explícito de migrations; Admin inicial, e-mail de teste e homologação externa; backups e restore; validação do runtime em outras arquiteturas. A fase 10 e o go-live permanecem abertos em [BACKLOG.md](BACKLOG.md).
+Composição privada Staging, Nginx/TLS e proxies conhecidos foram adicionados no incremento descrito em [STAGING.md](STAGING.md). Ainda pendentes: registry/promoção por digest; implantação e stack Production; provisionamento operacional de secrets/volumes e Cloudflare; executor explícito de migrations; Admin inicial, e-mail e homologação externa; backups/restore; outras arquiteturas. A fase 10 e o go-live permanecem abertos em [BACKLOG.md](BACKLOG.md).
 
 Referências: [containers .NET e builds multistage](https://learn.microsoft.com/en-us/dotnet/core/docker/build-container), [imagem oficial ASP.NET](https://hub.docker.com/r/microsoft/dotnet-aspnet) e [procedimento de entrega](DEVELOPMENT.md).

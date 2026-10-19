@@ -2,6 +2,16 @@
 
 # Estratégia de testes
 
+## Stack privada e transporte — 19/10/2026
+
+`ReverseProxyTests` acrescenta nove cenários: proxy conhecido/desconhecido/desligado, headers assimétricos e recusa de IP ausente, wildcard ou sub-rede como proxy. Duas verificações estruturais de `ContainerBuildTests` protegem portas loopback, redes internas, secrets em arquivos, flags desligadas, role limitada e headers substituídos. O teste HTTP usa o middleware real em TestServer; não substitui TLS em container.
+
+`tools/smoke-staging.sh` passa a ser obrigatório no CI depois do smoke da imagem: valida a composição real com TLS/certificado temporário, Basic Auth, rejeição de Host/SNI desconhecidos, headers, redirect HTTPS mesmo com headers falsificados, assets, readiness interno, usuário PostgreSQL limitado, ausência de migrations automáticas e persistência após recriação da web. Critérios completos em [STAGING.md](STAGING.md). Não usa dados/credenciais de negócio nem representa deploy em VPS.
+
+Validação local deste incremento: build Release sem avisos/erros; **77 unitários e 509 testes de integração aprovados, 10 PostgreSQL pulados** (596 testes .NET previstos no CI). Oito testes Node, lint/documentação e sintaxe Bash verificados; Docker não está instalado localmente. O aceite exige os dois smokes e Pages verdes no commit publicado. Não houve auditoria visual nova, transação externa ou aplicação operacional de migrations.
+
+O incremento anterior `af4b075` foi aprovado integralmente no [CI 39252027229](https://github.com/DiogoJP202/Sallvatco/actions/runs/39252027229): 585 testes .NET, oito Node, smoke da imagem e Pages verdes, oito rotas públicas HTTP 200/noindex. Essa evidência é da imagem anterior, não do novo smoke de TLS.
+
 ## Imagem e smoke de runtime — 19/10/2026
 
 `ContainerBuildTests` acrescenta cinco verificações estruturais: bases fixadas e alinhadas aos manifests, separação dos estágios, não-root/ausência de secrets, contexto restrito, contrato de CSS pré-compilado e obrigatoriedade do smoke no CI. São testes de arquivos, não execução Docker.

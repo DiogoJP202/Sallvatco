@@ -276,6 +276,8 @@ Na próxima frente, separar preparação de Staging (pode começar antes do MVP 
 
 **Incremento em 19/10/2026 (F10-S2):** construção da imagem e smoke isolado no CI, com bases por digest, runtime não-root e volumes de teste. Não publica registry nem implanta servidor; proxy, stacks, migrations operacionais e homologação continuam pendentes. Detalhes em [CONTAINERS.md](CONTAINERS.md).
 
+**Incremento seguinte em 19/10/2026 (F10-S1):** composição privada de Staging, Nginx/TLS, confiança explícita no proxy e smoke descartável. Ver [STAGING.md](STAGING.md). Supera a lacuna de arquivos de proxy/stack do registro anterior, não a implantação operacional; Cloudflare, registry, migrations, e-mail/Admin e backup continuam abertos.
+
 **Incremento em 06/10/2026 (F10-S2):** publicação da apresentação depende do CI aprovado e reutiliza o mesmo SHA; PRs não publicam e execução manual revalida. Esta proteção do Pages não equivale a deploy de backend, preparação de Staging ou aprovação de go-live.
 
 **Objetivo:** colocar o MVP em produção com rollback e restore praticáveis.

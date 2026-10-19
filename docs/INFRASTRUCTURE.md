@@ -4,7 +4,7 @@
 
 ## Estado em 19/10/2026
 
-Estão versionados `compose.yaml` de PostgreSQL Development, workflows CI/Pages e Dockerfile multistage da aplicação com smoke isolado no CI. Contratos e limites em [CONTAINERS.md](CONTAINERS.md). Não há imagem publicada em registry, Nginx, stacks Staging/Production, rotina externa de backup ou restore operacional comprovado. A topologia abaixo é **alvo planejado**, sujeita a PBD-014/PBD-015, não descrição de servidor existente. Ver [STATUS.md](STATUS.md), [CONFIGURATION.md](CONFIGURATION.md) e [OPERATIONS.md](OPERATIONS.md).
+Estão versionados `compose.yaml` de PostgreSQL Development, workflows CI/Pages, Dockerfile multistage com smoke e [composição privada de Staging com Nginx/TLS](STAGING.md). Contratos da imagem em [CONTAINERS.md](CONTAINERS.md). Não há imagem publicada em registry, stack operacional implantada, Cloudflare configurado, rotina externa de backup ou restore comprovado. A topologia abaixo é **alvo planejado**, sujeita a PBD-014/PBD-015, não descrição de servidor existente. Ver [STATUS.md](STATUS.md), [CONFIGURATION.md](CONFIGURATION.md) e [OPERATIONS.md](OPERATIONS.md).
 
 ## Topologia de produção
 

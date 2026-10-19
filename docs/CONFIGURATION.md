@@ -21,6 +21,7 @@ O host usa a configuração padrão do ASP.NET: arquivos de configuração, user
 | `Orders__ReservationMinutes` | 30; aceita 5–1440. | Padrão técnico sujeito a PBD-005. |
 | `Shipping__Fulfillment__PreparationBusinessDays` | 2; aceita 0–30. | Média de preparo/postagem confirmada, não prazo total de entrega. |
 | `AllowedHosts` | `*`. | Restringir ao host esperado na implantação. |
+| `ReverseProxy__Enabled` / `ReverseProxy__KnownProxy` | Desabilitado; quando habilitado exige um IP concreto. | Apenas For/Proto, um salto, headers simétricos e IP exato; ver [STAGING.md](STAGING.md). |
 | `Operational__ServiceName` / `CorrelationIdMaxLength` | `Sallvat.Web` / 64. | Identificar serviço e manter limite entre 16–128. |
 
 Limites atuais de imagem: 10 MiB, 25 milhões de pixels, dimensão 10.000 px e 10 imagens por produto; multipart 11 MiB. Ver [STORAGE.md](STORAGE.md). Volumes de imagens e chaves não são públicos como diretórios físicos; `/media` serve os objetos. Chave aleatória não substitui autorização se futuramente houver conteúdo privado. Persistência do key ring não implica criptografia em repouso: o exportador local avisa que não há XML encryptor. Definir proteção de disco/chaves e cópia criptografada antes da implantação.
@@ -73,4 +74,4 @@ Jobs registrados em `Program.cs`: limpeza de carrinhos, expiração de pedidos e
 
 ## Gaps de implantação
 
-O projeto ainda não contém middleware global de CSP/HSTS/HTTPS redirection/ForwardedHeaders nem configuração Nginx produtiva. O validador exigir URLs HTTPS não configura proxy ou transporte. A identidade depende de HTTPS efetivo e origem confiável; rate limiting por IP exige proxy configurado corretamente. Readiness testa PostgreSQL, não leitura/escrita do volume nem credenciais externas. Esses pontos permanecem trabalho de F9/F10, não garantias presentes.
+Desde 19/10, ForwardedHeaders tem configuração opt-in com proxy exato; Nginx da stack privada aplica TLS, redirect, HSTS curto e headers básicos. Isso não é configuração produtiva implantada. CSP global, confiança de IP Cloudflare e homologação completa de cookies/transporte continuam pendentes. Readiness testa PostgreSQL, não schema, leitura/escrita do volume nem credenciais externas. Contratos e limitações em [STAGING.md](STAGING.md).

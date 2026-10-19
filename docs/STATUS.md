@@ -10,6 +10,8 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 **Incremento de 19/10/2026:** Dockerfile multistage com bases fixadas por digest, execução não-root, contexto restrito e smoke de runtime exigido no CI. É preparação de artefato, sem registry ou deploy de Staging. Docker está ausente na estação local; execução do container deve ser comprovada no CI Linux. Contratos e pendências em [CONTAINERS.md](CONTAINERS.md); sem alteração em schema, pagamentos ou flags.
 
+**Segundo incremento de 19/10/2026:** [stack privada de Staging](STAGING.md) com Nginx/TLS, redes internas, secrets em arquivos, role de aplicação sem privilégios administrativos, volumes separados e proxy confiável no ASP.NET. Smoke completo passa a ser obrigatório no CI. Ainda não há servidor de homologação público, Cloudflare Access, registry, migrations operacionais, e-mail/Admin ou backup/restore. Nenhuma flag externa ativada.
+
 **Validação de 06/10:** o primeiro run do gate (`24a0d57`, [CI 37521653797](https://github.com/DiogoJP202/Sallvatco/actions/runs/37521653797)) detectou dependências vulneráveis e impediu corretamente a publicação. A correção [`ced9b04`](https://github.com/DiogoJP202/Sallvatco/commit/ced9b04) removeu a cadeia vulnerável do CLI Markdown, atualizou dependências auxiliares e acrescentou testes de tooling, sem alterar a loja. O [CI 37522819596](https://github.com/DiogoJP202/Sallvatco/actions/runs/37522819596) concluiu validação, exportação e deploy com sucesso: 580 testes .NET, oito de tooling e zero alertas npm. As oito rotas públicas principais responderam HTTP 200 com `noindex` após o deploy. Evidência datada desse SHA, não garantia de execuções futuras; detalhes e limites em [TESTING.md](TESTING.md#bloqueio-real-e-correção-de-dependências).
 
 A vitrine está publicada no [GitHub Pages](https://diogojp202.github.io/Sallvatco/). O backend já possui contas, catálogo administrativo, imagens, estoque, carrinho, cupons, criação de pedidos e fluxos financeiros de teste. **A loja ainda não está pronta para vender em produção.** Pagamentos, reembolsos, recuperação financeira e cotação externa estão desligados na configuração versionada.
@@ -38,7 +40,7 @@ O estágio é de **desenvolvimento avançado do núcleo do MVP, com homologaçã
 | 7 — Pagamentos | Orders Sandbox, envio exclusivo, webhook, consulta, recuperação manual/job, reembolso total auditado. | Conta de teste em Staging, exceções financeiras, claims sem ID, políticas e implementação produtiva. |
 | 8 — Operação | Fila mínima de pedidos e painel financeiro reaproveitáveis. | Fluxo pago → preparação → envio → entrega, comunicações, acompanhamento e resolução guiada. |
 | 9 — Segurança/LGPD | Controles de conta, antiforgery, upload, auditoria e testes de abuso parciais. | Proxy/headers globais, revisão completa, procedimentos de titular, retenção e políticas aprovadas. |
-| 10 — Infra/go-live | CI/Pages, Dockerfile e smoke de container; arquitetura/runbooks planejados. | Registry/promoção, VPS/domínios, Nginx/stacks, deploy, backups externos, restore, carga e aprovação. |
+| 10 — Infra/go-live | CI/Pages, Dockerfile, stack privada Staging com Nginx/TLS e smokes. | Registry/promoção, VPS/domínios, Cloudflare, implantação, backups externos, restore, carga e aprovação. |
 | 11 — Pós-MVP | Escopo documentado. | Não iniciar avaliações, fidelidade, marketing ou relatórios antes de priorização. |
 
 O [backlog](BACKLOG.md) detalha execução; o [roadmap](ROADMAP.md) mantém critérios de aceite. Checkbox técnico concluído não encerra uma fase com homologação pendente.

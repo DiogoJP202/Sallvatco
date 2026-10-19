@@ -4,7 +4,7 @@
 
 ## Implementado versus requerido — 01/10/2026
 
-Existem Identity/lockout, rate limiting de conta e ações financeiras, antiforgery MVC, autorização, validação de upload, logs sanitizados e testes. Esta especificação também contém controles ainda **planejados**: CSP/headers globais, HSTS/redirect HTTPS, ForwardedHeaders com proxies confiáveis, sessão Admin mais curta, infraestrutura e ciclo completo de acesso. Não há esses middlewares globais nem Nginx versionado em `Program.cs`/repositório. Não expor o backend antes de implementar e homologar a camada de transporte/proxy.
+Existem Identity/lockout, rate limiting de conta e ações financeiras, antiforgery MVC, autorização, upload, logs sanitizados e testes. Desde 19/10 há ForwardedHeaders opt-in com IP exato e [Nginx/TLS de Staging privado](STAGING.md), com redirect, HSTS curto e headers básicos. Continuam **planejados** CSP global, confiança de IP Cloudflare, sessão Admin mais curta, implantação/hardening e ciclo completo de acesso. Não expor o backend antes da homologação operacional.
 
 Limites efetivos atuais: login 10/10 minutos/IP, cadastro 5/hora/IP, recuperação 3/hora/IP e por hash de e-mail; confirmação de checkout/continuação de pagamento 5/minuto/IP; ações financeiras Admin compartilham 5/minuto/usuário/processo; webhook 120/minuto/processo. Cotação/revisão não possui ainda o limiter dedicado de 30/minuto proposto abaixo. Esses gaps pertencem a F9/F10. Testes automatizados não constituem pentest ou aprovação de produção.
 

@@ -12,7 +12,7 @@ E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, cat
 - Aplicação MVC: contas, endereços, CRUD de catálogo/imagens/estoque, carrinho, cupons, pedido transacional e reservas. Ainda faltam provedor de e-mail, primeiro Admin seguro e histórico/vínculo guest completos.
 - Frete: cotação/revalidação Melhor Envio, desativada. Uma unidade por cotação enquanto a caixa maior não for validada; não há compra de etiqueta ou rastreio implementados.
 - Pagamentos: Orders Sandbox, webhook, recuperação e reembolso total auditados; **todas as flags externas permanecem desligadas**. Testes não representam compras reais. Produção do Mercado Pago é recusada pela configuração atual.
-- Infraestrutura: CI e Pages operacionais; PostgreSQL de Development em Compose e [Dockerfile com smoke isolado no CI](docs/CONTAINERS.md). Registry, VPS, proxy, stacks Staging/Production, backups externos e restore operacional ainda não foram entregues. Construir/testar a imagem não significa ter um servidor Staging implantado.
+- Infraestrutura: CI e Pages operacionais; PostgreSQL de Development, [Dockerfile com smoke](docs/CONTAINERS.md) e [stack privada de Staging com Nginx/TLS](docs/STAGING.md). Registry, VPS, Cloudflare, implantação Staging/Production, backups externos e restore operacional continuam pendentes. Construir/testar a stack não significa ter um servidor Staging implantado.
 
 O [relatório de situação](docs/STATUS.md) consolida entregas, evidências, limitações, todas as pendências comerciais e ordem de continuidade. A documentação não habilita serviços nem aprova go-live.
 

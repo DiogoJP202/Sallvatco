@@ -96,6 +96,42 @@ public sealed partial class ContainerBuildTests
         Assert.Contains("cmp \"$task_dir/keys-before\" \"$task_dir/keys-after\"", smoke);
     }
 
+    [Fact]
+    public void StagingStackIsPrivateAndKeepsRuntimeCredentialsOutOfEnvironment()
+    {
+        var compose = Read("deploy/staging/compose.yaml");
+        Assert.Contains("127.0.0.1:${STAGING_HTTP_PORT:-8081}:8080", compose);
+        Assert.Contains("127.0.0.1:${STAGING_HTTPS_PORT:-8443}:8443", compose);
+        Assert.Equal(1, compose.Split("\n    ports:").Length - 1);
+        Assert.Equal(2, compose.Split("internal: true").Length - 1);
+        Assert.Contains("target: /app/appsettings.Staging.json", compose);
+        Assert.Contains("POSTGRES_PASSWORD_FILE:", compose);
+        Assert.DoesNotContain("POSTGRES_PASSWORD:", compose);
+        Assert.DoesNotContain("ConnectionStrings__", compose);
+        Assert.Contains("Payments__MercadoPago__CheckoutEnabled: 'false'", compose);
+        Assert.Contains("Shipping__MelhorEnvio__Enabled: 'false'", compose);
+        Assert.DoesNotContain("container_name:", compose);
+        Assert.DoesNotContain("external: true", compose);
+        Assert.Contains("bash tools/smoke-staging.sh", Read(".github/workflows/ci.yml"));
+    }
+
+    [Fact]
+    public void StagingProxyReplacesUntrustedHeadersAndRequiresPrivateAccess()
+    {
+        var nginx = Read("deploy/staging/nginx.conf.template");
+        Assert.Contains("proxy_set_header X-Forwarded-For $remote_addr;", nginx);
+        Assert.Contains("proxy_set_header X-Forwarded-Proto $scheme;", nginx);
+        Assert.Contains("proxy_set_header Authorization '';", nginx);
+        Assert.DoesNotContain("$proxy_add_x_forwarded_for", nginx);
+        Assert.Contains("auth_basic_user_file /run/secrets/access_passwords;", nginx);
+        Assert.Contains("ssl_reject_handshake on;", nginx);
+        Assert.Contains("location ^~ /health/ { return 404; }", nginx);
+        Assert.Contains("noindex, nofollow, noarchive", nginx);
+        var init = Read("deploy/staging/init-database.sh");
+        Assert.Contains("NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION", init);
+        Assert.DoesNotContain("dotnet", init);
+    }
+
     private static string Read(string path) =>
         File.ReadAllText(Path.Combine(RepositoryRoot.Find(), path)).ReplaceLineEndings("\n");
 

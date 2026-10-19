@@ -32,6 +32,7 @@ using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddTrustedReverseProxy(builder.Configuration);
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -291,6 +292,7 @@ builder.Services.AddSerilog((services, configuration) =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseCorrelationId();
 app.UseSerilogRequestLogging(options =>
 {

@@ -100,6 +100,9 @@ jobs:
       - name: Smoke test application container
         run: bash tools/smoke-container.sh "sallvat-smoke:${GITHUB_SHA}"
 
+      - name: Smoke test private staging stack
+        run: bash tools/smoke-staging.sh "sallvat-smoke:${GITHUB_SHA}"
+
   pages:
     name: Publish validated showcase
     needs: validate
