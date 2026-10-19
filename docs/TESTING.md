@@ -6,7 +6,9 @@
 
 O CI gera SQL idempotente offline e `smoke-staging.sh` o aplica duas vezes ao banco sintético, confere contagem das migrations e acesso ao catálogo pela role limitada. `test_vps.py` verifica manifesto completo, adulteração, path traversal, revisão divergente, recusa de sobrescrita e confirmação explícita. `smoke-vps.sh` executa importação, preparação com permissões reais, preflight, inicialização, start e check em `/srv/sallvat-staging` **somente no runner descartável**, com guardas de ausência prévia e limpeza exclusiva dos recursos criados. Testa recusa de segunda preparação/inicialização. Nenhuma credencial gerada é copiada para o artifact.
 
-O kit é disponibilizado apenas em `main`, depois do teste de operador; sua validade final depende de CI e Pages verdes. Localmente há oito testes Python, além dos oito Node e suíte .NET existente; Docker real continua exclusivo do CI nesta estação. SQL gerado não é migration aplicada na VPS. Roteiro e limites em [VPS.md](VPS.md).
+O kit é disponibilizado apenas em `main`, depois do teste de operador; sua validade final depende de CI e Pages verdes. Localmente há dez testes Python, além dos oito Node e suíte .NET existente; Docker real continua exclusivo do CI nesta estação. SQL gerado não é migration aplicada na VPS. Roteiro e limites em [VPS.md](VPS.md).
+
+`b1765fe` ([CI 39314311692](https://github.com/DiogoJP202/Sallvatco/actions/runs/39314311692)) passou testes/build, mas o PostgreSQL rejeitou o SQL idempotente: o comando raw de `AddAutomaticPaymentRecovery` não termina com ponto e vírgula, necessário dentro de `DO/IF`. O executor EF aceitava o comando isolado. `prepare-migration-script.py` acrescenta somente esse terminador no bloco exato exportado, recusando formato desconhecido/duplicado; testes verificam preservação e idempotência. Não se altera migration aplicada, snapshot ou semântica de schema. Artifact e Pages ficaram bloqueados até a correção passar no banco real.
 
 ## Stack privada e transporte — 19/10/2026
 

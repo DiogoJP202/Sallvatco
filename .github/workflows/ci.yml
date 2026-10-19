@@ -108,6 +108,9 @@ jobs:
           --startup-project src/Sallvat.Web --configuration Release --no-build
           --output "${RUNNER_TEMP}/sallvat-migrations.sql" -- --environment Testing
 
+      - name: Validate migration script terminator
+        run: python3 tools/prepare-migration-script.py "${RUNNER_TEMP}/sallvat-migrations.sql"
+
       - name: Test VPS preparation tooling
         run: python3 -m unittest discover -s tools/tests -p 'test_vps.py'
 

@@ -9,6 +9,9 @@ from unittest.mock import patch
 SPEC = importlib.util.spec_from_file_location("vps", Path(__file__).parents[1] / "vps.py")
 vps = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(vps)
+SQL_SPEC = importlib.util.spec_from_file_location("migration_script", Path(__file__).parents[1] / "prepare-migration-script.py")
+migration_script = importlib.util.module_from_spec(SQL_SPEC)
+SQL_SPEC.loader.exec_module(migration_script)
 
 
 class VpsTests(unittest.TestCase):
@@ -74,6 +77,17 @@ class VpsTests(unittest.TestCase):
         for count in ("1", "13", "", "invalid"):
             with self.assertRaisesRegex(RuntimeError, "não está vazio"):
                 vps.require_empty_database(count)
+
+    def test_sql_normalization_only_adds_known_terminator_and_is_idempotent(self):
+        original = "unchanged before\n" + migration_script.OLD + "\nunchanged after"
+        fixed = migration_script.normalize(original)
+        self.assertEqual(fixed, "unchanged before\n" + migration_script.FIXED + "\nunchanged after")
+        self.assertEqual(migration_script.normalize(fixed), fixed)
+
+    def test_unknown_or_duplicated_sql_block_is_rejected(self):
+        for source in ("unknown", migration_script.OLD * 2):
+            with self.assertRaisesRegex(ValueError, "Formato"):
+                migration_script.normalize(source)
 
 
 if __name__ == "__main__":

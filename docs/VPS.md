@@ -20,6 +20,8 @@ Em uma execução verde de **CI** na `main`, baixar o artifact `sallvat-vps-<SHA
 
 O artifact só é enviado depois dos testes da imagem, da stack e do procedimento de operador. PRs não publicam esse pacote. **Aguardar também Pages verde no mesmo run antes de usar.** O kit pode já existir enquanto o job Pages ainda está em andamento; existência do ZIP não é aceite completo. O workflow não publica em registry nem conecta à VPS. Tokens GitHub, banco, chaves privadas e certificados operacionais não integram o pacote.
 
+Na exportação SQL, um normalizador restrito acrescenta o terminador ausente do comando raw de `AddAutomaticPaymentRecovery`, necessário para o bloco idempotente PostgreSQL. O script falha se esse bloco mudar inesperadamente; não edita migrations originais nem transforma SQL arbitrário. O resultado precisa passar pela aplicação dupla no banco de teste antes de integrar o kit.
+
 Baixar somente do repositório/run/SHA aprovado. Os checksums detectam corrupção e divergência, **não são assinatura independente** contra substituição conjunta dos arquivos e manifesto. Guardar o artifact original e registrar SHA/run na entrega. O kit verifica ID da imagem após importação; a tag local `sallvat-vps:<SHA>` não é prova de integridade sozinha. Upload/download usa o controle de acesso do GitHub; nada requer colocar token no servidor.
 
 ## 1. Preparar o servidor, sem afetar outros serviços
