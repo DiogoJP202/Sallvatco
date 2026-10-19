@@ -6,6 +6,8 @@ Estado em 01/10/2026: **checklist preparatório, ainda não executado em Staging
 
 ## Entradas necessárias
 
+Em 19/10 foi confirmado o início por homologação sem domínio/Cloudflare. O [kit de primeira VPS](VPS.md) permite ensaio privado por SSH sem resolver DNS público, mas não encerra os itens operacionais/comerciais abaixo.
+
 - [ ] Negócio informa VPS/capacidade, domínio Staging/Production e responsável técnico (PBD-015).
 - [ ] Responsáveis definem acesso individual, provisionamento Admin e revogação (PBD-016).
 - [ ] Provedor/remetente de e-mail transacional e destinatários de teste são aprovados (PBD-010).

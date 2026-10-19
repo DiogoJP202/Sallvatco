@@ -6,6 +6,8 @@ E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, cat
 
 ## Estado atual — 19/10/2026
 
+Para a primeira homologação em Ubuntu, sem domínio: seguir [Preparação da VPS](docs/VPS.md). O CI entrega um kit com imagem testada, SQL e verificações; acesso privado por SSH. Não é liberação da loja para vendas.
+
 **Vitrine publicada; loja transacional ainda não liberada para produção.** O núcleo do MVP está implementado em boa parte e coberto por testes, mas homologação externa, logística, comunicações, segurança de implantação e decisões comerciais continuam pendentes. Não considerar as fases 1–5 integralmente homologadas.
 
 - [Apresentação no GitHub Pages](https://diogojp202.github.io/Sallvatco/): home, Sobre, quatro perfumes e nove apresentações de body splash, com filtros/galerias/variantes demonstrativos. Sem login, compra ou backend nesse endereço.

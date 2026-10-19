@@ -100,8 +100,37 @@ jobs:
       - name: Smoke test application container
         run: bash tools/smoke-container.sh "sallvat-smoke:${GITHUB_SHA}"
 
+      - name: Generate reviewed migration artifact
+        env:
+          ConnectionStrings__SallvatDatabase: 'Host=127.0.0.1;Port=1;Database=sallvat_script;Username=unused;Password=not-used'
+        run: >-
+          dotnet ef migrations script --idempotent --project src/Sallvat.Infrastructure
+          --startup-project src/Sallvat.Web --configuration Release --no-build
+          --output "${RUNNER_TEMP}/sallvat-migrations.sql" -- --environment Testing
+
+      - name: Test VPS preparation tooling
+        run: python3 -m unittest discover -s tools/tests -p 'test_vps.py'
+
       - name: Smoke test private staging stack
-        run: bash tools/smoke-staging.sh "sallvat-smoke:${GITHUB_SHA}"
+        run: bash tools/smoke-staging.sh "sallvat-smoke:${GITHUB_SHA}" "${RUNNER_TEMP}/sallvat-migrations.sql"
+
+      - name: Package validated VPS kit
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: python3 tools/package-vps.py "sallvat-smoke:${GITHUB_SHA}" "${RUNNER_TEMP}/sallvat-migrations.sql" "${RUNNER_TEMP}/sallvat-vps"
+
+      - name: Smoke test VPS operator procedure
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: bash tools/smoke-vps.sh "${RUNNER_TEMP}/sallvat-vps"
+
+      - name: Upload private staging kit
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sallvat-vps-${{ github.sha }}
+          path: ${{ runner.temp }}/sallvat-vps/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
   pages:
     name: Publish validated showcase

@@ -431,6 +431,7 @@ Gaps confirmados na revisão documental: middleware/proxy confiável, headers gl
 - [ ] Provisionar Ubuntu, usuário, SSH, firewall, Docker e sincronização de tempo.
 - [ ] Configurar stacks, redes, bancos, volumes e Data Protection separados.
 - [x] Versionar ensaio privado de Staging com Nginx/TLS, secrets em arquivos, role runtime limitada, proxy confiável e smoke obrigatório no CI (19/10/2026); implantação real permanece pendente.
+- [x] Preparar kit de primeira instalação privada sem domínio: imagem validada, checksums, secrets locais, SQL explícito em banco vazio, roteiro Ubuntu/SSH e teste de operador no CI. Sem servidor provisionado, atualização operacional ou go-live.
 - [ ] Configurar Nginx, Cloudflare Full strict e origem restrita.
 - [ ] Implementar/homologar ForwardedHeaders confiáveis, HTTPS/HSTS, CSP/headers e AllowedHosts por ambiente.
 - [ ] Verificar armazenamento persistente no smoke/health sem expor caminhos ou segredos.

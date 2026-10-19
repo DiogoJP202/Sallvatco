@@ -54,6 +54,8 @@ Inicializadores rodam somente em volume vazio. Alterar arquivos de senha não al
 
 ## Validação e operação posterior
 
+Para a primeira VPS sem domínio, usar o [kit privado Ubuntu/SSH](VPS.md). Ele acrescenta execução explícita de SQL somente em banco vazio e artifact de imagem, sem registry. Atualizações de banco persistente, e-mail/Admin, backup externo e exposição pública continuam fora do kit.
+
 Validação estrutural, sem subir ambiente (não exibe os valores resolvidos):
 
 ```sh

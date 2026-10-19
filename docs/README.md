@@ -38,6 +38,7 @@ Esta pasta é a fonte de verdade documental do projeto. Código, migrations, inf
 - [INFRASTRUCTURE.md](INFRASTRUCTURE.md) — topologia, redes, ambientes, volumes e backups;
 - [CONTAINERS.md](CONTAINERS.md) — imagem da aplicação, smoke isolado no CI e limites da preparação de Staging;
 - [STAGING.md](STAGING.md) — composição privada, TLS, proxy confiável, secrets em arquivos e ensaio descartável;
+- [VPS.md](VPS.md) — primeira instalação Ubuntu privada sem domínio, kit do CI, migrations explícitas e acesso por SSH;
 - [DEPLOYMENT.md](DEPLOYMENT.md) — build, migração, promoção, rollback e restore;
 - [TESTING.md](TESTING.md) — estratégia e cenários críticos.
 

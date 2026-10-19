@@ -2,6 +2,7 @@
 # Ensaio efêmero; nunca recebe arquivo de ambiente ou segredo operacional.
 set -euo pipefail
 image="${1:?Informe a imagem local aprovada}"
+task_migrations="${2:-}"
 task_dir="$(mktemp -d -t sallvat-staging-smoke-XXXXXXXX)"
 task_project="$(basename "$task_dir" | tr '[:upper:]' '[:lower:]')"
 task_compose="$(pwd)/deploy/staging/compose.yaml"
@@ -101,6 +102,17 @@ done
 [[ "$(docker exec "$task_db" psql -U sallvat_owner -d sallvat_staging -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")" == 0 ]]
 [[ "$(docker exec "$task_db" psql -U sallvat_owner -d sallvat_staging -Atc "SELECT rolsuper OR rolcreatedb OR rolcreaterole FROM pg_roles WHERE rolname='sallvat_app'")" == f ]]
 [[ "$(docker exec "$task_db" psql -U sallvat_owner -d sallvat_staging -Atc "SELECT has_schema_privilege('sallvat_app', 'public', 'CREATE')")" == f ]]
+if [[ -n "$task_migrations" ]]; then
+  # Aplicação explícita fora do startup; repetir prova idempotência do artefato SQL.
+  for pass in 1 2; do
+    docker exec -i "$task_db" psql -X -U sallvat_owner -d sallvat_staging -v ON_ERROR_STOP=1 < "$task_migrations" > "$task_dir/migrations-log"
+  done
+  task_expected="$(find src/Sallvat.Infrastructure/Persistence/Migrations -name '[0-9]*.cs' ! -name '*.Designer.cs' | wc -l)"
+  task_applied="$(docker exec "$task_db" psql -U sallvat_owner -d sallvat_staging -Atc 'SELECT count(*) FROM __ef_migrations_history')"
+  [[ "$task_applied" == "$task_expected" ]]
+  expect 200 /perfumes --user reviewer:isolated-access-only
+  printf 'SQL de migrations aprovado: aplicado duas vezes, schema completo e catalogo acessivel com role limitada.\n'
+fi
 # Recriação da aplicação preserva volumes e o resolver Nginx reencontra o serviço.
 docker exec "$task_web" sh -c 'printf "staging-storage" > /var/lib/sallvat/images/staging-smoke.txt; sha256sum /var/lib/sallvat/keys/*.xml' > "$task_dir/keys-before"
 compose up --detach --force-recreate --no-deps web

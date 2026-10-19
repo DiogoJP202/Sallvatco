@@ -2,6 +2,12 @@
 
 # Estratégia de testes
 
+## Kit da primeira VPS — 19/10/2026
+
+O CI gera SQL idempotente offline e `smoke-staging.sh` o aplica duas vezes ao banco sintético, confere contagem das migrations e acesso ao catálogo pela role limitada. `test_vps.py` verifica manifesto completo, adulteração, path traversal, revisão divergente, recusa de sobrescrita e confirmação explícita. `smoke-vps.sh` executa importação, preparação com permissões reais, preflight, inicialização, start e check em `/srv/sallvat-staging` **somente no runner descartável**, com guardas de ausência prévia e limpeza exclusiva dos recursos criados. Testa recusa de segunda preparação/inicialização. Nenhuma credencial gerada é copiada para o artifact.
+
+O kit é disponibilizado apenas em `main`, depois do teste de operador; sua validade final depende de CI e Pages verdes. Localmente há oito testes Python, além dos oito Node e suíte .NET existente; Docker real continua exclusivo do CI nesta estação. SQL gerado não é migration aplicada na VPS. Roteiro e limites em [VPS.md](VPS.md).
+
 ## Stack privada e transporte — 19/10/2026
 
 `ReverseProxyTests` acrescenta nove cenários: proxy conhecido/desconhecido/desligado, headers assimétricos e recusa de IP ausente, wildcard ou sub-rede como proxy. Duas verificações estruturais de `ContainerBuildTests` protegem portas loopback, redes internas, secrets em arquivos, flags desligadas, role limitada e headers substituídos. O teste HTTP usa o middleware real em TestServer; não substitui TLS em container.

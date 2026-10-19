@@ -278,6 +278,8 @@ Na próxima frente, separar preparação de Staging (pode começar antes do MVP 
 
 **Incremento seguinte em 19/10/2026 (F10-S1):** composição privada de Staging, Nginx/TLS, confiança explícita no proxy e smoke descartável. Ver [STAGING.md](STAGING.md). Supera a lacuna de arquivos de proxy/stack do registro anterior, não a implantação operacional; Cloudflare, registry, migrations, e-mail/Admin e backup continuam abertos.
 
+**Preparação VPS (F10-S1/F10-S2):** [kit de primeira homologação](VPS.md) sem domínio, com imagem exportada pelo CI, SQL idempotente testado, configuração restrita gerada no host e acesso privado por SSH. Não depende de registry, mas não substitui promoção/upgrade/rollback de banco persistente, backup/restore ou implantação aprovada.
+
 **Incremento em 06/10/2026 (F10-S2):** publicação da apresentação depende do CI aprovado e reutiliza o mesmo SHA; PRs não publicam e execução manual revalida. Esta proteção do Pages não equivale a deploy de backend, preparação de Staging ou aprovação de go-live.
 
 **Objetivo:** colocar o MVP em produção com rollback e restore praticáveis.

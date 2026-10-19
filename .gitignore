@@ -32,6 +32,8 @@ deploy/staging/secrets/
 node_modules/
 .tailwindcss/
 .nuget/
+__pycache__/
+*.pyc
 
 # Operating system files
 .DS_Store

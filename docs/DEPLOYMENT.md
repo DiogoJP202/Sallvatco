@@ -73,6 +73,8 @@ Credenciais de deploy têm escopo mínimo e não são expostas a pull requests n
 
 ## Deploy em Staging
 
+Exceção delimitada para primeiro provisionamento privado, sem domínio: [VPS.md](VPS.md). O CI exporta a imagem por SHA/ID em artifact e testa SQL idempotente; `initialize` exige banco vazio e confirmação. Não é um caminho alternativo para atualizar banco persistente sem backup nem um deploy automatizado via SSH. O runbook operacional abaixo continua dependendo dos pré-requisitos completos.
+
 1. confirmar backup/estado da stack quando houver dados relevantes;
 2. obter a imagem pelo digest;
 3. validar variáveis obrigatórias sem exibir valores;
