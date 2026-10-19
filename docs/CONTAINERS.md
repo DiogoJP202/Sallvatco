@@ -39,7 +39,7 @@ O CSS é recompilado no estágio Node e copiado para o estágio SDK. `PrebuiltTa
 
 Volumes novos podem herdar ownership do diretório da imagem. Bind mounts e volumes já existentes precisam de provisionamento de permissões compatíveis com o UID; não resolver erro de acesso executando a aplicação como root ou usando `chmod 777`. Não compartilhar key ring entre ambientes. As chaves XML ainda não recebem criptografia por certificado/KMS: proteger volume, acesso e backups; essa limitação permanece para hardening.
 
-Não executar a imagem diretamente na Internet. Faltam proxy confiável, TLS/headers, Cloudflare Access/noindex de Staging, stacks isoladas e limites ajustados à VPS. O loopback HTTP do smoke é exclusivamente técnico, sem sessão de negócio ou credenciais reais; não comprova cookies/redirects sob HTTPS.
+Não executar a imagem diretamente na Internet. Faltam proxy confiável, TLS/headers, Cloudflare Access/noindex de Staging, stacks isoladas e limites ajustados à VPS. O HTTP privado do smoke é exclusivamente técnico, sem sessão de negócio ou credenciais reais; não comprova cookies/redirects sob HTTPS.
 
 ## Smoke reproduzível em Linux
 
@@ -49,7 +49,7 @@ Requer Docker, Bash, curl e acesso aos registries para baixar bases; nenhum toke
 bash tools/smoke-container.sh sallvat-web:revisao-local
 ```
 
-O script cria uma rede interna exclusiva, dois containers descartáveis e volumes anônimos. Só a aplicação recebe uma porta aleatória em **127.0.0.1**, nunca em todas as interfaces. PostgreSQL não publica porta. A aplicação roda com filesystem read-only, capabilities removidas, `no-new-privileges`, `/tmp` em tmpfs e limites de memória/CPU/processos. Esses limites são de smoke, não dimensionamento aprovado da VPS.
+O script cria uma rede interna exclusiva, dois containers descartáveis e volumes anônimos. **Nenhuma porta é publicada no host.** O runner Linux consulta diretamente o IP privado da aplicação no bridge, com Host permitido fixo; PostgreSQL só é acessível na rede interna. O Docker daemon deve ser local ao runner Linux; o script não pressupõe acesso ao bridge por Windows/Docker Desktop ou daemon remoto. A aplicação roda com filesystem read-only, capabilities removidas, `no-new-privileges`, `/tmp` em tmpfs e limites de memória/CPU/processos. Esses limites são de smoke, não dimensionamento aprovado da VPS.
 
 Verificações:
 

@@ -14,6 +14,8 @@ Evidência local em 19/10: publish com CSS pré-compilado e build Release aprova
 
 Primeira execução remota `2b28786` ([CI 39250678606](https://github.com/DiogoJP202/Sallvatco/actions/runs/39250678606)): testes/lints passaram, mas o build Docker falhou porque o contexto não incluía `.editorconfig`, perdendo a classificação de migrations geradas. Pages foi pulado. Correção inclui o arquivo no contexto e no estágio SDK, com assertions de regressão; não altera migrations nem reduz severidade de analisadores. O aceite exige a execução seguinte completa, não o run bloqueado.
 
+Na segunda execução `1c0e931` ([CI 39251377922](https://github.com/DiogoJP202/Sallvatco/actions/runs/39251377922)), a imagem foi construída, mas a sondagem tentou ler uma porta não publicada na rede `--internal`. O smoke foi ajustado para acesso do runner Linux ao IP privado do bridge, sem publicar portas ou permitir saída externa; teste estrutural impede reintrodução de `--publish`. Este run também bloqueou Pages, antes de concluir o smoke.
+
 ## Gate de publicação — 06/10/2026
 
 `ContinuousIntegrationWorkflowTests` verifica estruturalmente dependência `pages → validate`, Pages somente reutilizável, guards de evento/branch, ausência de bypass por `always()`, checkout pelo mesmo SHA, permissões separadas, revalidação manual e concorrência sem cancelar automaticamente `main`. Os testes não simulam o scheduler GitHub; a execução no remoto comprova o caminho de sucesso e a ordem dos jobs. Não se introduz falha intencional em `main` apenas para testar o bloqueio.

@@ -87,7 +87,9 @@ public sealed partial class ContainerBuildTests
         var smoke = Read("tools/smoke-container.sh");
         Assert.Contains("--read-only --cap-drop ALL --security-opt no-new-privileges:true", smoke);
         Assert.Contains("network create --internal", smoke);
-        Assert.Contains("--publish 127.0.0.1::8080", smoke);
+        Assert.DoesNotContain("--publish", smoke);
+        Assert.Contains("docker inspect --format", smoke);
+        Assert.Contains("--header 'Host: 127.0.0.1'", smoke);
         Assert.Contains("expect_status /health/ready 503", smoke);
         Assert.Contains("expect_status /health/ready 200", smoke);
         Assert.Contains("[[ \"$task_tables\" == 0 ]]", smoke);

@@ -27,19 +27,20 @@ task_app="$(docker run --detach --network "$task_network" \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --mount type=volume,destination=/var/lib/sallvat/keys \
   --mount type=volume,destination=/var/lib/sallvat/images \
-  --publish 127.0.0.1::8080 \
   --env ASPNETCORE_ENVIRONMENT=Staging \
   --env AllowedHosts=127.0.0.1 \
   --env AccountLinks__PublicOrigin=https://staging.example.invalid \
   --env 'ConnectionStrings__SallvatDatabase=Host=postgres;Port=5432;Database=sallvat_smoke;Username=sallvat_smoke;Password=isolated-smoke-only;Timeout=2;Command Timeout=2' \
   "$image")"
-task_port="$(docker port "$task_app" 8080/tcp)"
-task_url="http://${task_port}"
+# Rede interna não publica portas. O host Linux alcança o IP privado do bridge.
+task_ip="$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$task_app")"
+[[ -n "$task_ip" ]]
+task_url="http://${task_ip}:8080"
 
 expect_status() {
   local path="$1" expected="$2" actual=""
   for attempt in {1..30}; do
-    actual="$(curl --silent --max-time 5 --output "$task_dir/response" --write-out '%{http_code}' "$task_url$path" || true)"
+    actual="$(curl --silent --noproxy '*' --header 'Host: 127.0.0.1' --max-time 5 --output "$task_dir/response" --write-out '%{http_code}' "$task_url$path" || true)"
     if [[ "$actual" == "$expected" ]]; then return 0; fi
     sleep 1
   done
