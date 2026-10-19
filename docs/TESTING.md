@@ -12,6 +12,8 @@ Validação local deste incremento: build Release sem avisos/erros; **77 unitár
 
 O incremento anterior `af4b075` foi aprovado integralmente no [CI 39252027229](https://github.com/DiogoJP202/Sallvatco/actions/runs/39252027229): 585 testes .NET, oito Node, smoke da imagem e Pages verdes, oito rotas públicas HTTP 200/noindex. Essa evidência é da imagem anterior, não do novo smoke de TLS.
 
+Primeiro CI da stack, `74d9ae3` ([39309044614](https://github.com/DiogoJP202/Sallvatco/actions/runs/39309044614)): testes/build/smoke da imagem passaram, mas a web iniciou antes do Nginx e a alocação dinâmica ocupou o IP fixo confiável do proxy. Docker recusou iniciar Nginx (`Address already in use`); Pages foi bloqueado. A correção separa o pool dinâmico do IP fixo dentro da sub-rede e inclui regressão estrutural. Não amplia a confiança para toda a rede nem publica aplicação/banco.
+
 ## Imagem e smoke de runtime — 19/10/2026
 
 `ContainerBuildTests` acrescenta cinco verificações estruturais: bases fixadas e alinhadas aos manifests, separação dos estágios, não-root/ausência de secrets, contexto restrito, contrato de CSS pré-compilado e obrigatoriedade do smoke no CI. São testes de arquivos, não execução Docker.

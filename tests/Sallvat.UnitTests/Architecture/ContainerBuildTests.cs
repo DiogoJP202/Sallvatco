@@ -104,6 +104,7 @@ public sealed partial class ContainerBuildTests
         Assert.Contains("127.0.0.1:${STAGING_HTTPS_PORT:-8443}:8443", compose);
         Assert.Equal(1, compose.Split("\n    ports:").Length - 1);
         Assert.Equal(2, compose.Split("internal: true").Length - 1);
+        Assert.Contains("ip_range: ${STAGING_PROXY_DYNAMIC_RANGE:-172.29.240.8/29}", compose);
         Assert.Contains("target: /app/appsettings.Staging.json", compose);
         Assert.Contains("POSTGRES_PASSWORD_FILE:", compose);
         Assert.DoesNotContain("POSTGRES_PASSWORD:", compose);

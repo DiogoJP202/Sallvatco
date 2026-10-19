@@ -23,6 +23,7 @@ cleanup() {
   exit "$task_exit"
 }
 trap cleanup EXIT
+trap 'printf "Smoke Staging falhou na linha %s\n" "$LINENO" >&2' ERR
 # Arquivos sintéticos descartáveis. Permissões amplas somente para fixtures sem segredos reais.
 chmod 755 "$task_dir"
 printf 'isolated-owner-only' > "$task_dir/owner.txt"

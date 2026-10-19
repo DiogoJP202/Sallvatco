@@ -113,6 +113,8 @@ networks:
     ipam:
       config:
         - subnet: ${STAGING_PROXY_SUBNET:-172.29.240.0/28}
+          # Pool dinâmico separado: a web não pode ocupar o IP confiável do Nginx.
+          ip_range: ${STAGING_PROXY_DYNAMIC_RANGE:-172.29.240.8/29}
   database:
     internal: true
 
