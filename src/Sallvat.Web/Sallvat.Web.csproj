@@ -28,11 +28,20 @@
   </ItemGroup>
 
   <Target
+    Name="ValidatePrebuiltTailwindCss"
+    BeforeTargets="PrepareForBuild"
+    Condition="'$(PrebuiltTailwind)' == 'true'">
+    <Error
+      Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/css/app.css')"
+      Text="CSS pré-compilado ausente. Execute o estágio frontend antes de usar PrebuiltTailwind." />
+  </Target>
+
+  <Target
     Name="BuildTailwindCss"
     BeforeTargets="PrepareForBuild"
     Inputs="@(TailwindSource)"
     Outputs="$(MSBuildProjectDirectory)/wwwroot/css/app.css"
-    Condition="'$(DesignTimeBuild)' != 'true'">
+    Condition="'$(DesignTimeBuild)' != 'true' and '$(PrebuiltTailwind)' != 'true'">
     <Error
       Condition="!Exists('$(FrontendRoot)/node_modules/@tailwindcss/cli/package.json')"
       Text="Dependências frontend ausentes. Execute 'npm ci' na raiz do repositório." />

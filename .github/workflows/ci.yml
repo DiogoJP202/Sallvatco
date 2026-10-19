@@ -94,6 +94,12 @@ jobs:
       - name: Audit NuGet dependencies
         run: dotnet list Sallvat.sln package --vulnerable --include-transitive
 
+      - name: Build application container
+        run: docker build --pull --label "org.opencontainers.image.revision=${GITHUB_SHA}" --tag "sallvat-smoke:${GITHUB_SHA}" .
+
+      - name: Smoke test application container
+        run: bash tools/smoke-container.sh "sallvat-smoke:${GITHUB_SHA}"
+
   pages:
     name: Publish validated showcase
     needs: validate

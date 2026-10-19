@@ -274,6 +274,8 @@ Na próxima frente, separar preparação de Staging (pode começar antes do MVP 
 
 ## Fase 10 — Staging, deploy e go-live
 
+**Incremento em 19/10/2026 (F10-S2):** construção da imagem e smoke isolado no CI, com bases por digest, runtime não-root e volumes de teste. Não publica registry nem implanta servidor; proxy, stacks, migrations operacionais e homologação continuam pendentes. Detalhes em [CONTAINERS.md](CONTAINERS.md).
+
 **Incremento em 06/10/2026 (F10-S2):** publicação da apresentação depende do CI aprovado e reutiliza o mesmo SHA; PRs não publicam e execução manual revalida. Esta proteção do Pages não equivale a deploy de backend, preparação de Staging ou aprovação de go-live.
 
 **Objetivo:** colocar o MVP em produção com rollback e restore praticáveis.

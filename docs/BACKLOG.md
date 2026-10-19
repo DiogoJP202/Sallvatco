@@ -445,6 +445,7 @@ Gaps confirmados na revisão documental: middleware/proxy confiável, headers gl
 #### TASK
 
 - [ ] Publicar imagem OCI por SHA/digest no CI.
+- [x] Preparar Dockerfile multistage não-root, contexto restrito e smoke obrigatório de runtime Linux no CI, sem registry/deploy (19/10/2026; aceite requer pipeline verde).
 - [x] Encadear Pages ao CI aprovado do mesmo SHA, via workflow reutilizável; publicar somente push/manual em `main`, sem publicação em PR, com permissões por job (06/10/2026).
 - [ ] Implementar deploy de Staging e promoção manual/aprovada.
 - [ ] Implementar validação de options e readiness.

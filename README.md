@@ -4,7 +4,7 @@
 
 E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, catálogo, estoque, carrinho, pedidos e administração em um monólito modular ASP.NET Core MVC.
 
-## Estado atual — 06/10/2026
+## Estado atual — 19/10/2026
 
 **Vitrine publicada; loja transacional ainda não liberada para produção.** O núcleo do MVP está implementado em boa parte e coberto por testes, mas homologação externa, logística, comunicações, segurança de implantação e decisões comerciais continuam pendentes. Não considerar as fases 1–5 integralmente homologadas.
 
@@ -12,7 +12,7 @@ E-commerce de perfumes artesanais em desenvolvimento: experiência de marca, cat
 - Aplicação MVC: contas, endereços, CRUD de catálogo/imagens/estoque, carrinho, cupons, pedido transacional e reservas. Ainda faltam provedor de e-mail, primeiro Admin seguro e histórico/vínculo guest completos.
 - Frete: cotação/revalidação Melhor Envio, desativada. Uma unidade por cotação enquanto a caixa maior não for validada; não há compra de etiqueta ou rastreio implementados.
 - Pagamentos: Orders Sandbox, webhook, recuperação e reembolso total auditados; **todas as flags externas permanecem desligadas**. Testes não representam compras reais. Produção do Mercado Pago é recusada pela configuração atual.
-- Infraestrutura: CI e Pages operacionais; apenas PostgreSQL de Development em Compose. VPS, imagem da aplicação, proxy, Staging, backups externos e restore operacional ainda não foram entregues.
+- Infraestrutura: CI e Pages operacionais; PostgreSQL de Development em Compose e [Dockerfile com smoke isolado no CI](docs/CONTAINERS.md). Registry, VPS, proxy, stacks Staging/Production, backups externos e restore operacional ainda não foram entregues. Construir/testar a imagem não significa ter um servidor Staging implantado.
 
 O [relatório de situação](docs/STATUS.md) consolida entregas, evidências, limitações, todas as pendências comerciais e ordem de continuidade. A documentação não habilita serviços nem aprova go-live.
 

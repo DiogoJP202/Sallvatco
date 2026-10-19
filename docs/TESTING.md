@@ -2,6 +2,16 @@
 
 # Estratégia de testes
 
+## Imagem e smoke de runtime — 19/10/2026
+
+`ContainerBuildTests` acrescenta cinco verificações estruturais: bases fixadas e alinhadas aos manifests, separação dos estágios, não-root/ausência de secrets, contexto restrito, contrato de CSS pré-compilado e obrigatoriedade do smoke no CI. São testes de arquivos, não execução Docker.
+
+`tools/smoke-container.sh` executa a imagem em Linux amd64, com banco/rede/volumes descartáveis e nenhuma integração externa. Confere CSS, login, UID, runtime sem SDK/Node, bibliotecas SkiaSharp resolvidas, filesystem read-only, imagens/key ring após restart, readiness com/sem PostgreSQL e ausência de tabelas criadas automaticamente. Não comprova schema migrado, renderização/encode SkiaSharp, HTTPS, autenticação ponta a ponta, backup/restore ou Staging. Detalhes em [CONTAINERS.md](CONTAINERS.md).
+
+Na estação desta entrega não há Docker: validar publish/build/test/format e scripts localmente, registrando skips PostgreSQL; o aceite de runtime depende de build/smoke e Pages verdes no CI do mesmo commit. Nenhuma migration operacional, credencial ou flag produtiva é alterada por esta preparação.
+
+Evidência local em 19/10: publish com CSS pré-compilado e build Release aprovados (zero avisos/erros); **75 unitários e 500 de integração aprovados, 10 PostgreSQL pulados**. Oito testes Node, auditoria npm sem alertas, lint de 27 Markdown, 142 links relativos, sintaxe Bash, formatação .NET e exportação em `.local/container-showcase-20261019` aprovados. CSS versionado sem diferença. Isso não é evidência de execução Docker local; o resultado de runtime é registrado pelo CI do commit.
+
 ## Gate de publicação — 06/10/2026
 
 `ContinuousIntegrationWorkflowTests` verifica estruturalmente dependência `pages → validate`, Pages somente reutilizável, guards de evento/branch, ausência de bypass por `always()`, checkout pelo mesmo SHA, permissões separadas, revalidação manual e concorrência sem cancelar automaticamente `main`. Os testes não simulam o scheduler GitHub; a execução no remoto comprova o caminho de sucesso e a ordem dos jobs. Não se introduz falha intencional em `main` apenas para testar o bloqueio.

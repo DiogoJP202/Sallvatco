@@ -6,6 +6,8 @@ Inventário conferido em 01/10/2026 em `appsettings.json`, `appsettings.Developm
 
 ## Localização e precedência
 
+Na imagem Docker (19/10/2026), os paths de imagens/chaves são absolutos em `/var/lib/sallvat/`, HTTP interno usa 8080 e diagnósticos remotos do runtime ficam desabilitados. Conexão, origem pública, `AllowedHosts` e ambiente são fornecidos externamente. Não existe configuração Staging pronta para exposição pública. Consulte [CONTAINERS.md](CONTAINERS.md) para volumes/permissões e limites do smoke.
+
 O host usa a configuração padrão do ASP.NET: arquivos de configuração, user-secrets em Development e overrides de ambiente/linha de comando. Variáveis usam `__` entre níveis. Evitar segredo em argumento de processo, histórico de terminal ou logs; provisionar por canal protegido. User-secrets são conveniência local, não cofre produtivo. Ver [DEVELOPMENT.md](DEVELOPMENT.md) e [SECURITY.md](SECURITY.md).
 
 | Chave de ambiente | Default/comportamento | Ação necessária |

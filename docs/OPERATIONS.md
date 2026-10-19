@@ -19,6 +19,7 @@ Credenciais devem ser instaladas diretamente no ambiente protegido. Registro de 
 ## Preparar o ambiente antes de homologar
 
 - [ ] Implementar imagem OCI e registry por SHA/digest; stacks e redes isoladas.
+  - Dockerfile e smoke isolado estão versionados desde 19/10; registry, redes/stacks operacionais e deploy permanecem pendentes. Ver [CONTAINERS.md](CONTAINERS.md).
 - [ ] Configurar DNS/TLS, allowlist de proxies, HTTPS efetivo e headers; PostgreSQL/Kestrel não públicos.
 - [ ] Proteger páginas de Staging com Cloudflare Access e noindex. Planejar exceção restrita **apenas** para webhook: provedor não consegue completar login interativo de Access; rota continua exigindo assinatura/validação e proteção própria. Testar sem abrir o restante do ambiente.
 - [ ] Configurar volumes de banco, imagens e Data Protection; permissões, backup e rotação de logs.

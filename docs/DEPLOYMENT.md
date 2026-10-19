@@ -2,9 +2,9 @@
 
 # Deploy, rollback e restauração
 
-## Estado e pré-requisitos — 01/10/2026
+## Estado e pré-requisitos — 19/10/2026
 
-CI e Pages publicam apenas a apresentação; não há deploy do backend implementado. Os procedimentos de Staging/Production abaixo são runbook alvo, ainda não executado. VPS/domínios, imagem OCI, proxy/headers, e-mail, primeiro Admin, volumes e backup precisam ser preparados. Consulte [OPERATIONS.md](OPERATIONS.md) antes de usar este roteiro e [CONFIGURATION.md](CONFIGURATION.md) para flags/dependências reais.
+CI e Pages publicam apenas a apresentação; não há deploy do backend implementado. O CI agora constrói e testa uma imagem local no runner, sem enviá-la a registry, conforme [CONTAINERS.md](CONTAINERS.md). Os procedimentos de Staging/Production abaixo são runbook alvo, ainda não executado. VPS/domínios, registry, proxy/headers, e-mail, primeiro Admin, volumes operacionais e backup precisam ser preparados. Consulte [OPERATIONS.md](OPERATIONS.md) antes de usar este roteiro e [CONFIGURATION.md](CONFIGURATION.md) para flags/dependências reais.
 
 ### Schema financeiro atual
 
@@ -31,7 +31,7 @@ Para suspender novas consultas, desabilitar a flag e reiniciar o processo com a 
 
 ### Infraestrutura versionada
 
-Já estão versionados o Compose de Development, o pipeline de validação, 13 migrations de Infrastructure e os assets Tailwind compilados em build reprodutível.
+Já estão versionados o Compose de Development, o pipeline de validação, Dockerfile/contexto restrito/smoke de container, 13 migrations de Infrastructure e os assets Tailwind compilados em build reprodutível.
 
 Ainda serão adicionados:
 
@@ -60,11 +60,12 @@ O workflow versionado do GitHub Actions já:
 2. compilar em Release;
 3. executar testes unitários e de integração;
 4. verificar assets e documentação;
-5. analisar vulnerabilidades de dependências.
+5. analisar vulnerabilidades de dependências;
+6. construir a imagem com revisão por SHA e executar smoke isolado; falha bloqueia publicação do Pages.
 
 A etapa futura de entrega deverá:
 
-1. gerar imagem sem secrets;
+1. reaproveitar o build isolado sem secrets e definir retenção/proveniência do artefato;
 2. publicar em registry privado/GHCR com SHA e digest;
 3. promover somente o artefato aprovado.
 

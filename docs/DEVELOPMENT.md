@@ -38,6 +38,10 @@ Overrides deliberados em `package.json`: `@parcel/watcher` **2.6.0**, somente so
 
 Os testes `[PostgreSqlFact]` são pulados sem `SALLVAT_TEST_POSTGRES`. Isso deve aparecer no relato: sucesso local com skips **não** comprova constraints/concorrência reais. O CI fornece PostgreSQL isolado e executa esses cenários. Para executá-los localmente, fornecer conexão de um servidor **exclusivo de testes**, com permissão para criar/remover bancos efêmeros `sallvat_payment_tests_*`; nunca apontar para servidor produtivo. Não imprimir a variável nem versionar a senha.
 
+## Validar a imagem da aplicação
+
+Para alterações de empacotamento, consultar [CONTAINERS.md](CONTAINERS.md) e executar build/smoke em Docker Linux. O job `validate` exige ambos antes do Pages. Se Docker não existir localmente, declarar a limitação e aguardar o teste real no CI; testes de texto do Dockerfile não substituem execução de container.
+
 ## Nova migration
 
 Criar apenas para uma alteração de modelo solicitada e com configuração de Development apontando para dados locais:

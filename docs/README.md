@@ -36,6 +36,7 @@ Esta pasta é a fonte de verdade documental do projeto. Código, migrations, inf
 - [LGPD.md](LGPD.md) — inventário de dados, minimização, retenção e direitos;
 - [OBSERVABILITY.md](OBSERVABILITY.md) — logs, auditoria, correlação e health checks;
 - [INFRASTRUCTURE.md](INFRASTRUCTURE.md) — topologia, redes, ambientes, volumes e backups;
+- [CONTAINERS.md](CONTAINERS.md) — imagem da aplicação, smoke isolado no CI e limites da preparação de Staging;
 - [DEPLOYMENT.md](DEPLOYMENT.md) — build, migração, promoção, rollback e restore;
 - [TESTING.md](TESTING.md) — estratégia e cenários críticos.
 

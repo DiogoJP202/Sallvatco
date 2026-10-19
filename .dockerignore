@@ -1,0 +1,25 @@
+# Allowlist: somente arquivos necessários para construir a aplicação.
+**
+!Dockerfile
+!package.json
+!package-lock.json
+!global.json
+!Directory.Build.props
+!Directory.Packages.props
+!src/
+!src/**
+**/bin
+**/obj
+**/node_modules
+**/.local
+**/.env
+**/.env.*
+**/appsettings.*.local.json
+**/appsettings.Development.json
+**/appsettings.Testing.json
+**/launchSettings.json
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key
+**/secrets.json
