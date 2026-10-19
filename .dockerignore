@@ -1,6 +1,7 @@
 # Allowlist: somente arquivos necessários para construir a aplicação.
 **
 !Dockerfile
+!.editorconfig
 !package.json
 !package-lock.json
 !global.json

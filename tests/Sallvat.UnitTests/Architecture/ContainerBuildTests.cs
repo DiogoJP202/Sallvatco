@@ -17,6 +17,7 @@ public sealed partial class ContainerBuildTests
         Assert.Contains("npm ci --ignore-scripts", dockerfile);
         Assert.Contains("dotnet restore src/Sallvat.Web/Sallvat.Web.csproj --locked-mode", dockerfile);
         Assert.Contains("COPY --from=frontend", dockerfile);
+        Assert.Contains("COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./", dockerfile);
         Assert.Contains("-p:PrebuiltTailwind=true", dockerfile);
         Assert.Contains("COPY --from=build /out/ ./", dockerfile);
     }
@@ -44,6 +45,7 @@ public sealed partial class ContainerBuildTests
         Assert.StartsWith("# Allowlist:", ignore, StringComparison.Ordinal);
         Assert.Contains("\n**\n", ignore);
         Assert.Contains("!src/\n!src/**", ignore);
+        Assert.Contains("!.editorconfig\n", ignore);
         foreach (var excluded in new[]
         {
             "bin", "obj", "node_modules", ".local", ".env", ".env.*",

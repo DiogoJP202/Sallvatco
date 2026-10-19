@@ -9,7 +9,7 @@ RUN npm run css:build
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400-noble@sha256:4beef5b8919dcaa2dc924233bd069257e883cc7a061e09088a97d152d6a48510 AS build
 WORKDIR /source
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
-COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY src/ ./src/
 RUN dotnet restore src/Sallvat.Web/Sallvat.Web.csproj --locked-mode
 COPY --from=frontend /source/src/Sallvat.Web/wwwroot/css/app.css ./src/Sallvat.Web/wwwroot/css/app.css
