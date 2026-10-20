@@ -5,6 +5,37 @@ namespace Sallvat.UnitTests.Checkout;
 public sealed class CheckoutDraftValidatorTests
 {
     [Fact]
+    public void NullFieldsFromModelBindingReturnErrorsInsteadOfThrowing()
+    {
+        var (draft, errors) = CheckoutDraftValidator.Validate(new(
+            new(null!, null!, null!),
+            new(null, null!, null!, null!, null!, null, null!, null!, null!)));
+
+        Assert.Null(draft);
+        Assert.Equal(10, errors.Count);
+        Assert.Contains(errors, error => error.Field == "Phone");
+        Assert.Contains(errors, error => error.Field == "PostalCode");
+    }
+
+    [Theory]
+    [InlineData("", "", false)]
+    [InlineData("   ", "   ", false)]
+    [InlineData("abc11987654321", "01310-100", false)]
+    [InlineData("11987654321", "abc01310100", false)]
+    [InlineData("(11) 98765-4321", "01310-100", true)]
+    [InlineData("1133334444", "01310100", true)]
+    [InlineData("11987654321", "01310100", true)]
+    public void ValidatesPhoneAndPostalCodeFormats(string phone, string postalCode, bool valid)
+    {
+        var (draft, errors) = CheckoutDraftValidator.Validate(new(
+            new("Cliente Teste", "cliente@example.com", phone),
+            new(null, "Cliente Teste", postalCode, "Rua Teste", "S/N", null, "Centro", "São Paulo", "SP")));
+
+        Assert.Equal(valid, draft is not null);
+        Assert.Equal(valid, errors.Count == 0);
+    }
+
+    [Fact]
     public void NormalizesOnlyNecessaryContactAndBrazilianAddressData()
     {
         var (draft, errors) = CheckoutDraftValidator.Validate(new(

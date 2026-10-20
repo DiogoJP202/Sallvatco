@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 using Sallvat.Domain.Customers;
 
 namespace Sallvat.Application.Checkout;
 
-public static class CheckoutDraftValidator
+public static partial class CheckoutDraftValidator
 {
+    public const string PhonePattern = @"(?:[0-9]{2}|\([0-9]{2}\)) ?[0-9]{4,5}-?[0-9]{4}";
+    public const string PostalCodePattern = "[0-9]{5}-?[0-9]{3}";
     private static readonly HashSet<string> BrazilianStateCodes =
         new(StringComparer.Ordinal)
         {
@@ -105,13 +108,10 @@ public static class CheckoutDraftValidator
     }
 
     private static string? NormalizePhone(
-        string value,
+        string? value,
         List<CheckoutValidationError> errors)
     {
-        var digits = new string(value
-            .Where(char.IsAsciiDigit)
-            .ToArray());
-        if (digits.Length is not (10 or 11))
+        if (!PhoneRegex().IsMatch(value?.Trim() ?? string.Empty))
         {
             errors.Add(new(
                 "Phone",
@@ -119,7 +119,7 @@ public static class CheckoutDraftValidator
             return null;
         }
 
-        return digits;
+        return new string(value!.Where(char.IsAsciiDigit).ToArray());
     }
 
     private static string? NormalizeState(
@@ -137,16 +137,17 @@ public static class CheckoutDraftValidator
     }
 
     private static string? FixedDigits(
-        string value,
+        string? value,
         int length,
         string field,
         string message,
         List<CheckoutValidationError> errors)
     {
-        var digits = new string(value
+        var digits = new string((value ?? string.Empty)
             .Where(char.IsAsciiDigit)
             .ToArray());
-        if (digits.Length != length)
+        if (digits.Length != length
+            || !PostalCodeRegex().IsMatch(value?.Trim() ?? string.Empty))
         {
             errors.Add(new(field, message));
             return null;
@@ -205,4 +206,10 @@ public static class CheckoutDraftValidator
             (value ?? string.Empty).Split(
                 (char[]?)null,
                 StringSplitOptions.RemoveEmptyEntries));
+
+    [GeneratedRegex(@"\A(?:" + PhonePattern + @")\z")]
+    private static partial Regex PhoneRegex();
+
+    [GeneratedRegex(@"\A(?:" + PostalCodePattern + @")\z")]
+    private static partial Regex PostalCodeRegex();
 }

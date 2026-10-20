@@ -8,6 +8,8 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 ## Resumo executivo
 
+**Correção de checkout em 20/10/2026:** campos vazios enviados pelo MVC podiam chegar como `null` e provocar `ArgumentNullException` na normalização de telefone/CEP em `/checkout/revisar`. O validador agora devolve erros por campo, rejeita letras misturadas aos números e mantém a validação no servidor. O formulário tem constraints HTML, mensagens acessíveis em JavaScript nativo e seleção de UF. Verificadas submissão vazia por HTTP e revisão válida pelo navegador contra PostgreSQL local; isso não habilita frete, cobrança nem produção. A validação é de preenchimento/formato, não uma consulta de existência de CEP, telefone ou e-mail. Evidências e regressões em [TESTING.md](TESTING.md#regressão-de-validação-do-checkout--20102026).
+
 **Incremento de 19/10/2026:** Dockerfile multistage com bases fixadas por digest, execução não-root, contexto restrito e smoke de runtime exigido no CI. É preparação de artefato, sem registry ou deploy de Staging. Docker está ausente na estação local; execução do container deve ser comprovada no CI Linux. Contratos e pendências em [CONTAINERS.md](CONTAINERS.md); sem alteração em schema, pagamentos ou flags.
 
 **Segundo incremento de 19/10/2026:** [stack privada de Staging](STAGING.md) com Nginx/TLS, redes internas, secrets em arquivos, role de aplicação sem privilégios administrativos, volumes separados e proxy confiável no ASP.NET. Smoke completo passa a ser obrigatório no CI. Ainda não há servidor de homologação público, Cloudflare Access, registry, migrations operacionais, e-mail/Admin ou backup/restore. Nenhuma flag externa ativada.

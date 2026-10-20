@@ -1,4 +1,6 @@
 @model CheckoutPageViewModel
+@using Sallvat.Application.Checkout
+@using Sallvat.Domain.Customers
 @{
     ViewData["Title"] = "Checkout";
     ViewData["ForceNoIndex"] = true;
@@ -15,7 +17,7 @@
 
 <section class="bg-paper">
     <div class="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_22rem] lg:items-start lg:px-10 lg:py-16">
-        <form class="grid gap-8" asp-action="Review" method="post" novalidate>
+        <form class="grid gap-8" asp-action="Review" method="post" data-checkout-form>
             @if (TempData["CheckoutError"] is string checkoutError)
             {
                 <p class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950" role="alert">@checkoutError</p>
@@ -28,17 +30,17 @@
                 <div class="mt-6 grid gap-5 sm:grid-cols-2">
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
                         <span>Nome completo</span>
-                        <input asp-for="Form.BuyerName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="name" />
+                        <input asp-for="Form.BuyerName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="name" required maxlength="@Customer.NameMaxLength" />
                         <span asp-validation-for="Form.BuyerName" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700">
                         E-mail
-                        <input asp-for="Form.Email" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="email" inputmode="email" />
+                        <input asp-for="Form.Email" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="email" inputmode="email" type="email" required maxlength="@Customer.EmailMaxLength" />
                         <span asp-validation-for="Form.Email" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700">
                         Telefone com DDD
-                        <input asp-for="Form.Phone" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="tel" inputmode="tel" placeholder="(11) 99999-9999" />
+                        <input asp-for="Form.Phone" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="tel" inputmode="tel" type="tel" required maxlength="@Customer.PhoneMaxLength" pattern="@CheckoutDraftValidator.PhonePattern" title="Informe um telefone com DDD, como (11) 99999-9999." placeholder="(11) 99999-9999" />
                         <span asp-validation-for="Form.Phone" class="text-xs text-red-700"></span>
                     </label>
                 </div>
@@ -72,42 +74,48 @@
                 <div class="mt-6 grid gap-5 sm:grid-cols-6">
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
                         Destinatário
-                        <input asp-for="Form.RecipientName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping name" />
+                        <input asp-for="Form.RecipientName" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping name" required maxlength="@Address.RecipientNameMaxLength" />
                         <span asp-validation-for="Form.RecipientName" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
                         CEP
-                        <input asp-for="Form.PostalCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping postal-code" inputmode="numeric" placeholder="00000-000" />
+                        <input asp-for="Form.PostalCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping postal-code" inputmode="numeric" required maxlength="9" pattern="@CheckoutDraftValidator.PostalCodePattern" title="Informe um CEP com 8 dígitos, como 01310-100." placeholder="00000-000" />
                         <span asp-validation-for="Form.PostalCode" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
                         Rua ou avenida
-                        <input asp-for="Form.Street" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line1" />
+                        <input asp-for="Form.Street" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line1" required maxlength="@Address.StreetMaxLength" />
                         <span asp-validation-for="Form.Street" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
                         Número
-                        <input asp-for="Form.Number" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line2" />
+                        <input asp-for="Form.Number" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line2" required maxlength="@Address.NumberMaxLength" placeholder="Número ou S/N" />
                         <span asp-validation-for="Form.Number" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-3">
                         Complemento (opcional)
-                        <input asp-for="Form.Complement" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line3" />
+                        <input asp-for="Form.Complement" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-line3" maxlength="@Address.ComplementMaxLength" />
                         <span asp-validation-for="Form.Complement" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-3">
                         Bairro
-                        <input asp-for="Form.District" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" />
+                        <input asp-for="Form.District" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" required maxlength="@Address.DistrictMaxLength" />
                         <span asp-validation-for="Form.District" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-4">
                         Cidade
-                        <input asp-for="Form.City" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level2" />
+                        <input asp-for="Form.City" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level2" required maxlength="@Address.CityMaxLength" />
                         <span asp-validation-for="Form.City" class="text-xs text-red-700"></span>
                     </label>
                     <label class="grid gap-2 text-sm font-semibold text-stone-700 sm:col-span-2">
                         UF
-                        <input asp-for="Form.StateCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal uppercase text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level1" maxlength="2" />
+                        <select asp-for="Form.StateCode" class="rounded-xl border border-stone-300 bg-paper px-4 py-3 font-normal uppercase text-ink focus:border-copper focus:outline-none" autocomplete="shipping address-level1" required>
+                            <option value="">Selecione</option>
+                            @foreach (var state in new[] { "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO" })
+                            {
+                                <option value="@state">@state</option>
+                            }
+                        </select>
                         <span asp-validation-for="Form.StateCode" class="text-xs text-red-700"></span>
                     </label>
                 </div>
@@ -132,3 +140,7 @@
         </aside>
     </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/checkout-validation.js" asp-append-version="true" defer></script>
+}

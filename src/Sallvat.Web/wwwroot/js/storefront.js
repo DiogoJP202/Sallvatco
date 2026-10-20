@@ -169,7 +169,10 @@
       const option = addressSelect.selectedOptions[0];
       if (!option?.value) return;
       Object.entries(fields).forEach(([name, field]) => {
-        if (field) field.value = option.dataset[name] ?? "";
+        if (field) {
+          field.value = option.dataset[name] ?? "";
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+        }
       });
     });
   }

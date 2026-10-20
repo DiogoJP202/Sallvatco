@@ -2,6 +2,18 @@
 
 # Estratégia de testes
 
+## Regressão de validação do checkout — 20/10/2026
+
+O POST `/checkout/revisar` com telefone/CEP vazios reproduziu `ArgumentNullException` em `CheckoutDraftValidator`. Strings não anuláveis em C# não impedem que o model binder entregue `null`. A normalização deve tratar isso como erro de campo, sem criar pedido nem cotar frete.
+
+- Unitários: todos os campos nulos, vazios/espaços, letras em telefone/CEP, formatos com e sem máscara.
+- Integração HTTP: formulário ausente, vazio, espaços e valores malformados com sacola válida; retorna HTTP 200 com erros, preserva campos preenchidos e não exibe revisão bem-sucedida. Mantidos antiforgery e os cenários válidos existentes.
+- Frontend: constraints HTML sem `novalidate`, seleção das 27 UFs e script nativo com mensagens inline associadas por `aria-describedby`, `aria-invalid` e anúncio `polite`. Preenchimento de endereço salvo dispara revalidação. Cinco testes Node cobrem mensagens, classes de visibilidade, correção do valor, foco e ausência de formulário.
+- Validação local: build Release sem warnings, 85 testes unitários e 513 de integração aprovados; dez testes exclusivos PostgreSQL da suíte não foram executados nesta rodada local. Treze testes Node aprovados, `dotnet format --verify-no-changes` e `git diff --check` sem falhas.
+- Smoke separado contra a aplicação MVC/PostgreSQL local: POST sem campos e sem JavaScript devolve erros sem 500. No navegador, formulário vazio bloqueia o envio e mostra avisos; dados sintéticos válidos chegam à revisão. Console sem erros nesse fluxo.
+
+Não há consulta externa para confirmar existência de endereço, e-mail ou telefone. Frete e pagamentos continuam desabilitados; a revisão informa essa limitação. O teste local não equivale a homologação das integrações nem a aprovação do deploy, que depende do CI/Pages do commit.
+
 ## Kit da primeira VPS — 19/10/2026
 
 O CI gera SQL idempotente offline e `smoke-staging.sh` o aplica duas vezes ao banco sintético, confere contagem das migrations e acesso ao catálogo pela role limitada. `test_vps.py` verifica manifesto completo, adulteração, path traversal, revisão divergente, recusa de sobrescrita e confirmação explícita. `smoke-vps.sh` executa importação, preparação com permissões reais, preflight, inicialização, start e check em `/srv/sallvat-staging` **somente no runner descartável**, com guardas de ausência prévia e limpeza exclusiva dos recursos criados. Testa recusa de segunda preparação/inicialização. Nenhuma credencial gerada é copiada para o artifact.

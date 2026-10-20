@@ -300,6 +300,62 @@ public sealed partial class CartPageTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("empty")]
+    [InlineData("whitespace")]
+    [InlineData("malformed")]
+    public async Task InvalidCheckoutFieldsRenderErrorsWithoutThrowing(string scenario)
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        var product = await PublishedCatalogFixture.CreateAsync(application, $"invalid-checkout-{scenario}");
+        using var client = CreateClient(application);
+        var token = await GetAntiforgeryTokenAsync(client, $"/perfumes/{product.Slug}");
+        using var added = await client.PostAsync("/carrinho/itens", Form(token,
+            ("VariantId", product.AvailableVariantId.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            ("Quantity", "1")));
+        Assert.Equal(HttpStatusCode.Redirect, added.StatusCode);
+        token = await GetAntiforgeryTokenAsync(client, "/checkout");
+        using var page = await client.GetAsync("/checkout");
+        var html = await page.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("novalidate", html, StringComparison.Ordinal);
+        Assert.Contains("data-checkout-form", html, StringComparison.Ordinal);
+        Assert.Contains("checkout-validation.js", html, StringComparison.Ordinal);
+        Assert.Contains("pattern=", html, StringComparison.Ordinal);
+        Assert.Contains("required", html, StringComparison.Ordinal);
+        Assert.Contains("<select", html, StringComparison.Ordinal);
+
+        var value = scenario == "whitespace" ? "   " : "";
+        var fields = scenario == "missing"
+            ? Array.Empty<(string, string)>()
+            : new[]
+            {
+                ("Form.BuyerName", "Cliente preservado"),
+                ("Form.Email", scenario == "malformed" ? "invalido" : value),
+                ("Form.Phone", scenario == "malformed" ? "abc11987654321" : value),
+                ("Form.RecipientName", "Cliente preservado"),
+                ("Form.PostalCode", scenario == "malformed" ? "abc01310100" : value),
+                ("Form.Street", "Rua de teste"),
+                ("Form.Number", "S/N"),
+                ("Form.District", "Centro"),
+                ("Form.City", "São Paulo"),
+                ("Form.StateCode", "XX"),
+            };
+        using var response = await client.PostAsync("/checkout/revisar", Form(token, fields));
+        var content = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("data-valmsg-for=\"Form.Phone\"", content, StringComparison.Ordinal);
+        Assert.Contains("telefone", content, StringComparison.Ordinal);
+        Assert.Contains("CEP", content, StringComparison.Ordinal);
+        Assert.Contains("field-validation-error", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("Dados validados pelo servidor", content, StringComparison.Ordinal);
+        if (scenario != "missing")
+        {
+            Assert.Contains("Cliente preservado", content, StringComparison.Ordinal);
+        }
+    }
+
     private static HttpClient CreateClient(
         AccountWebApplicationFactory application) =>
         application.CreateClient(new WebApplicationFactoryClientOptions
