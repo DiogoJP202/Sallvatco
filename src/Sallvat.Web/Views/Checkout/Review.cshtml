@@ -111,7 +111,21 @@
                     <button class="min-h-12 cursor-not-allowed rounded-full bg-stone-600 px-7 py-3 text-sm font-semibold text-stone-300" type="button" disabled>Aguardando homologação do frete</button>
                 }
             </div>
-            <a class="mt-6 inline-block text-sm font-semibold text-stone-300 underline underline-offset-4 hover:text-white" asp-action="Index">Corrigir os dados</a>
+            <form asp-action="Edit" method="post" class="mt-6">
+                <input type="hidden" asp-for="Form.BuyerName" />
+                <input type="hidden" asp-for="Form.Email" />
+                <input type="hidden" asp-for="Form.Phone" />
+                <input type="hidden" asp-for="Form.SavedAddressId" />
+                <input type="hidden" asp-for="Form.RecipientName" />
+                <input type="hidden" asp-for="Form.PostalCode" />
+                <input type="hidden" asp-for="Form.Street" />
+                <input type="hidden" asp-for="Form.Number" />
+                <input type="hidden" asp-for="Form.Complement" />
+                <input type="hidden" asp-for="Form.District" />
+                <input type="hidden" asp-for="Form.City" />
+                <input type="hidden" asp-for="Form.StateCode" />
+                <button class="min-h-11 text-sm font-semibold text-stone-300 underline underline-offset-4 hover:text-white" type="submit">Corrigir os dados</button>
+            </form>
         </div>
     </div>
 </section>

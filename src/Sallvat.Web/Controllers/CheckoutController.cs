@@ -25,7 +25,19 @@ public sealed class CheckoutController(
     IClock clock) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Index(
+    public Task<IActionResult> Index(
+        CancellationToken cancellationToken) =>
+        ShowFormAsync(null, cancellationToken);
+
+    [HttpPost("editar")]
+    [RequestSizeLimit(32_768)]
+    public Task<IActionResult> Edit(
+        [Bind(Prefix = "Form")] CheckoutFormViewModel form,
+        CancellationToken cancellationToken) =>
+        ShowFormAsync(form, cancellationToken);
+
+    private async Task<IActionResult> ShowFormAsync(
+        CheckoutFormViewModel? form,
         CancellationToken cancellationToken)
     {
         var owner = CurrentOwner();
@@ -41,8 +53,8 @@ public sealed class CheckoutController(
         var prefill = await checkoutService.GetPrefillAsync(
             CurrentUserId(),
             cancellationToken);
-        return View(new CheckoutPageViewModel(
-            CheckoutFormViewModel.From(prefill),
+        return View("Index", new CheckoutPageViewModel(
+            form ?? CheckoutFormViewModel.From(prefill),
             cart,
             prefill.Addresses));
     }
@@ -108,7 +120,8 @@ public sealed class CheckoutController(
         return View(new CheckoutReviewViewModel(
             result.Draft,
             result.Cart,
-            freight)
+            freight,
+            form)
         { Confirmations = confirmations });
     }
 

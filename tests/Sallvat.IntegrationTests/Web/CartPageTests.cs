@@ -284,17 +284,39 @@ public sealed partial class CartPageTests
             Assert.DoesNotContain("Total com entrega:", content, StringComparison.Ordinal);
         }
         Assert.DoesNotContain("00000000000", content, StringComparison.Ordinal);
+
+        var reviewHtml = await response.Content.ReadAsStringAsync();
+        var editForm = Regex.Match(reviewHtml, """<form\b[^>]*action="/checkout/editar"[^>]*>(?<body>.*?)</form>""", RegexOptions.Singleline);
+        Assert.True(editForm.Success, "The review did not render the checkout edit form.");
+        var editFields = Regex.Matches(editForm.Groups["body"].Value, "<input\\b[^>]*name=\"([^\"]+)\"[^>]*value=\"([^\"]*)\"")
+            .Select(match => new KeyValuePair<string, string>(
+                match.Groups[1].Value,
+                WebUtility.HtmlDecode(match.Groups[2].Value)));
+        using var editResponse = await client.PostAsync("/checkout/editar", new FormUrlEncodedContent(editFields));
+        var editHtml = WebUtility.HtmlDecode(await editResponse.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, editResponse.StatusCode);
+        Assert.True(editResponse.Headers.CacheControl?.NoStore);
+        Assert.Contains("action=\"/checkout/revisar\"", editHtml, StringComparison.Ordinal);
+        Assert.Contains("value=\"  Cliente   Web \"", editHtml, StringComparison.Ordinal);
+        Assert.Contains("value=\" CLIENTE@EXAMPLE.COM \"", editHtml, StringComparison.Ordinal);
+        Assert.Contains("value=\"(11) 99999-8888\"", editHtml, StringComparison.Ordinal);
+        Assert.Contains("value=\"01310-100\"", editHtml, StringComparison.Ordinal);
+        Assert.Contains("value=\"Avenida Paulista\"", editHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Dados validados pelo servidor", editHtml, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task CheckoutPostWithoutAntiforgeryIsRejected()
+    [Theory]
+    [InlineData("/checkout/revisar")]
+    [InlineData("/checkout/editar")]
+    public async Task CheckoutPostWithoutAntiforgeryIsRejected(string path)
     {
         await using var application = new AccountWebApplicationFactory();
         await application.InitializeDatabaseAsync();
         using var client = CreateClient(application);
 
         using var response = await client.PostAsync(
-            "/checkout/revisar",
+            path,
             new FormUrlEncodedContent([]));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

@@ -175,6 +175,16 @@ internal static partial class Program
             options);
         await ExportPageAsync(
             client,
+            "/contato",
+            Path.Combine("contato", "index.html"),
+            options);
+        await ExportPageAsync(
+            client,
+            "/entrega",
+            Path.Combine("entrega", "index.html"),
+            options);
+        await ExportPageAsync(
+            client,
             "/linha-corporal",
             Path.Combine("linha-corporal", "index.html"),
             options);

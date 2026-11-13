@@ -5,6 +5,27 @@ namespace Sallvat.IntegrationTests.Web;
 
 public sealed class HomePageTests
 {
+    [Fact]
+    public async Task ContactAndDeliveryPagesUseConfirmedStoreInformation()
+    {
+        await using var application = new AccountWebApplicationFactory();
+        await application.InitializeDatabaseAsync();
+        using var client = application.CreateClient();
+
+        var home = await client.GetStringAsync("/");
+        var contact = await client.GetStringAsync("/contato");
+        var delivery = WebUtility.HtmlDecode(await client.GetStringAsync("/entrega"));
+
+        Assert.Contains("href=\"/contato\"", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/entrega\"", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://www.instagram.com/sallvatco\"", contact, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://wa.me/5511963143754\"", contact, StringComparison.Ordinal);
+        Assert.Contains("href=\"mailto:sallvatco@gmail.com\"", contact, StringComparison.Ordinal);
+        Assert.Contains("dois dias úteis", delivery, StringComparison.Ordinal);
+        Assert.Contains("O transporte começa após a postagem.", delivery, StringComparison.Ordinal);
+        Assert.Contains("href=\"/contato\"", delivery, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("/")]
     [InlineData("/sobre")]

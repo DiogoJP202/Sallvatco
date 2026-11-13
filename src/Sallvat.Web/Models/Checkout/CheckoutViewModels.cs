@@ -112,7 +112,8 @@ public sealed record CheckoutPageViewModel(
 public sealed record CheckoutReviewViewModel(
     CheckoutDraft Draft,
     CartSummary Cart,
-    FreightQuoteResult Freight)
+    FreightQuoteResult Freight,
+    CheckoutFormViewModel Form)
 {
     public IReadOnlyDictionary<string, string> Confirmations { get; init; } = new Dictionary<string, string>();
 }

@@ -88,4 +88,4 @@ Este documento define requisitos e decisões de negócio, não comprova que toda
 | PBD-014 | Qual destino externo e retenção definitiva dos backups? | 7 diários, 4 semanais e 6 mensais, criptografados fora da VPS. | Produção |
 | PBD-015 | Qual plano da VPS, domínios de staging/produção e configuração da conta Cloudflare? | Topologia definida sem valores de capacidade. | Provisionamento |
 | PBD-016 | Quem terá acesso administrativo e como ocorrerá concessão/revogação? | Uma conta inicial criada por processo seguro e individual; sem conta compartilhada. | Operação |
-| PBD-017 | Instagram será link ou embed e qual será o canal oficial de suporte? | Link simples; nenhum script/widget externo. | Conteúdo da home/contato |
+| PBD-017 | Canais de contato confirmados pela marca | Links simples para WhatsApp e Instagram, além do e-mail de contato. | Página `/contato` |

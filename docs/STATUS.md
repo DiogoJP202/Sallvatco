@@ -8,6 +8,15 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 ## Resumo executivo
 
+**Preparação para publicação em 13/11/2026.** A página `/contato` reúne [WhatsApp](https://wa.me/5511963143754), [Instagram](https://www.instagram.com/sallvatco) e `sallvatco@gmail.com`. A página `/entrega` informa a média de dois dias úteis de preparo e postagem, separada do prazo de transporte. Ambas são incluídas na vitrine estática. O botão “Corrigir os dados” da revisão retorna ao formulário preenchido por POST com antiforgery. O envio seguinte revalida os dados e recalcula a cotação.
+
+### Pendências para abertura de vendas
+
+- **Marca.** Confirmar razão social, CNPJ, endereço, responsável por privacidade e domínio. Aprovar termos, privacidade e trocas, além de nomes, imagens, preços, volumes e estoque do catálogo.
+- **Frete.** Confirmar medidas internas, peso e capacidade da caixa maior. Validar serviços e regiões atendidas no Melhor Envio. O prazo médio de dois dias úteis cobre preparo e postagem. A política de frete grátis pode ser definida depois.
+- **Homologação.** Instalar um kit atualizado na VPS, configurar o remetente dos e-mails transacionais e testar cadastro, recuperação de acesso, cotação, pedido, pagamento de teste, webhook e pós-compra.
+- **Produção.** Implementar e validar pagamentos produtivos, configurar domínio e HTTPS, provisionar os administradores e testar a restauração de backup antes de abrir vendas.
+
 **Correção de checkout em 20/10/2026:** campos vazios enviados pelo MVC podiam chegar como `null` e provocar `ArgumentNullException` na normalização de telefone/CEP em `/checkout/revisar`. O validador agora devolve erros por campo, rejeita letras misturadas aos números e mantém a validação no servidor. O formulário tem constraints HTML, mensagens acessíveis em JavaScript nativo e seleção de UF. Verificadas submissão vazia por HTTP e revisão válida pelo navegador contra PostgreSQL local; isso não habilita frete, cobrança nem produção. A validação é de preenchimento/formato, não uma consulta de existência de CEP, telefone ou e-mail. Evidências e regressões em [TESTING.md](TESTING.md#regressão-de-validação-do-checkout--20102026).
 
 **Incremento de 19/10/2026:** Dockerfile multistage com bases fixadas por digest, execução não-root, contexto restrito e smoke de runtime exigido no CI. É preparação de artefato, sem registry ou deploy de Staging. Docker está ausente na estação local; execução do container deve ser comprovada no CI Linux. Contratos e pendências em [CONTAINERS.md](CONTAINERS.md); sem alteração em schema, pagamentos ou flags.
@@ -59,7 +68,8 @@ O [backlog](BACKLOG.md) detalha execução; o [roadmap](ROADMAP.md) mantém crit
 | `/Admin/Produtos`, `/Admin/Cupons`, `/Admin/Pedidos`, `/Admin/Pagamentos` | Servidor, autenticação e autorização; não exportados. |
 | `/integracoes/mercado-pago/webhook` | POST no servidor, desligado por configuração; não existe como receptor no Pages. |
 | `/health/live`, `/health/ready` | Processo e conexão PostgreSQL, respectivamente; não confirmam saúde de todos os serviços externos. |
-| Contato, privacidade, termos, trocas, entrega, sitemap produtivo | Escopo planejado, ainda não entregue como conjunto institucional final. |
+| `/contato` e `/entrega` | Canais informados pela marca e orientação sobre o prazo médio de preparo. |
+| Privacidade, termos, trocas e sitemap produtivo | Pendentes de conteúdo final e publicação. |
 
 O nome exibido é **Lumiere**, mas o endereço legado continua `/perfumes/cumiere/`. Não renomear URLs sem redirect/compatibilidade. Os perfumes do exportador ainda têm preços de demonstração (`299,90`/`449,90`), diferentes da tabela enviada pela marca (`30 ml: 45,00`, `50 ml: 70,00`, `100 ml: 125,00`). Essa divergência precisa ser resolvida com aprovação, não interpretada como preço final. A linha corporal apresenta `200 ml / R$ 45,00`, a partir do material recebido, em catálogo editorial estático. Notas, duração e disponibilidade demonstrativas não são comprovação comercial.
 
@@ -115,7 +125,7 @@ A fonte autoritativa continua sendo [REQUIREMENTS.md](REQUIREMENTS.md#pending-bu
 | 014 | Destino externo, retenção definitiva, responsáveis e testes de backup/restore. |
 | 015 | VPS/capacidade, staging/produção, domínios, DNS e Cloudflare. |
 | 016 | Administradores individuais, provisionamento, concessão e revogação. |
-| 017 | Instagram como link/embed e canal oficial de suporte. |
+| 017 | WhatsApp e Instagram confirmados e publicados como links simples na página de contato. |
 
 Confirmado: contato `sallvatco@gmail.com`, conta Melhor Envio existente, origem `02320-040`, média de **2 dias úteis para preparar e postar**, perfume embalado `130 g / C11 × L16 × A5 cm` para todos os volumes informados, body splash 200 ml embalado `300 g / C16 × L20 × A7 cm`, vários itens em caixa maior. Estas informações não equivalem a credenciais configuradas ou frete homologado. O bloqueio de várias unidades permanece.
 

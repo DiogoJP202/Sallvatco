@@ -56,4 +56,18 @@ public sealed class HomeController(
         return View(new BodySplashCollectionPageViewModel(
             BodySplashPresentationCatalog.All));
     }
+
+    [HttpGet("contato")]
+    public IActionResult Contact()
+    {
+        ViewData["CanonicalUrl"] = new Uri(publicOrigin, "/contato").AbsoluteUri;
+        return View();
+    }
+
+    [HttpGet("entrega")]
+    public IActionResult Delivery()
+    {
+        ViewData["CanonicalUrl"] = new Uri(publicOrigin, "/entrega").AbsoluteUri;
+        return View();
+    }
 }
