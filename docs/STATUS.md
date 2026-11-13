@@ -8,6 +8,8 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 ## Resumo executivo
 
+**SEO e descoberta.** O MVC passou a validar paginação, filtros e variantes, com canonical por página e redirects de slugs históricos. A publicação produtiva exige liberação explícita. Sitemap, robots e feed Merchant estão implementados com as opções de ativação desligadas. A vitrine mantém noindex e omite ofertas estruturadas. Homologação na VPS, políticas comerciais, medições e piloto externo seguem pendentes. Ver [SEO.md](SEO.md).
+
 **Preparação para publicação em 13/11/2026.** A página `/contato` reúne [WhatsApp](https://wa.me/5511963143754), [Instagram](https://www.instagram.com/sallvatco) e `sallvatco@gmail.com`. A página `/entrega` informa a média de dois dias úteis de preparo e postagem, separada do prazo de transporte. Ambas são incluídas na vitrine estática. O botão “Corrigir os dados” da revisão retorna ao formulário preenchido por POST com antiforgery. O envio seguinte revalida os dados e recalcula a cotação.
 
 ### Pendências para abertura de vendas
@@ -69,7 +71,8 @@ O [backlog](BACKLOG.md) detalha execução; o [roadmap](ROADMAP.md) mantém crit
 | `/integracoes/mercado-pago/webhook` | POST no servidor, desligado por configuração; não existe como receptor no Pages. |
 | `/health/live`, `/health/ready` | Processo e conexão PostgreSQL, respectivamente; não confirmam saúde de todos os serviços externos. |
 | `/contato` e `/entrega` | Canais informados pela marca e orientação sobre o prazo médio de preparo. |
-| Privacidade, termos, trocas e sitemap produtivo | Pendentes de conteúdo final e publicação. |
+| Privacidade, termos e trocas | Pendentes de conteúdo final e publicação. |
+| Sitemap produtivo e feed Merchant | Implementados com ativação condicionada à homologação e ao domínio oficial. |
 
 O nome exibido é **Lumiere**, mas o endereço legado continua `/perfumes/cumiere/`. Não renomear URLs sem redirect/compatibilidade. Os perfumes do exportador ainda têm preços de demonstração (`299,90`/`449,90`), diferentes da tabela enviada pela marca (`30 ml: 45,00`, `50 ml: 70,00`, `100 ml: 125,00`). Essa divergência precisa ser resolvida com aprovação, não interpretada como preço final. A linha corporal apresenta `200 ml / R$ 45,00`, a partir do material recebido, em catálogo editorial estático. Notas, duração e disponibilidade demonstrativas não são comprovação comercial.
 

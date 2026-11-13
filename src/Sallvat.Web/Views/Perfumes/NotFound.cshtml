@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Página não encontrada";
+    ViewData["ForceNoIndex"] = true;
+}
+
+<section class="mx-auto max-w-5xl px-5 py-16 sm:px-8">
+    <h1 class="font-serif text-5xl">Página não encontrada</h1>
+    <p class="mt-5 text-stone-600">Esta seleção de fragrâncias ou volumes não está disponível.</p>
+    @if (ViewData["ProductPath"] is string productPath)
+    {
+        <a class="btn-primary mt-6" href="@productPath">Ver volumes da fragrância</a>
+    }
+    <a class="btn-secondary mt-6" asp-action="Index">Explorar perfumes</a>
+</section>

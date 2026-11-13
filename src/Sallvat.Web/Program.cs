@@ -26,6 +26,7 @@ using Sallvat.Web.Observability;
 using Sallvat.Web.Orders;
 using Sallvat.Web.Payments;
 using Sallvat.Web.Security;
+using Sallvat.Web.Seo;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -102,10 +103,25 @@ builder.Services
                         || builder.Environment.IsEnvironment("Testing"))
                     && uri.Scheme == Uri.UriSchemeHttp))
             && uri.AbsolutePath == "/"
+            && string.IsNullOrEmpty(uri.UserInfo)
             && string.IsNullOrEmpty(uri.Query)
             && string.IsNullOrEmpty(uri.Fragment),
         $"{AccountLinkOptions.SectionName}:PublicOrigin must be an absolute HTTPS URL outside Development.")
     .ValidateOnStart();
+builder.Services.AddOptions<SeoOptions>()
+    .Bind(builder.Configuration.GetSection("Seo"))
+    .Validate(options => !builder.Environment.IsProduction() || !options.IndexingEnabled
+        || StorefrontSeo.IsValidProductionOrigin(builder.Configuration["AccountLinks:PublicOrigin"] ?? ""),
+        "Indexing requires a public HTTPS origin on the store domain.")
+    .Validate(options => !options.MerchantFeedEnabled
+        || (options.MerchantItems.Count > 0
+            && options.MerchantItems.All(item => item.Key > 0 && item.Value.IsValid())),
+        "The merchant feed requires approved variants with valid identifier declarations.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(services => new StorefrontSeo(
+    services.GetRequiredService<IWebHostEnvironment>(),
+    services.GetRequiredService<IOptions<SeoOptions>>(),
+    services.GetRequiredService<IOptions<AccountLinkOptions>>()));
 builder.Services
     .AddOptions<ImageStorageOptions>()
     .Bind(builder.Configuration.GetSection(ImageStorageOptions.SectionName))
@@ -355,6 +371,15 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseRequestLocalization();
 app.UseRouting();
+app.Use(async (context, next) =>
+{
+    if (!app.Services.GetRequiredService<StorefrontSeo>().IndexingEnabled)
+    {
+        context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
+    }
+
+    await next(context);
+});
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();

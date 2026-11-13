@@ -64,12 +64,18 @@ expect() {
 expect 401 /conta/entrar
 grep -qi 'X-Robots-Tag: noindex' "$task_dir/headers"
 expect 401 /css/app.css
+expect 401 /robots.txt
 expect 401 /conta/entrar --user reviewer:wrong-password
 expect 200 /conta/entrar --user reviewer:isolated-access-only
 grep -qi 'Strict-Transport-Security: max-age=86400' "$task_dir/headers"
 grep -qi 'X-Content-Type-Options: nosniff' "$task_dir/headers"
 expect 200 /css/app.css --user reviewer:isolated-access-only
 cmp src/Sallvat.Web/wwwroot/css/app.css "$task_dir/body"
+expect 200 /robots.txt --user reviewer:isolated-access-only
+grep -q '^Disallow: /$' "$task_dir/body"
+! grep -qi '^Sitemap:' "$task_dir/body"
+expect 404 /sitemap.xml --user reviewer:isolated-access-only
+expect 404 /feeds/google-merchant.xml --user reviewer:isolated-access-only
 expect 404 /health/ready --user reviewer:isolated-access-only
 # Nginx deve sobrescrever os cabeçalhos externos; redirect da autenticação deve ser HTTPS/canônico.
 expect 302 /Admin --user reviewer:isolated-access-only \

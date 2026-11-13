@@ -1,27 +1,27 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Sallvat.Application.Catalog;
-using Sallvat.Web.Configuration;
 using Sallvat.Web.Models.Catalog;
+using Sallvat.Web.Seo;
 
 namespace Sallvat.Web.Controllers;
 
 [AllowAnonymous]
 public sealed class HomeController(
     ICatalogService catalogService,
-    IOptions<AccountLinkOptions> accountLinkOptions) : Controller
+    StorefrontSeo seo) : Controller
 {
-    private readonly Uri publicOrigin = new(
-        accountLinkOptions.Value.PublicOrigin,
-        UriKind.Absolute);
-
     [HttpGet]
     public async Task<IActionResult> Index(
         CancellationToken cancellationToken)
     {
-        ViewData["CanonicalUrl"] = new Uri(publicOrigin, "/").AbsoluteUri;
-        ViewData["OpenGraphType"] = "website";
+        if (Request.Path != "/")
+        {
+            return LocalRedirectPermanent(StorefrontSeo.WithCampaign("/", Request.Query));
+        }
+
+        seo.SetInstitutionalPage(ViewData, "/");
+        ViewData["StructuredData"] = ProductStructuredData.BuildHome(seo);
 
         return View(new HomePageViewModel(
             await catalogService.ListFeaturedAsync(
@@ -30,28 +30,20 @@ public sealed class HomeController(
             BodySplashPresentationCatalog.All
                 .Where(product => product.Featured)
                 .Take(3)
-                .ToArray()));
+                .ToArray(),
+            await catalogService.ListPublicFamiliesAsync(cancellationToken)));
     }
 
     [HttpGet("sobre")]
     public IActionResult About()
     {
-        ViewData["CanonicalUrl"] = new Uri(
-            publicOrigin,
-            "/sobre").AbsoluteUri;
-        ViewData["OpenGraphType"] = "website";
-
-        return View();
+        return InstitutionalPage("/sobre");
     }
 
     [HttpGet("linha-corporal")]
     public IActionResult BodySplashes()
     {
-        ViewData["CanonicalUrl"] = new Uri(
-            publicOrigin,
-            "/linha-corporal").AbsoluteUri;
-        ViewData["OpenGraphType"] = "website";
-        ViewData["ForceNoIndex"] = true;
+        seo.SetPage(ViewData, "/linha-corporal", eligible: false);
 
         return View(new BodySplashCollectionPageViewModel(
             BodySplashPresentationCatalog.All));
@@ -60,14 +52,23 @@ public sealed class HomeController(
     [HttpGet("contato")]
     public IActionResult Contact()
     {
-        ViewData["CanonicalUrl"] = new Uri(publicOrigin, "/contato").AbsoluteUri;
-        return View();
+        return InstitutionalPage("/contato");
     }
 
     [HttpGet("entrega")]
     public IActionResult Delivery()
     {
-        ViewData["CanonicalUrl"] = new Uri(publicOrigin, "/entrega").AbsoluteUri;
+        return InstitutionalPage("/entrega");
+    }
+
+    private IActionResult InstitutionalPage(string path)
+    {
+        if (!string.Equals(Request.Path.Value, path, StringComparison.Ordinal))
+        {
+            return LocalRedirectPermanent(StorefrontSeo.WithCampaign(path, Request.Query));
+        }
+
+        seo.SetInstitutionalPage(ViewData, path);
         return View();
     }
 }

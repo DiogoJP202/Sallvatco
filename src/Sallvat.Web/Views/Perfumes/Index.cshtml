@@ -1,7 +1,10 @@
 @model CatalogPage
 @{
-    ViewData["Title"] = "Perfumes";
-    ViewData["Description"] = "Conheça os perfumes publicados pela curadoria Sallvat & Co.";
+    var title = Model.SelectedFamily is null ? "Perfumes" : $"Perfumes · {Model.SelectedFamily}";
+    ViewData["Title"] = Model.Page > 1 ? $"{title} — página {Model.Page}" : title;
+    ViewData["Description"] = Model.SelectedFamily is null
+        ? "Conheça os perfumes da Sallvat & Co. e compare perfis olfativos e opções de volume."
+        : $"Conheça as fragrâncias da família {Model.SelectedFamily} na Sallvat & Co.";
 }
 
 <section class="relative isolate min-h-[28rem] overflow-hidden border-b border-stone-300/70 bg-[#ddd2c4]">
@@ -76,13 +79,20 @@
 
         @if (Model.TotalPages > 1)
         {
-            <nav class="mt-12 flex justify-center gap-3" aria-label="Paginação">
-                @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+            <nav class="mt-12 flex flex-wrap items-center justify-center gap-3" aria-label="Paginação">
+                @if (Model.Page > 1)
+                {
+                    <a class="btn-secondary" href="@Sallvat.Web.Seo.StorefrontSeo.CatalogPath(Model.Page - 1, Model.SelectedFamily)">Anterior</a>
+                }
+                @for (var pageNumber = Math.Max(1, Model.Page - 2); pageNumber <= Math.Min(Model.TotalPages, Model.Page + 2); pageNumber++)
                 {
                     <a class="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold @(pageNumber == Model.Page ? "border-ink bg-ink text-white" : "border-stone-300 bg-white")"
-                       asp-action="Index"
-                       asp-route-familia="@Model.SelectedFamily"
-                       asp-route-pagina="@pageNumber">@pageNumber</a>
+                       href="@Sallvat.Web.Seo.StorefrontSeo.CatalogPath(pageNumber, Model.SelectedFamily)"
+                       aria-current="@(pageNumber == Model.Page ? "page" : null)">@pageNumber</a>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="btn-secondary" href="@Sallvat.Web.Seo.StorefrontSeo.CatalogPath(Model.Page + 1, Model.SelectedFamily)">Próxima</a>
                 }
             </nav>
         }

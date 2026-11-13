@@ -43,6 +43,14 @@ public sealed record CatalogVariant(
     string Currency,
     int Available);
 
+public sealed record CatalogDiscoveryProduct(
+    long Id,
+    string Slug,
+    string Name,
+    string Description,
+    IReadOnlyList<CatalogImage> Images,
+    IReadOnlyList<CatalogVariant> Variants);
+
 public sealed record CatalogProductDetails(
     long Id,
     string Name,

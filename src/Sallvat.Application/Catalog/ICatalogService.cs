@@ -16,6 +16,21 @@ public interface ICatalogService
         string slug,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<string>> ListPublicSlugsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> ListPublicFamiliesAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CatalogDiscoveryProduct>> ListDiscoveryProductsAsync(
+        IReadOnlyCollection<long> approvedVariantIds,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CatalogProductSummary>> ListRelatedAsync(
+        long productId,
+        string family,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<AdminProductSummary>> ListAdminAsync(
         CancellationToken cancellationToken = default);
 

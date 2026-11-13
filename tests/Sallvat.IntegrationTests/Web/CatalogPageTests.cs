@@ -93,7 +93,7 @@ public sealed class CatalogPageTests
         using var client = application.CreateClient();
 
         using var response = await client.GetAsync(
-            "/perfumes?familia=Floral&pagina=2");
+            "/perfumes");
         var content = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -141,7 +141,7 @@ public sealed class CatalogPageTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains(
-            "<title>Âmbar Noturno | Sallvat & Co.</title>",
+            "<title>Âmbar Noturno — Amadeirado | Sallvat & Co.</title>",
             decodedContent,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -169,11 +169,9 @@ public sealed class CatalogPageTests
             content,
             StringComparison.Ordinal);
         Assert.Contains("\"@type\":\"Product\"", content, StringComparison.Ordinal);
-        Assert.Contains("\"@type\":\"Offer\"", content, StringComparison.Ordinal);
-        Assert.Contains(
-            "https://schema.org/OutOfStock",
-            content,
-            StringComparison.Ordinal);
+        Assert.Contains("\"@type\":\"ProductGroup\"", content, StringComparison.Ordinal);
+        Assert.Contains("\"@type\":\"BreadcrumbList\"", content, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"@type\":\"Offer\"", content, StringComparison.Ordinal);
         Assert.Contains(
             $"href=\"/perfumes/{product.Slug}?variante={product.OutOfStockVariantId}\"",
             content,
@@ -223,10 +221,10 @@ public sealed class CatalogPageTests
                 AllowAutoRedirect = false,
             });
         using var oldSlugResponse = await client.GetAsync(
-            $"/perfumes/{product.Slug}");
+            $"/perfumes/{product.Slug}?variante={product.OutOfStockVariantId}&utm_source=teste");
         Assert.Equal(HttpStatusCode.MovedPermanently, oldSlugResponse.StatusCode);
         Assert.Equal(
-            "/perfumes/ambar-atual",
+            $"/perfumes/ambar-atual?variante={product.OutOfStockVariantId}&utm_source=teste",
             oldSlugResponse.Headers.Location?.OriginalString);
 
         using (var scope = application.Services.CreateScope())

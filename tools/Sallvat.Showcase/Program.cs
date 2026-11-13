@@ -496,6 +496,11 @@ internal static partial class Program
                      SearchOption.AllDirectories))
         {
             var html = File.ReadAllText(htmlPath);
+            if (!html.Contains("<meta name=\"robots\" content=\"noindex,nofollow\"", StringComparison.Ordinal)
+                || html.Contains("\"@type\":\"Offer\"", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Política de demonstração inválida em {htmlPath}.");
+            }
             foreach (var rawReference in InternalReferences(html))
             {
                 var reference = WebUtility.HtmlDecode(rawReference);

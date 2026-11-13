@@ -42,9 +42,11 @@
   const galleryButtons = [...document.querySelectorAll("[data-gallery-thumbnail]")];
   if (galleryMain && galleryButtons.length > 0) {
     galleryButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        galleryButtons.forEach((item) => item.setAttribute("aria-pressed", "false"));
-        button.setAttribute("aria-pressed", "true");
+      button.addEventListener("click", (event) => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        galleryButtons.forEach((item) => item.removeAttribute("aria-current"));
+        button.setAttribute("aria-current", "true");
         galleryMain.src = button.dataset.largeUrl;
         galleryMain.srcset = button.dataset.srcset;
         galleryMain.width = Number(button.dataset.width);
@@ -71,7 +73,7 @@
     if (selectedVariant) selectedVariant.value = option.dataset.variantId;
     if (selectedAvailability) {
       selectedAvailability.textContent = available > 0
-        ? `${available} ${available === 1 ? "unidade disponível" : "unidades disponíveis"}. Valores e estoque ilustrativos.`
+        ? `${available} ${available === 1 ? "unidade disponível" : "unidades disponíveis"}.`
         : "Esta variante está temporariamente esgotada.";
     }
     if (purchaseButton) {
@@ -80,11 +82,16 @@
         ? (isShowcase ? "Adicionar à sacola · demonstração" : "Adicionar à sacola")
         : "Variante esgotada";
     }
-    if (updateAddress) history.replaceState({}, "", option.href);
+    if (updateAddress) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("variante", option.dataset.variantId);
+      history.replaceState({}, "", url);
+    }
   };
 
   variantOptions.forEach((option) => {
     option.addEventListener("click", (event) => {
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       selectVariant(option, true);
     });

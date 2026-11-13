@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Sallvat.Application.Accounts;
@@ -18,17 +19,23 @@ public sealed class AccountWebApplicationFactory :
     private readonly IClock? clock;
     private readonly IFreightService? freightService;
     private readonly Action<IServiceCollection>? configureServices;
+    private readonly string environment;
+    private readonly IReadOnlyDictionary<string, string?>? configuration;
 
     public AccountWebApplicationFactory(
         long? maximumPixelCount = null,
         IClock? clock = null,
         IFreightService? freightService = null,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        string environment = "Testing",
+        IReadOnlyDictionary<string, string?>? configuration = null)
         : base(maximumPixelCount: maximumPixelCount)
     {
         this.clock = clock;
         this.freightService = freightService;
         this.configureServices = configureServices;
+        this.environment = environment;
+        this.configuration = configuration;
     }
 
     public FakeAccountEmailSender EmailSender { get; } = new();
@@ -36,6 +43,11 @@ public sealed class AccountWebApplicationFactory :
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         base.ConfigureWebHost(builder);
+        builder.UseEnvironment(environment);
+        if (configuration is not null)
+        {
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(configuration));
+        }
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<DbContextOptions<SallvatDbContext>>();

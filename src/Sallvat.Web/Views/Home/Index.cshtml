@@ -1,6 +1,7 @@
 @model HomePageViewModel
+@inject Sallvat.Web.Seo.StorefrontSeo Seo
 @{
-    ViewData["Title"] = "Início";
+    ViewData["Title"] = "Perfumaria artesanal";
     ViewData["Description"] = "Perfumes artesanais Sallvat & Co., apresentados com clareza, cuidado e identidade própria.";
     ViewData["ProductImageSizes"] = "(min-width: 1280px) 382px, (min-width: 1024px) calc((100vw - 136px) / 3), (min-width: 640px) calc((100vw - 92px) / 2), calc(100vw - 40px)";
 }
@@ -74,7 +75,7 @@
             <div class="mt-12 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach (var product in Model.FeaturedProducts)
                 {
-                    <partial name="_ProductCard" model="product" />
+                    <partial name="_ProductCard" model="product" view-data='new ViewDataDictionary(ViewData) { ["ProductHeadingLevel"] = 3 }' />
                 }
             </div>
         </div>
@@ -122,7 +123,7 @@
             <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
                asp-controller="Perfumes"
                asp-action="Index"
-               asp-route-familia="Fresco aquático">
+               asp-route-familia="@(Model.PublishedFamilies.Contains("Fresco aquático", StringComparer.Ordinal) ? "Fresco aquático" : null)">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                      src="~/images/showcase/atmosphere-sea-salt.webp"
                      asp-append-version="true"
@@ -142,7 +143,7 @@
             <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-ink"
                asp-controller="Perfumes"
                asp-action="Index"
-               asp-route-familia="Âmbar gourmand">
+               asp-route-familia="@(Model.PublishedFamilies.Contains("Âmbar gourmand", StringComparer.Ordinal) ? "Âmbar gourmand" : null)">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                      src="~/images/showcase/atmosphere-hibernum.webp"
                      asp-append-version="true"
@@ -162,7 +163,7 @@
             <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
                asp-controller="Perfumes"
                asp-action="Index"
-               asp-route-familia="Amadeirado">
+               asp-route-familia="@(Model.PublishedFamilies.Contains("Amadeirado", StringComparer.Ordinal) ? "Amadeirado" : null)">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                      src="~/images/showcase/atmosphere-corium.webp"
                      asp-append-version="true"
@@ -182,7 +183,7 @@
             <a class="group relative min-h-[31rem] overflow-hidden rounded-[2rem] bg-sand"
                asp-controller="Perfumes"
                asp-action="Index"
-               asp-route-familia="Cítrico amadeirado">
+               asp-route-familia="@(Model.PublishedFamilies.Contains("Cítrico amadeirado", StringComparer.Ordinal) ? "Cítrico amadeirado" : null)">
                 <img class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                      src="~/images/showcase/atmosphere-cumiere.webp"
                      asp-append-version="true"
@@ -228,7 +229,10 @@
             <p class="text-xs font-semibold tracking-[0.22em] text-stone-400 uppercase">Direção de marca</p>
             <h2 id="editorial-title" class="mt-5 font-serif text-5xl leading-[0.98] tracking-tight sm:text-6xl">Perfume como gesto de identidade.</h2>
             <p class="mt-7 max-w-xl text-base leading-8 text-stone-300">Cada criação é apresentada pelo que desperta: notas, texturas, momentos e presença. Uma linguagem visual que aproxima a escolha antes mesmo da primeira borrifada.</p>
-            <p class="mt-6 max-w-xl text-sm leading-7 text-stone-400">Esta coleção está em curadoria. Nomes, descrições, preços e disponibilidade serão confirmados antes do lançamento comercial.</p>
+            @if (!Seo.IndexingEnabled)
+            {
+                <p class="mt-6 max-w-xl text-sm leading-7 text-stone-400">Esta coleção está em curadoria. Nomes, descrições, preços e disponibilidade serão confirmados antes do lançamento comercial.</p>
+            }
             <a class="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-ink transition hover:bg-sand"
                asp-controller="Home"
                asp-action="About">Conhecer a proposta</a>

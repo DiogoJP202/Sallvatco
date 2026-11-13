@@ -42,15 +42,22 @@ internal sealed class CatalogService(
 
         var publicProducts = PublishedProducts();
 
-        var families = await publicProducts
-            .Where(product => product.OlfactoryFamily != string.Empty)
-            .Select(product => product.OlfactoryFamily)
-            .Distinct()
-            .OrderBy(item => item)
-            .ToListAsync(cancellationToken);
+        var families = await ListPublicFamiliesAsync(cancellationToken);
 
         if (selectedFamily is not null)
         {
+            if (!families.Contains(selectedFamily, StringComparer.Ordinal))
+            {
+                var matches = families
+                    .Where(value => string.Equals(value, selectedFamily, StringComparison.OrdinalIgnoreCase))
+                    .Take(2)
+                    .ToArray();
+                if (matches.Length == 1)
+                {
+                    selectedFamily = matches[0];
+                }
+            }
+
             publicProducts = publicProducts.Where(product =>
                 product.OlfactoryFamily == selectedFamily);
         }
@@ -59,14 +66,16 @@ internal sealed class CatalogService(
         var totalPages = Math.Max(
             1,
             (int)Math.Ceiling((double)totalItems / pageSize));
-        page = Math.Min(page, totalPages);
-        var items = await LoadSummariesAsync(
-            publicProducts
-            .OrderByDescending(product => product.IsFeatured)
-            .ThenBy(product => product.Name)
-                .Skip((page - 1) * pageSize),
-            pageSize,
-            cancellationToken);
+        var items = page > totalPages
+            ? []
+            : await LoadSummariesAsync(
+                publicProducts
+                    .OrderByDescending(product => product.IsFeatured)
+                    .ThenBy(product => product.Name)
+                    .ThenBy(product => product.Id)
+                    .Skip((page - 1) * pageSize),
+                pageSize,
+                cancellationToken);
 
         return new CatalogPage(
             items,
@@ -88,6 +97,76 @@ internal sealed class CatalogService(
             Math.Clamp(maximumItems, 1, 6),
             cancellationToken);
 
+    public Task<IReadOnlyList<CatalogProductSummary>> ListRelatedAsync(
+        long productId,
+        string family,
+        CancellationToken cancellationToken = default) =>
+        LoadSummariesAsync(
+            PublishedProducts()
+                .Where(product => product.Id != productId && product.OlfactoryFamily == family)
+                .OrderByDescending(product => product.IsFeatured)
+                .ThenBy(product => product.Name)
+                .ThenBy(product => product.Id),
+            3,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<string>> ListPublicSlugsAsync(
+        CancellationToken cancellationToken = default) =>
+        await PublishedProducts()
+            .OrderBy(product => product.Slug)
+            .Select(product => product.Slug)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<string>> ListPublicFamiliesAsync(
+        CancellationToken cancellationToken = default) =>
+        await PublishedProducts()
+            .Where(product => product.OlfactoryFamily != string.Empty)
+            .Select(product => product.OlfactoryFamily)
+            .Distinct()
+            .OrderBy(family => family)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CatalogDiscoveryProduct>> ListDiscoveryProductsAsync(
+        IReadOnlyCollection<long> approvedVariantIds,
+        CancellationToken cancellationToken = default)
+    {
+        var variants = SellableVariants();
+        var rows = await PublishedProducts()
+            .Where(product => variants.Any(variant =>
+                variant.ProductId == product.Id && approvedVariantIds.Contains(variant.Id)))
+            .OrderBy(product => product.Id)
+            .Select(product => new
+            {
+                product.Id,
+                product.Slug,
+                product.Name,
+                product.ShortDescription,
+                Images = dbContext.ProductImages
+                    .Where(image => image.ProductId == product.Id)
+                    .OrderByDescending(image => image.IsCover)
+                    .ThenBy(image => image.Position)
+                    .ToList(),
+                Variants = variants
+                    .Where(variant => variant.ProductId == product.Id)
+                    .OrderBy(variant => variant.Id)
+                    .Select(variant => new CatalogVariant(
+                        variant.Id, variant.Sku, variant.VolumeMl, variant.Price,
+                        variant.Currency, variant.OnHand - variant.Reserved))
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(row => new CatalogDiscoveryProduct(
+            row.Id,
+            row.Slug,
+            row.Name,
+            row.ShortDescription,
+            row.Images.Select(image => ToCatalogImage(
+                image.Id, image.StorageKey, image.AltText, image.Width,
+                image.Height, image.Position, image.IsCover)).ToArray(),
+            row.Variants)).ToArray();
+    }
+
     public async Task<CatalogLookupResult> FindPublishedAsync(
         string slug,
         CancellationToken cancellationToken = default)
@@ -102,11 +181,8 @@ internal sealed class CatalogService(
             return new CatalogLookupResult(null, null);
         }
 
-        var productId = await dbContext.Products
-            .AsNoTracking()
-            .Where(product =>
-                product.Slug == normalizedSlug
-                && product.Status == ProductStatus.Published)
+        var productId = await PublishedProducts()
+            .Where(product => product.Slug == normalizedSlug)
             .Select(product => (long?)product.Id)
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -121,10 +197,9 @@ internal sealed class CatalogService(
 
         var redirectSlug = await (
             from history in dbContext.ProductSlugHistory.AsNoTracking()
-            join product in dbContext.Products.AsNoTracking()
+            join product in PublishedProducts()
                 on history.ProductId equals product.Id
             where history.Slug == normalizedSlug
-                && product.Status == ProductStatus.Published
             select product.Slug)
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -976,17 +1051,10 @@ internal sealed class CatalogService(
             return null;
         }
 
-        var variants = await dbContext.ProductVariants
-            .AsNoTracking()
-            .Where(variant =>
-                variant.ProductId == productId
-                && variant.IsActive
-                && variant.Price > 0
-                && variant.WeightKg > 0
-                && variant.HeightCm > 0
-                && variant.WidthCm > 0
-                && variant.LengthCm > 0)
+        var variants = await SellableVariants()
+            .Where(variant => variant.ProductId == productId)
             .OrderBy(variant => variant.VolumeMl)
+            .ThenBy(variant => variant.Id)
             .Select(variant => new CatalogVariant(
                 variant.Id,
                 variant.Sku,
@@ -996,6 +1064,10 @@ internal sealed class CatalogService(
                 variant.OnHand - variant.Reserved))
             .ToListAsync(cancellationToken);
         var images = await LoadImagesAsync(productId, cancellationToken);
+        if (variants.Count == 0 || images.All(image => !image.IsCover))
+        {
+            return null;
+        }
 
         return new CatalogProductDetails(
             product.Id,
@@ -1108,18 +1180,24 @@ internal sealed class CatalogService(
             product.Season,
             product.Period);
 
-    private IQueryable<Product> PublishedProducts() =>
-        dbContext.Products
+    private IQueryable<ProductVariant> SellableVariants() =>
+        dbContext.ProductVariants
             .AsNoTracking()
-            .Where(product => product.Status == ProductStatus.Published)
-            .Where(product => dbContext.ProductVariants.Any(variant =>
-                variant.ProductId == product.Id
-                && variant.IsActive
+            .Where(variant => variant.IsActive
                 && variant.Price > 0
                 && variant.WeightKg > 0
                 && variant.HeightCm > 0
                 && variant.WidthCm > 0
-                && variant.LengthCm > 0));
+                && variant.LengthCm > 0);
+
+    private IQueryable<Product> PublishedProducts()
+    {
+        var variants = SellableVariants();
+        return dbContext.Products.AsNoTracking()
+            .Where(product => product.Status == ProductStatus.Published
+                && variants.Any(variant => variant.ProductId == product.Id)
+                && dbContext.ProductImages.Any(image => image.ProductId == product.Id && image.IsCover));
+    }
 
     private async Task<IReadOnlyList<CatalogProductSummary>>
         LoadSummariesAsync(
@@ -1127,6 +1205,7 @@ internal sealed class CatalogService(
             int maximumItems,
             CancellationToken cancellationToken)
     {
+        var variants = SellableVariants();
         var rows = await products
             .Take(maximumItems)
             .Select(product => new
@@ -1136,15 +1215,8 @@ internal sealed class CatalogService(
                 product.Slug,
                 product.ShortDescription,
                 product.OlfactoryFamily,
-                StartingPrice = dbContext.ProductVariants
-                    .Where(variant =>
-                        variant.ProductId == product.Id
-                        && variant.IsActive
-                        && variant.Price > 0
-                        && variant.WeightKg > 0
-                        && variant.HeightCm > 0
-                        && variant.WidthCm > 0
-                        && variant.LengthCm > 0)
+                StartingPrice = variants
+                    .Where(variant => variant.ProductId == product.Id)
                     .Min(variant => variant.Price),
                 Cover = dbContext.ProductImages
                     .Where(image =>

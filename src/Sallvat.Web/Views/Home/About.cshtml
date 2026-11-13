@@ -1,3 +1,4 @@
+@inject Sallvat.Web.Seo.StorefrontSeo Seo
 @{
     ViewData["Title"] = "Sobre";
     ViewData["Description"] = "Conheça a proposta sensorial e a direção de marca da Sallvat & Co.";
@@ -9,7 +10,10 @@
             <p class="eyebrow">Sobre a Sallvat &amp; Co.</p>
             <h1 id="about-title" class="mt-6 font-serif text-6xl leading-[0.92] tracking-[-0.035em] sm:text-7xl">Uma história começa antes da primeira nota.</h1>
             <p class="mt-8 max-w-xl text-lg leading-8 text-stone-700">A Sallvat &amp; Co. apresenta a perfumaria como uma forma de traduzir presença, memória e intenção. Cada universo é construído para tornar a descoberta mais clara, pessoal e sensorial.</p>
-            <p class="mt-5 max-w-xl text-sm leading-7 text-stone-600">A identidade, o catálogo e os textos exibidos nesta apresentação ainda estão em processo de curadoria e aprovação.</p>
+            @if (!Seo.IndexingEnabled)
+            {
+                <p class="mt-5 max-w-xl text-sm leading-7 text-stone-600">A identidade, o catálogo e os textos exibidos nesta apresentação ainda estão em processo de curadoria e aprovação.</p>
+            }
         </div>
         <div class="grid grid-cols-[0.92fr_1.08fr] items-end gap-4">
             <img class="mb-10 aspect-[4/5] w-full rounded-[2rem] bg-[#f2ece3] object-contain shadow-xl shadow-stone-900/10"

@@ -1,13 +1,21 @@
 @model ProductDetailsPageViewModel
+@inject Sallvat.Web.Seo.StorefrontSeo Seo
 @{
     var product = Model.Product;
     var cover = product.Images.First(image => image.IsCover);
-    ViewData["Title"] = product.Name;
+    ViewData["Title"] = $"{product.Name} — {product.OlfactoryFamily}";
     ViewData["Description"] = product.ShortDescription;
     ViewData["StructuredData"] = Model.StructuredData;
 }
 
 <section class="border-b border-stone-300/70 bg-[#eee6da]">
+    <nav class="mx-auto max-w-7xl px-5 pt-6 text-sm text-stone-700 sm:px-8 lg:px-10" aria-label="Caminho da página">
+        <ol class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <li><a class="underline underline-offset-4" asp-controller="Home" asp-action="Index">Início</a></li>
+            <li><span aria-hidden="true">/ </span><a class="underline underline-offset-4" asp-action="Index">Perfumes</a></li>
+            <li aria-current="page"><span aria-hidden="true">/ </span>@product.Name</li>
+        </ol>
+    </nav>
     <div class="mx-auto grid max-w-7xl gap-12 px-5 py-10 sm:px-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-start lg:px-10 lg:py-20">
         <div class="lg:sticky lg:top-28">
             <div class="relative overflow-hidden rounded-[2.5rem] bg-sand shadow-2xl shadow-stone-900/10">
@@ -28,9 +36,9 @@
                 <div class="mt-4 grid grid-cols-4 gap-3" aria-label="Galeria de imagens">
                     @foreach (var image in product.Images)
                     {
-                        <button type="button"
+                        <a href="@image.LargeUrl"
                                 aria-label="Exibir: @image.AltText"
-                                aria-pressed="@(image.IsCover ? "true" : "false")"
+                                aria-current="@(image.IsCover ? "true" : null)"
                                 data-gallery-thumbnail
                                 data-large-url="@image.LargeUrl"
                                 data-srcset="@CatalogImagePresentation.SourceSet(image)"
@@ -38,15 +46,14 @@
                                 data-height="@image.Height"
                                 data-alt="@image.AltText">
                             <img class="aspect-[4/5] w-full bg-sand object-contain" src="@image.ThumbnailUrl" width="@image.Width" height="@image.Height" alt="" loading="lazy" decoding="async" />
-                        </button>
+                        </a>
                     }
                 </div>
             }
         </div>
 
         <div class="py-2 lg:py-8">
-            <a class="inline-flex items-center gap-2 text-sm font-semibold text-copper transition hover:text-ink" asp-action="Index"><span aria-hidden="true">←</span> Voltar aos perfumes</a>
-            <p class="eyebrow mt-10">@product.OlfactoryFamily · @product.Concentration</p>
+            <p class="eyebrow">@product.OlfactoryFamily · @product.Concentration</p>
             <h1 class="mt-5 font-serif text-5xl leading-none tracking-[-0.035em] sm:text-7xl">@product.Name</h1>
             <p class="mt-7 text-lg leading-8 text-stone-600">@product.ShortDescription</p>
 
@@ -86,7 +93,11 @@
                     <span class="text-sm text-stone-600">Selecionado: <span data-selected-volume>@Model.SelectedVariant.VolumeMl ml</span></span>
                     <strong class="font-serif text-3xl" data-selected-price>@Model.SelectedVariant.Price.ToString("C")</strong>
                 </div>
-                <p class="mt-3 border-t border-stone-200 pt-4 text-xs leading-5 text-stone-500" data-selected-availability>@(Model.SelectedVariant.Available > 0 ? $"{Model.SelectedVariant.Available} {(Model.SelectedVariant.Available == 1 ? "unidade disponível" : "unidades disponíveis")}. Valores e estoque ilustrativos." : "Esta variante está temporariamente esgotada.")</p>
+                <p class="mt-3 border-t border-stone-200 pt-4 text-xs leading-5 text-stone-500" data-selected-availability>@(Model.SelectedVariant.Available > 0 ? $"{Model.SelectedVariant.Available} {(Model.SelectedVariant.Available == 1 ? "unidade disponível" : "unidades disponíveis")}." : "Esta variante está temporariamente esgotada.")</p>
+                @if (!Seo.IndexingEnabled)
+                {
+                    <p class="mt-2 text-xs text-stone-600">Valores e estoque ilustrativos.</p>
+                }
                 <form asp-controller="Cart" asp-action="AddItem" method="post" data-purchase-form>
                     <input type="hidden" name="VariantId" value="@Model.SelectedVariant.Id" data-selected-variant />
                     <input type="hidden" name="Quantity" value="1" />
@@ -97,6 +108,10 @@
                         @(Model.SelectedVariant.Available > 0 ? "Adicionar à sacola" : "Variante esgotada")
                     </button>
                 </form>
+                <div class="mt-4 flex flex-wrap gap-4 text-sm">
+                    <a class="underline underline-offset-4" asp-controller="Home" asp-action="Delivery">Informações de entrega</a>
+                    <a class="underline underline-offset-4" asp-controller="Home" asp-action="Contact">Falar com a Sallvat &amp; Co.</a>
+                </div>
             </div>
         </div>
     </div>
@@ -120,8 +135,7 @@
     <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
         <div class="grid gap-14 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
-                <p class="eyebrow">Pirâmide olfativa</p>
-                <h2 id="notes-title" class="mt-5 font-serif text-4xl leading-tight sm:text-5xl">Uma evolução revelada em camadas.</h2>
+                <h2 id="notes-title" class="font-serif text-4xl leading-tight sm:text-5xl">Pirâmide olfativa</h2>
             </div>
             <dl class="grid gap-px overflow-hidden rounded-[2rem] bg-stone-300 ring-1 ring-stone-300 sm:grid-cols-3">
                 <div class="bg-paper p-7"><dt><span class="block font-serif text-2xl text-copper">01</span><strong class="mt-5 block text-sm">Saída</strong></dt><dd class="mt-2 text-sm leading-6 text-stone-600">@product.TopNotes</dd></div>
@@ -147,3 +161,16 @@
         </dl>
     </div>
 </section>
+
+@if (Model.RelatedProducts.Count > 0)
+{
+    <section class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10" aria-labelledby="related-title">
+        <h2 id="related-title" class="mb-8 font-serif text-4xl">Outras fragrâncias da família @product.OlfactoryFamily</h2>
+        <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach (var related in Model.RelatedProducts)
+            {
+                <partial name="_ProductCard" model="related" view-data='new ViewDataDictionary(ViewData) { ["ProductHeadingLevel"] = 3 }' />
+            }
+        </div>
+    </section>
+}

@@ -88,6 +88,13 @@ jobs:
       - name: Test
         run: dotnet test Sallvat.sln --configuration Release --no-build --logger "console;verbosity=normal"
 
+      - name: Verify showcase in root and project paths
+        run: |
+          dotnet run --project tools/Sallvat.Showcase -c Release --no-build --no-restore -- \
+            --output "${RUNNER_TEMP}/sallvat-seo-root" --site-url https://preview.sallvat.invalid/
+          dotnet run --project tools/Sallvat.Showcase -c Release --no-build --no-restore -- \
+            --output "${RUNNER_TEMP}/sallvat-seo-project" --site-url https://preview.sallvat.invalid/Sallvatco/
+
       - name: Verify formatting
         run: dotnet format Sallvat.sln --verify-no-changes --no-restore
 
