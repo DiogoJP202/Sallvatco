@@ -137,6 +137,14 @@ Rollback destrutivo de banco não é padrão. Quando indispensável, parar escri
 
 Restore produtivo nunca sobrescreve volume original antes da validação.
 
+### Ensaio local de migrations e restauração
+
+Na revisão `cabda78`, o SQL idempotente gerado pelo `dotnet ef migrations script` e validado por `tools/prepare-migration-script.py` foi aplicado duas vezes com `psql` e `ON_ERROR_STOP=1` em um banco descartável no PostgreSQL 18.6. Em cada passagem, os 13 IDs de `__ef_migrations_history` corresponderam às migrations versionadas.
+
+Foi criada uma variante sintética de 50 ml, com preço de R$ 19,95, quatro unidades em estoque e uma reservada. O dump em formato customizado (`pg_dump --format=custom`) passou pela conferência de SHA-256 e foi restaurado em outro banco vazio com `pg_restore --exit-on-error --single-transaction`. A restauração preservou o histórico, o vínculo com o produto, o SKU, o preço, a moeda e os saldos. A constraint `ck_product_variant_stock` rejeitou uma reserva acima do estoque no banco restaurado. Os bancos e o dump descartáveis foram removidos ao fim. Os dez testes da ferramenta de preparação da VPS também passaram.
+
+O ensaio cobriu o PostgreSQL local com dados sintéticos. Na VPS, ainda é preciso validar as permissões da role de aplicação, a restauração conjunta de banco, imagens e chaves, a cópia criptografada externa e os tempos de recuperação com volume representativo. O procedimento de primeira instalação continua em [VPS.md](VPS.md).
+
 ## Primeiro provisionamento
 
 - aplicar patches no Ubuntu e criar usuário administrativo sem login root por senha;
