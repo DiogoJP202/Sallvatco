@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
 using Sallvat.Application.Carts;
 using Sallvat.Application.Checkout;
 using Sallvat.Application.Payments;
@@ -28,6 +29,37 @@ public sealed partial class CheckoutPaymentFlowTests
     public async Task GuestFlowReplaysWithoutDuplicateOrderOrDispatchAndOnlyWebhookConfirms()
     {
         await using var scenario = await Scenario.CreateAsync();
+        await AssertGuestCheckoutAsync(scenario);
+    }
+
+    [PostgreSqlFact]
+    public async Task GuestCheckoutConfirmsThroughSignedHttpWebhookOnPostgreSql()
+    {
+        var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("SALLVAT_TEST_POSTGRES"))
+        {
+            Database = "sallvat_payment_tests_" + Guid.NewGuid().ToString("N"),
+            Pooling = false,
+        };
+        await using var scenario = new Scenario(enabled: true, postgreSqlTestConnection: connection.ConnectionString);
+        try
+        {
+            await scenario.InitializeAsync();
+            await AssertGuestCheckoutAsync(scenario);
+        }
+        finally
+        {
+            using var scope = scenario.App.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SallvatDbContext>();
+            if (connection.Database.StartsWith("sallvat_payment_tests_", StringComparison.Ordinal)
+                && db.Database.GetDbConnection().Database == connection.Database)
+            {
+                await db.Database.EnsureDeletedAsync();
+            }
+        }
+    }
+
+    private static async Task AssertGuestCheckoutAsync(Scenario scenario)
+    {
         var review = await scenario.ReviewAsync();
         Assert.DoesNotContain("cliente@example.com", Hidden(review, "reviewToken"), StringComparison.Ordinal);
         var path = await scenario.ConfirmAsync(review);
@@ -40,14 +72,17 @@ public sealed partial class CheckoutPaymentFlowTests
         Assert.Empty(await db.Payments.ToListAsync());
         Assert.Single(await db.StockReservations.ToListAsync());
         Assert.Empty(await db.CartItems.ToListAsync());
-        var status = await scenario.Client.GetAsync(path);
+        var reserved = await db.ProductVariants.SingleAsync(variant => variant.Id == scenario.Product.AvailableVariantId);
+        Assert.Equal(4, reserved.OnHand);
+        Assert.Equal(1, reserved.Reserved);
+        using var status = await scenario.Client.GetAsync(path);
         Assert.True(status.Headers.CacheControl!.NoStore);
         var html = await status.Content.ReadAsStringAsync();
         Assert.Contains("noindex", html, StringComparison.Ordinal);
         Assert.DoesNotContain("cliente@example.com", html, StringComparison.Ordinal);
         for (var i = 0; i < 2; i++)
         {
-            var redirect = await scenario.Client.PostAsync(path + "/continuar", Form(html, ("confirmed", "true")));
+            using var redirect = await scenario.Client.PostAsync(path + "/continuar", Form(html, ("confirmed", "true")));
             Assert.Equal(HttpStatusCode.Redirect, redirect.StatusCode);
             Assert.Equal("https://www.mercadopago.com.br/checkout/v1/redirect?order_id=ORD-dispatch", redirect.Headers.Location!.AbsoluteUri);
         }
@@ -63,15 +98,31 @@ public sealed partial class CheckoutPaymentFlowTests
         Assert.Equal(OrderStatus.PendingPayment, (await db.Orders.SingleAsync()).Status);
         Assert.Null((await db.Payments.SingleAsync()).ExternalPaymentId);
 
-        var webhook = scope.ServiceProvider.GetRequiredService<IPaymentWebhookService>();
-        Assert.Equal(PaymentWebhookResult.Accepted, await webhook.HandleAsync(
-            PaymentWebhookTests.Request(id: "ORD-dispatch", now: scenario.Clock.UtcNow)));
+        var notification = PaymentWebhookTests.Request(id: "ORD-dispatch", now: scenario.Clock.UtcNow);
+        for (var i = 0; i < 2; i++)
+        {
+            using var webhook = new HttpRequestMessage(HttpMethod.Post, "/integracoes/mercado-pago/webhook?data.id=ORD-dispatch")
+            {
+                Content = new ByteArrayContent(notification.Body),
+            };
+            webhook.Content.Headers.ContentType = new("application/json");
+            webhook.Headers.Add("x-request-id", notification.RequestId);
+            webhook.Headers.Add("x-signature", notification.Signature);
+            using var received = await scenario.Client.SendAsync(webhook);
+            Assert.Equal(HttpStatusCode.OK, received.StatusCode);
+        }
+
         var confirmed = await scenario.Client.GetStringAsync(path);
         Assert.Contains("data-payment-state=\"Confirmed\"", confirmed, StringComparison.Ordinal);
         Assert.DoesNotContain("Abrir pagamento de teste", confirmed, StringComparison.Ordinal);
         db.ChangeTracker.Clear();
         Assert.Equal(OrderStatus.Paid, (await db.Orders.SingleAsync()).Status);
+        Assert.Equal(PaymentStatus.Approved, (await db.Payments.SingleAsync()).Status);
         Assert.Equal(StockReservationStatus.Consumed, (await db.StockReservations.SingleAsync()).Status);
+        var sold = await db.ProductVariants.SingleAsync(variant => variant.Id == scenario.Product.AvailableVariantId);
+        Assert.Equal(3, sold.OnHand);
+        Assert.Equal(0, sold.Reserved);
+        Assert.Equal(1, await db.InventoryMovements.CountAsync(movement => movement.Type == InventoryMovementType.Sale));
         Assert.Equal(1, scenario.Gateway.Queries);
         Assert.Equal(1, scenario.Gateway.Calls);
     }
@@ -319,10 +370,10 @@ public sealed partial class CheckoutPaymentFlowTests
         public HttpClient Client { get; }
         public PublishedProductData Product { get; private set; } = null!;
 
-        private Scenario(bool enabled)
+        public Scenario(bool enabled, string? postgreSqlTestConnection = null)
         {
             Freight = new(Clock);
-            App = new(clock: Clock, freightService: Freight, configureServices: services =>
+            App = new(clock: Clock, freightService: Freight, postgreSqlTestConnection: postgreSqlTestConnection, configureServices: services =>
             {
                 services.RemoveAll<IPaymentGateway>();
                 services.AddSingleton<IPaymentGateway>(Gateway);
@@ -353,13 +404,18 @@ public sealed partial class CheckoutPaymentFlowTests
         public static async Task<Scenario> CreateAsync(bool enabled = true)
         {
             var scenario = new Scenario(enabled);
-            await scenario.App.InitializeDatabaseAsync();
-            scenario.Product = await PublishedCatalogFixture.CreateAsync(scenario.App, "checkout-payment");
-            var html = await scenario.Client.GetStringAsync("/perfumes/checkout-payment");
-            var added = await scenario.Client.PostAsync("/carrinho/itens", Form(html,
-                ("VariantId", scenario.Product.AvailableVariantId.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("Quantity", "1")));
-            Assert.Equal(HttpStatusCode.Redirect, added.StatusCode);
+            await scenario.InitializeAsync();
             return scenario;
+        }
+
+        public async Task InitializeAsync()
+        {
+            await App.InitializeDatabaseAsync();
+            Product = await PublishedCatalogFixture.CreateAsync(App, "checkout-payment");
+            var html = await Client.GetStringAsync("/perfumes/checkout-payment");
+            using var added = await Client.PostAsync("/carrinho/itens", Form(html,
+                ("VariantId", Product.AvailableVariantId.ToString(System.Globalization.CultureInfo.InvariantCulture)), ("Quantity", "1")));
+            Assert.Equal(HttpStatusCode.Redirect, added.StatusCode);
         }
 
         public async Task<string> ReviewAsync()

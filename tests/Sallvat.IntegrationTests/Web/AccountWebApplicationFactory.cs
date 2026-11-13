@@ -21,6 +21,7 @@ public sealed class AccountWebApplicationFactory :
     private readonly Action<IServiceCollection>? configureServices;
     private readonly string environment;
     private readonly IReadOnlyDictionary<string, string?>? configuration;
+    private readonly string? postgreSqlTestConnection;
 
     public AccountWebApplicationFactory(
         long? maximumPixelCount = null,
@@ -28,7 +29,8 @@ public sealed class AccountWebApplicationFactory :
         IFreightService? freightService = null,
         Action<IServiceCollection>? configureServices = null,
         string environment = "Testing",
-        IReadOnlyDictionary<string, string?>? configuration = null)
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        string? postgreSqlTestConnection = null)
         : base(maximumPixelCount: maximumPixelCount)
     {
         this.clock = clock;
@@ -36,6 +38,7 @@ public sealed class AccountWebApplicationFactory :
         this.configureServices = configureServices;
         this.environment = environment;
         this.configuration = configuration;
+        this.postgreSqlTestConnection = postgreSqlTestConnection;
     }
 
     public FakeAccountEmailSender EmailSender { get; } = new();
@@ -55,7 +58,16 @@ public sealed class AccountWebApplicationFactory :
                 IDbContextOptionsConfiguration<SallvatDbContext>>();
             services.RemoveAll<SallvatDbContext>();
             services.AddDbContext<SallvatDbContext>(options =>
-                options.UseInMemoryDatabase(databaseName));
+            {
+                if (postgreSqlTestConnection is null)
+                {
+                    options.UseInMemoryDatabase(databaseName);
+                }
+                else
+                {
+                    options.UseNpgsql(postgreSqlTestConnection);
+                }
+            });
 
             if (clock is not null)
             {
@@ -80,7 +92,14 @@ public sealed class AccountWebApplicationFactory :
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider
             .GetRequiredService<SallvatDbContext>();
-        await context.Database.EnsureCreatedAsync();
+        if (postgreSqlTestConnection is null)
+        {
+            await context.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await context.Database.MigrateAsync();
+        }
     }
 }
 

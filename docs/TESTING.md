@@ -2,6 +2,21 @@
 
 # Estratégia de testes
 
+## Ensaio local de compra
+
+O cenário `GuestCheckoutConfirmsThroughSignedHttpWebhookOnPostgreSql` usa TestServer com os controllers MVC, formulários, antiforgery, cookies de sacola, migrations e PostgreSQL. Frete e provedor de pagamento são simulados em memória. Cada execução cria um banco efêmero `sallvat_payment_tests_*` e só remove esse banco ao terminar.
+
+O roteiro parte da página do perfume, adiciona 50 ml à sacola, revisa dados sintéticos, cria um pedido com frete e repete a confirmação. A reserva mantém quatro unidades físicas e compromete uma. O retorno do provedor deixa o pedido pendente. A confirmação chega pelo endpoint HTTPS de webhook com assinatura de teste. O replay da notificação mantém uma única venda, reduz o saldo físico para três e zera a reserva.
+
+Para repetir o ensaio, configure `SALLVAT_TEST_POSTGRES` com um PostgreSQL exclusivo de testes, conforme [DEVELOPMENT.md](DEVELOPMENT.md#validação-local-reproduzível). Com a solution já compilada em Debug:
+
+```powershell
+$filtro = 'FullyQualifiedName~CheckoutPaymentFlowTests|FullyQualifiedName~OrderLifecycleServiceTests|FullyQualifiedName~PaymentRecoveryTests|FullyQualifiedName~PostgreSqlPaymentTests|FullyQualifiedName~DiscoveryTests'
+dotnet test tests/Sallvat.IntegrationTests -c Debug --no-build --no-restore --filter $filtro
+```
+
+O ensaio e os cenários complementares passaram em uma execução de 83 testes, sem falhas ou itens ignorados. A bateria cobre cancelamento e expiração, liberação de estoque e cupom, recuperação após notificação perdida, disputa com webhook e consistência do catálogo com o feed. A suíte completa em Debug passou com 85 testes unitários e 536 de integração, sem itens ignorados. A homologação na VPS ainda precisa de testes com Melhor Envio e Mercado Pago em Sandbox, e-mail, domínio e navegação real.
+
 ## Regressão de validação do checkout — 20/10/2026
 
 O POST `/checkout/revisar` com telefone/CEP vazios reproduziu `ArgumentNullException` em `CheckoutDraftValidator`. Strings não anuláveis em C# não impedem que o model binder entregue `null`. A normalização deve tratar isso como erro de campo, sem criar pedido nem cotar frete.

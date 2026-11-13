@@ -8,6 +8,8 @@ Revisão documental: **01/10/2026**. Base de código: [`d347a68`](https://github
 
 ## Resumo executivo
 
+O piloto comercial tem uma [ficha de catálogo](CATALOGO-PILOTO.md) para Sea Salt e Hibernum em dois volumes, com campos de aprovação por variante. As [políticas](POLITICAS-RASCUNHO.md) e o [primeiro guia](GUIA-NOTAS-OLFATIVAS.md) são rascunhos para revisão da marca. O [ensaio local de compra](TESTING.md#ensaio-local-de-compra) usa os controllers MVC e PostgreSQL descartável com gateways simulados.
+
 **SEO e descoberta.** O MVC passou a validar paginação, filtros e variantes, com canonical por página e redirects de slugs históricos. A publicação produtiva exige liberação explícita. Sitemap, robots e feed Merchant estão implementados com as opções de ativação desligadas. A vitrine mantém noindex e omite ofertas estruturadas. Homologação na VPS, políticas comerciais, medições e piloto externo seguem pendentes. Ver [SEO.md](SEO.md).
 
 **Preparação para publicação em 13/11/2026.** A página `/contato` reúne [WhatsApp](https://wa.me/5511963143754), [Instagram](https://www.instagram.com/sallvatco) e `sallvatco@gmail.com`. A página `/entrega` informa a média de dois dias úteis de preparo e postagem, separada do prazo de transporte. Ambas são incluídas na vitrine estática. O botão “Corrigir os dados” da revisão retorna ao formulário preenchido por POST com antiforgery. O envio seguinte revalida os dados e recalcula a cotação.

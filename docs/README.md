@@ -19,6 +19,8 @@ Esta pasta é a fonte de verdade documental do projeto. Código, migrations, inf
 - [REQUIREMENTS.md](REQUIREMENTS.md) — requisitos rastreáveis, regras conhecidas e decisões comerciais pendentes;
 - [SEO.md](SEO.md) — indexação, metadados, dados estruturados e performance de descoberta.
 - [IMAGES.md](IMAGES.md) — imagens tratadas da demonstração, arquivos, prompts e limites de uso.
+- [CATALOGO-PILOTO.md](CATALOGO-PILOTO.md) — ficha de aprovação de Sea Salt e Hibernum por volume.
+- [GUIA-NOTAS-OLFATIVAS.md](GUIA-NOTAS-OLFATIVAS.md) — primeiro rascunho editorial para revisão da marca.
 
 ### Arquitetura e domínio
 
@@ -34,6 +36,7 @@ Esta pasta é a fonte de verdade documental do projeto. Código, migrations, inf
 
 - [SECURITY.md](SECURITY.md) — controles obrigatórios e ameaças;
 - [LGPD.md](LGPD.md) — inventário de dados, minimização, retenção e direitos;
+- [POLITICAS-RASCUNHO.md](POLITICAS-RASCUNHO.md) — propostas de termos, privacidade e trocas com decisões pendentes.
 - [OBSERVABILITY.md](OBSERVABILITY.md) — logs, auditoria, correlação e health checks;
 - [INFRASTRUCTURE.md](INFRASTRUCTURE.md) — topologia, redes, ambientes, volumes e backups;
 - [CONTAINERS.md](CONTAINERS.md) — imagem da aplicação, smoke isolado no CI e limites da preparação de Staging;
